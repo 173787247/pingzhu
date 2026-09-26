@@ -25,6 +25,14 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI（NAPI） | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | 選配 |
 
+### 下載（Windows）
+
+**[⬇ 安裝包 pingzhu-0.4.0-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.4.0/pingzhu-0.4.0-setup.exe)**
+　·　[可攜版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.4.0/pingzhu-0.4.0-win-x64.zip)
+
+裝到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理員權限。裝好後 `Ctrl+Alt+Z` 切換中英，
+打 `su3cl3` 會出現「你好」。詳細操作見 [windows/README.md](windows/README.md)。
+
 **現況：M0 – M4（可攜版）完成** —— 解碼引擎、資料管線、個人化學習、Rust 核心 ＋ C ABI，
 以及**一個現在就能在 Windows 上跑的輸入法**（[windows/](windows/README.md)）。
 
