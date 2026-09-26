@@ -70,6 +70,17 @@ void StatusWindow::refresh() {
 void StatusWindow::setPosition(int x, int y) { moveTo(x, y); }
 
 void StatusWindow::moveTo(int x, int y) {
+    /* Clamped to the visible desktop, always.
+     *
+     * A saved position can be stale — the screen layout changed, or the config
+     * was copied from another machine — and a drag can overshoot. Either way a
+     * button that ends up off-screen is a button the user cannot click, and
+     * nothing on screen explains where it went. (This happened: the window was
+     * found at -4817,-1135 while the config said 1858,1312.) */
+    const int screenW = GetSystemMetrics(SM_CXSCREEN);
+    const int screenH = GetSystemMetrics(SM_CYSCREEN);
+    x = std::max(0, std::min(x, screenW - kSize));
+    y = std::max(0, std::min(y, screenH - kSize));
     rect_ = {x, y, x + kSize, y + kSize};
     if (hwnd_) {
         SetWindowPos(hwnd_, HWND_TOPMOST, x, y, kSize, kSize, SWP_NOACTIVATE);
