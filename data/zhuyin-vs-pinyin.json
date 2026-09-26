@@ -1,0 +1,47 @@
+{
+  "entries": 169587,
+  "unreadable": 0,
+  "pinyinGaps": 17,
+  "all": {
+    "count": 169587,
+    "bopomofo": {
+      "compositionPerCharacter": 2.9862475301565206,
+      "effectivePerCharacter": 3.1749900491227736,
+      "top1": 77.26476675688585,
+      "inPage1": 90.67145476952832,
+      "meanRank": 4.123971766703816,
+      "meanAmbiguity": 7.247943533407631,
+      "groups": 131031
+    },
+    "pinyin": {
+      "compositionPerCharacter": 3.096944186900117,
+      "effectivePerCharacter": 3.5832977802989316,
+      "top1": 60.63849233726641,
+      "inPage1": 86.48540277261819,
+      "meanRank": 10.260462181653075,
+      "meanAmbiguity": 19.52092436330615,
+      "groups": 102835
+    }
+  },
+  "words": {
+    "count": 139163,
+    "bopomofo": {
+      "compositionPerCharacter": 2.9785447036673,
+      "effectivePerCharacter": 3.0133134787254843,
+      "top1": 90.67424530945726,
+      "inPage1": 99.99712567277221,
+      "meanRank": 1.1162809079999712,
+      "meanAmbiguity": 1.2325618159999425,
+      "groups": 126185
+    },
+    "pinyin": {
+      "compositionPerCharacter": 3.0950530423347735,
+      "effectivePerCharacter": 3.2042926662042257,
+      "top1": 71.25385339493975,
+      "inPage1": 99.53507757090605,
+      "meanRank": 1.6396312238166755,
+      "meanAmbiguity": 2.279262447633351,
+      "groups": 99159
+    }
+  }
+}
