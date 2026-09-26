@@ -5,7 +5,7 @@
 Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 [![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases)
-[![engine tests](https://img.shields.io/badge/engine%20tests-49%2F49-brightgreen)](#现况)
+[![engine tests](https://img.shields.io/badge/engine%20tests-65%2F65-brightgreen)](#现况)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
 
@@ -188,7 +188,7 @@ node engine/cli.ts su3cl3 ji394su3 w96j0
 node engine/cli.ts --layout eten ne3     # 倚天鍵盤
 
 # 測試與評測
-cd engine && node --test "test/*.test.ts"   # 37 項
+cd engine && node --test "test/*.test.ts"   # 65 項
 node engine/bench.mjs 5000                  # 解碼品質
 node engine/bench.mjs 5000 --compare        # promotion 開啟前後的逐例對比
 node engine/bench-learn.mjs 5000            # 學習前後對比
@@ -287,16 +287,20 @@ $ node engine/bench-learn.mjs 5000
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
-| **M0** | 解码引擎：键盘／切分／读字格 Viterbi／候选视窗；37 项测试 | ✅ 已完成 |
+| **M0** | 解码引擎：键盘／切分／读字格 Viterbi／候选视窗 | ✅ 已完成 |
 | **M1** | 资料管线：从 McBopomofo 开放资料编译出可携语言模型 | ✅ 已完成 |
 | **M2** | 个人化：使用者词库、学习排序、候选翻页 | ✅ 已完成 |
 | **M3** | Rust 核心 ＋ C ABI（差异化测试对 TS 参考实作） | ✅ 已完成 |
 | **M4a** | Windows 可携版外壳（托盘／钩子／候选视窗／注入） | ✅ 已完成 |
-| **M4b** | Windows TSF 外壳（语言列整合） | 待做 |
+| **M4b** | Windows TSF 外壳：进语言列、组字、显示属性、候选视窗定位、安装程式 | ✅ 已完成 |
+| **M4c** | 繁简输出：OpenCC 对照表、热键／浮动按钮／设定档三种切换方式 | ✅ 已完成 |
 | **M5** | macOS IMK 外壳 | 待做 |
 | **M6** | Android `InputMethodService` 外壳 | 待做 |
 | **M7** | HarmonyOS IME Kit 外壳 | 研究中 |
-| **M8** | 加值功能：简繁转换、符号表、联想词、快捷输入 | 待做 |
+| **M8** | 其他加值功能：符号表、联想词、快捷输入 | 待做 |
+
+测试现况：**TypeScript 65 项**、**Rust 24 项**（含 1,529 例差异化测试）、
+**Windows 原生 3 组**（按键路由／引擎整合／TSF COM 契约）。
 
 详细排程、工作量与风险见 [docs/05-roadmap.md](docs/05-roadmap.md)。
 
