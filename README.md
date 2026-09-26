@@ -16,16 +16,22 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 平注（PingZhu）是一套從零打造的注音（Bopomofo／Zhuyin）輸入法。它不做「又一個 RIME 設定檔」，
 而是把注音解碼引擎本身做成可攜核心，再為每個平台接上該平台的官方輸入法框架：
 
-| 平台 | 官方框架 | 狀態 |
-|---|---|---|
-| Windows 10/11 (x64 + Arm64) | Text Services Framework (TSF) | 規劃中（技術完全開放，工作量最大） |
-| macOS 12+ | InputMethodKit (IMK) | 規劃中（走 Developer ID + 公證，非 App Store） |
-| Android 8+ | `InputMethodService` | 規劃中（缺口最大、風險最低） |
-| HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
-| Linux | fcitx5 / ibus addon | 選配 |
+| 平台 | 官方框架 | 引擎 | 外殼狀態 |
+|---|---|---|---|
+| Windows 10/11 (x64 + Arm64) | Text Services Framework (TSF) | ✅ C ABI | 待做（技術完全開放，工作量最大） |
+| macOS 12+ | InputMethodKit (IMK) | ✅ C ABI | 待做（走 Developer ID + 公證，非 App Store） |
+| Android 8+ | `InputMethodService` | ✅ C ABI（JNI） | 待做（缺口最大、風險最低） |
+| HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI（NAPI） | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
+| Linux | fcitx5 / ibus addon | ✅ C ABI | 選配 |
 
-**現況：M0 + M1 + M2 完成** —— 解碼引擎、資料管線、個人化學習皆可運作，37 項測試通過。
-平台外殼尚未開始。
+**現況：M0 – M3 完成** —— 解碼引擎、資料管線、個人化學習，以及**可被四個平台外殼連結的
+Rust 核心 ＋ C ABI**。平台外殼本身尚未開始。
+
+| | TypeScript 參考實作 | Rust 核心 |
+|---|---|---|
+| 測試 | 37 項 | 16 項單元 + **1,529 例差異化測試** |
+| 每按鍵 | 15.2 µs | 16.5 µs |
+| C ABI | — | ✅ 純 C 程式可直接驅動（見 [core-rs](core-rs/README.md)） |
 
 ```console
 $ node engine/cli.ts su3cl3 ji394su3 w96j0
@@ -222,7 +228,7 @@ $ node engine/bench-learn.mjs 5000
 | **M0** | 解碼引擎：鍵盤／切分／讀字格 Viterbi／候選視窗；37 項測試 | ✅ 已完成 |
 | **M1** | 資料管線：從 McBopomofo 開放資料編譯出可攜語言模型 | ✅ 已完成 |
 | **M2** | 個人化：使用者詞庫、學習排序、候選翻頁 | ✅ 已完成 |
-| **M3** | 核心移植（Rust）＋ C ABI／JNI／NAPI／Swift 綁定 | 待做 |
+| **M3** | Rust 核心 ＋ C ABI（差異化測試對 TS 參考實作） | ✅ 已完成 |
 | **M4** | Windows TSF 外殼 | 待做 |
 | **M5** | macOS IMK 外殼 | 待做 |
 | **M6** | Android `InputMethodService` 外殼 | 待做 |
@@ -245,6 +251,7 @@ $ node engine/bench-learn.mjs 5000
 | [docs/05-roadmap.md](docs/05-roadmap.md) | MVP → v1 的路線、工作量估算、風險與退路 |
 | [docs/06-engine-design.md](docs/06-engine-design.md) | 引擎內部：切分演算法、讀字格、資料格式、評測方法 |
 | [docs/07-research-tooling.md](docs/07-research-tooling.md) | 本倉庫的調研工具鏈（可重現取證） |
+| [core-rs/README.md](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外殼怎麼接、怎麼驗證 |
 | [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [03](research/03-platform-ime-frameworks.md) · [04](research/04-zhuyin-ime-internals.md) | 四份原始調研報告（約 34 萬字，含逐條來源與【已查證】/【推測】/【需查證】三級標記） |
 
 ---

@@ -1,0 +1,21 @@
+[package]
+name = "pingzhu-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "平注 PingZhu — cross-platform Bopomofo (Zhuyin) input method engine core"
+license = "MIT"
+repository = "https://github.com/173787247/pingzhu"
+
+[lib]
+name = "pingzhu_core"
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

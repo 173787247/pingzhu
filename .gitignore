@@ -15,3 +15,6 @@ research/data/BPMFMappings.txt
 # editor
 .vscode/
 .idea/
+
+# Rust build output
+core-rs/target/

@@ -46,20 +46,20 @@
 
 **這一項證明了 M2 的核心命題**：同音詞不需要靠模型猜對，靠「教一次就記住」更快。
 
-### M3 · 核心移植 Rust（3–5 週）
+### M3 · Rust 核心 ＋ C ABI ✅
 
-| 項目 | 說明 |
-|---|---|
-| 移植對象 | 切分、讀字格、候選、狀態機（不含 CLI） |
-| 驗收標準 | 對 M0 的 11 項測試產生相同輸出（測試已寫好） |
-| C ABI | `engine_feed_key` / `engine_candidates` / `engine_commit` / `engine_reset` |
-| 綁定 | cbindgen 產 C 標頭；Android JNI；HarmonyOS NAPI；Swift 直接 interop |
-| 資料載入 | 讀同一份 TSV；後續可選二進位索引 |
+- `core-rs/`：音節模型、鍵盤、詞庫、讀字格、使用者詞庫、輸入引擎、C ABI
+- `include/pingzhu.h`：外殼唯一需要看的介面
+- **驗證方式是這一段的重點**：TypeScript 版是規格書，
+  `tests/differential.rs` 重播 1,529 個從參考實作匯出的真實按鍵字串，
+  逐項比對 composing／sentence／score／usedFallback／斷詞／候選第一頁
+- 突變測試確認這個綠色是有意義的（關閉 promotion → 20+ 處不一致）
+- 純 C 煙霧測試：一個 C 程式用 C ABI 驅動引擎，得出 你好／我愛你／萬丹
 
-**為何在這裡**：M2 的功能要在四個平台上都可用，先移植可避免把 TypeScript 的行為
-在四個外殼裡各重寫一次。
-**風險**：中。演算法已凍結但仍在演進，移植期間要避免雙邊分歧——
-對策是 TS 版凍結為「參考實作」，只修 bug 不加功能。
+**一個誠實的結果：移植並沒有變快。** 16.5 µs vs 15.2 µs，同一個數量級。
+Rust 的價值在於**能被嵌進別人的行程**（TSF 是 in-proc DLL、IMK 是 app bundle、
+Android／鴻蒙需要 `.so`），不是速度。距離 10 ms 的體驗門檻還有三個數量級，
+所以刻意不做微觀最佳化。
 
 ### M4 · Windows TSF 外殼（4–6 週）
 
@@ -154,7 +154,7 @@
 | M0 引擎 | ✅ | — | — |
 | M1 資料 | ✅ | — | — |
 | M2 個人化 | ✅ | — | — |
-| M3 Rust 核心 | 3–5 週 | 7 週 | 中 |
+| M3 Rust 核心 | ✅ | — | — |
 | M4 Windows TSF | 4–6 週 | 13 週 | **高** |
 | M5 macOS IMK | 3–4 週 | 17 週 | 中 |
 | M6 Android | 3–4 週 | 21 週 | 低—中 |
