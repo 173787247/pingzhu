@@ -195,7 +195,21 @@ STDMETHODIMP TextService::Activate(ITfThreadMgr *threadMgr, TfClientId clientId)
 STDMETHODIMP TextService::ActivateEx(ITfThreadMgr *threadMgr, TfClientId clientId, DWORD) {
     if (!threadMgr) return E_INVALIDARG;
     startLog(moduleDir(), L"pingzhu-tsf.log");
-    log("--- activated in " + hostName() + " ---");
+    /* The DLL's own file name at the end of this line is the only reliable way
+     * to tell which build is running. Windows keeps a loaded DLL for the
+     * lifetime of the process and COM reuses it without re-reading the registry,
+     * so an application that has been open for a while is running whatever was
+     * registered when it started — and nothing on screen says so.
+     *
+     * (Notepad on Windows 11 is a single process with tabs, so "opening
+     * Notepad" does not give a fresh one. That is exactly how a two-hour-old
+     * build ended up being tested against a brand new setting.) */
+    {
+        std::wstring path = modulePath();
+        size_t slash = path.find_last_of(L"\\/");
+        log("--- activated in " + hostName() + " [" +
+            toUtf8(slash == std::wstring::npos ? path : path.substr(slash + 1)) + "] ---");
+    }
     threadMgr_ = threadMgr;
     threadMgr_->AddRef();
     clientId_ = clientId;
