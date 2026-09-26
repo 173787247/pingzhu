@@ -61,12 +61,19 @@ enum class Action {
     Backspace,
     Commit,           // enter: accept the current sentence
     Cancel,           // escape: throw the composition away
+    ToggleScript,     // Ctrl+Alt+S: switch between Traditional and Simplified
 };
 
 struct Decision {
     Action action;
     int arg;  // SelectCandidate: 1..10, MoveCursor: -1 or +1
 };
+
+/* The 繁/簡 toggle. Lives in the router rather than in a shell because both
+ * shells need it and only one of them can be tested without a language bar —
+ * and because the language bar button turned out not to be available everywhere
+ * (Windows 11 ships with the language bar off, and AddItem refuses without it). */
+constexpr char kScriptToggleKey = 's';
 
 /* `chineseMode` is the shell's IME on/off switch; when off everything passes. */
 Decision route(const KeyEvent &key, const EngineState &state, bool chineseMode);

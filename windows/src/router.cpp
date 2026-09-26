@@ -20,6 +20,12 @@ bool is_layout_key(char ch) {
 Decision route(const KeyEvent &key, const EngineState &state, bool chineseMode) {
     if (!chineseMode) return {Action::Pass, 0};
 
+    /* Checked before the modifier rule below, which would otherwise hand every
+     * Ctrl+Alt combination to the application. */
+    if (key.ctrl && key.alt && !key.shift && key.ch == kScriptToggleKey) {
+        return {Action::ToggleScript, 0};
+    }
+
     // Modifier combos belong to the application (Ctrl+C, Alt+Tab, ...). The IME
     // only claims unmodified keys.
     if (key.ctrl || key.alt) return {Action::Pass, 0};

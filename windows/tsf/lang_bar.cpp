@@ -1,6 +1,7 @@
 #include "lang_bar.h"
 
 #include <msctf.h>
+#include <cstdio>
 #include <new>
 
 #include "../src/config.h"
@@ -190,19 +191,49 @@ HICON LangBarButton::buildIcon() const {
     return icon;
 }
 
+/*
+ * Two ways to reach the language bar item manager.
+ *
+ * `TF_CreateLangBarItemMgr` is the documented call for a text service, but this
+ * SDK ships no msctf.lib, so it is resolved at run time. `CoCreateInstance` on
+ * the same CLSID is the fallback. They may not be equivalent — the free function
+ * is the one Microsoft's own samples use, and if it does anything extra (such as
+ * binding the manager to the calling thread's language bar) that is exactly the
+ * difference that would make AddItem refuse.
+ */
+bool LangBarButton::acquireManager(ITfLangBarItemMgr **out) {
+    *out = nullptr;
+    if (HMODULE msctf = GetModuleHandleW(L"msctf.dll")) {
+        using CreateFn = HRESULT(WINAPI *)(ITfLangBarItemMgr **);
+        auto create = reinterpret_cast<CreateFn>(GetProcAddress(msctf, "TF_CreateLangBarItemMgr"));
+        if (create && SUCCEEDED(create(out)) && *out) {
+            log("item manager via TF_CreateLangBarItemMgr");
+            return true;
+        }
+    }
+    if (SUCCEEDED(CoCreateInstance(CLSID_TF_LangBarItemMgr, nullptr, CLSCTX_INPROC_SERVER,
+                                   IID_ITfLangBarItemMgr,
+                                   reinterpret_cast<void **>(out))) &&
+        *out) {
+        log("item manager via CoCreateInstance");
+        return true;
+    }
+    log("language bar item manager unavailable");
+    return false;
+}
+
 bool LangBarButton::add() {
     ITfLangBarItemMgr *manager = nullptr;
-    HRESULT hr = CoCreateInstance(CLSID_TF_LangBarItemMgr, nullptr, CLSCTX_INPROC_SERVER,
-                                  IID_ITfLangBarItemMgr,
-                                  reinterpret_cast<void **>(&manager));
-    if (FAILED(hr) || !manager) {
-        log("language bar item manager unavailable");
-        return false;
-    }
-    hr = manager->AddItem(static_cast<ITfLangBarItemButton *>(this));
+    if (!acquireManager(&manager)) return false;
+    HRESULT hr = manager->AddItem(static_cast<ITfLangBarItemButton *>(this));
     manager->Release();
     if (FAILED(hr)) {
-        log("AddItem refused by the language bar");
+        /* The HRESULT is the whole diagnosis and was not being recorded: "it was
+         * refused" without a code sends the reader looking for the wrong thing. */
+        char detail[96];
+        std::snprintf(detail, sizeof(detail), "AddItem failed, hr=0x%08lX",
+                      static_cast<unsigned long>(hr));
+        log(detail);
         return false;
     }
     added_ = true;

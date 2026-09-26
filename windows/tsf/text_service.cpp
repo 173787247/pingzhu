@@ -488,6 +488,19 @@ bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
             HideCandidates();
             break;
 
+        case Action::ToggleScript: {
+            const char *next =
+                engine_.outputScript() == "simplified" ? "traditional" : "simplified";
+            if (engine_.setOutputScript(next)) {
+                saveOutputScript(moduleDir(), next);
+                log("output script = " + engine_.outputScript() + " (Ctrl+Alt+S)");
+                /* The preview inside the candidate window carries the script, so
+                 * refresh it if the user is mid-composition. */
+                ShowCandidates();
+            }
+            break;
+        }
+
         case Action::Pass:
         default:
             *eaten = false;

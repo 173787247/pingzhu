@@ -155,6 +155,15 @@ void performAction(pingzhu::Action action, int arg, char ch) {
             g_engine.reset();
             refreshCandidateWindow();
             break;
+        case Action::ToggleScript: {
+            const char *next = g_config.output == "simplified" ? "traditional" : "simplified";
+            if (g_engine.setOutputScript(next)) {
+                g_config.output = next;
+                pingzhu::saveOutputScript(executableDir(), next);
+                refreshCandidateWindow();
+            }
+            break;
+        }
         case Action::Pass:
         default:
             break;

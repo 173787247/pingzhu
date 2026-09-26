@@ -67,6 +67,7 @@ private:
      * and leaking one per call is the classic way an IME grows without bound. */
     HICON icon_ = nullptr;
 
+    static bool acquireManager(ITfLangBarItemMgr **out);
     HICON buildIcon() const;
     std::wstring label() const;
 };

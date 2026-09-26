@@ -28,6 +28,7 @@ static const char *actionName(Action a) {
         case Action::Backspace: return "Backspace";
         case Action::Commit: return "Commit";
         case Action::Cancel: return "Cancel";
+        case Action::ToggleScript: return "ToggleScript";
     }
     return "?";
 }
@@ -70,6 +71,21 @@ int main() {
     // a word is often a digit key.
     check("a digit key starts a composition", route(key(KeyKind::Digit, '3'), idle, true),
           Action::Compose);
+    check("Ctrl+Alt+S toggles the output script",
+          route([] { KeyEvent e = key(KeyKind::Letter, 's'); e.ctrl = true; e.alt = true; return e; }(),
+                idle, true),
+          Action::ToggleScript);
+    check("Ctrl+Alt+S also works mid-composition",
+          route([] { KeyEvent e = key(KeyKind::Letter, 's'); e.ctrl = true; e.alt = true; return e; }(),
+                composing, true),
+          Action::ToggleScript);
+    check("Ctrl+S is still the application's",
+          route([] { KeyEvent e = key(KeyKind::Letter, 's'); e.ctrl = true; return e; }(), idle, true),
+          Action::Pass);
+    check("Ctrl+Alt+Shift+S is not the toggle",
+          route([] { KeyEvent e = key(KeyKind::Letter, 's'); e.ctrl = true; e.alt = true;
+                     e.shift = true; return e; }(), idle, true),
+          Action::Pass);
     check("ctrl combos belong to the app",
           route([] { KeyEvent e = key(KeyKind::Letter, 'c'); e.ctrl = true; return e; }(), composing,
                 true),
