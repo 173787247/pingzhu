@@ -12,7 +12,7 @@
  * Columns: keys, composing, sentence, score, usedFallback, pathWords, page1
  * Scores keep six decimals; the Rust side compares with a small tolerance.
  */
-import { Dictionary, buildSyllableInventory } from "./src/dictionary.ts";
+import { loadDictionary, loadSyllableInventory } from "./src/node-data.ts";
 import { InputEngine } from "./src/engine.ts";
 import { buildTestSet, readingToKeys } from "./bench-lib.mjs";
 import { fileURLToPath } from "node:url";
@@ -23,8 +23,8 @@ const LM = join(here, "..", "data", "bopomofo-lm.tsv");
 
 const sampleSize = Number(process.argv[2] ?? 1500);
 
-const dict = Dictionary.load(LM);
-const inventory = buildSyllableInventory(LM);
+const dict = loadDictionary(LM);
+const inventory = loadSyllableInventory(LM);
 
 /** Keystrokes that exercise the interesting paths, not just the happy one. */
 const HAND_PICKED = [

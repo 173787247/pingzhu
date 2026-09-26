@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>平注 PingZhu — 注音引擎試打</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1c1f26; --line: #2c313c;
+    --fg: #e6e9ef; --dim: #8b93a7; --accent: #6ea8fe; --ok: #4ec9a0; --warn: #e0a458;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.6 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    padding: 24px; max-width: 900px; margin: 0 auto;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  .sub { color: var(--dim); font-size: 13px; margin-bottom: 20px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .label { color: var(--dim); font-size: 12px; letter-spacing: .06em; margin-bottom: 6px; }
+  #document {
+    width: 100%; min-height: 90px; background: #0f1115; color: var(--fg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    font-size: 20px; font-family: inherit; resize: vertical;
+  }
+  #document:focus { outline: 1px solid var(--accent); }
+  #composing { font-size: 26px; letter-spacing: .08em; min-height: 38px; }
+  #composing .pending { color: var(--warn); }
+  #sentence { font-size: 26px; color: var(--ok); min-height: 38px; }
+  #candidates { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; }
+  .cand {
+    background: #232833; border: 1px solid var(--line); border-radius: 6px;
+    padding: 5px 10px; cursor: pointer; font-size: 17px; user-select: none;
+  }
+  .cand:hover { border-color: var(--accent); }
+  .cand b { color: var(--accent); font-weight: 600; margin-right: 3px; font-size: 13px; }
+  .cand.learned { border-color: var(--ok); }
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; color: var(--dim); font-size: 13px; margin-top: 8px; }
+  .badge { padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); }
+  .badge.on { border-color: var(--accent); color: var(--accent); }
+  #keyboard { display: grid; gap: 5px; margin-top: 4px; }
+  .krow { display: flex; gap: 5px; }
+  .key {
+    width: 46px; height: 46px; background: #232833; border: 1px solid var(--line);
+    border-radius: 6px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; cursor: pointer; user-select: none; line-height: 1.1;
+  }
+  .key:hover { border-color: var(--accent); }
+  .key .b { font-size: 17px; }
+  .key .s { font-size: 10px; color: var(--dim); }
+  .key.wide { width: 108px; }
+  .help { color: var(--dim); font-size: 13px; }
+  .help kbd {
+    background: #232833; border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 4px; padding: 1px 6px; font-family: inherit; font-size: 12px; color: var(--fg);
+  }
+  #status { color: var(--dim); font-size: 13px; min-height: 20px; }
+</style>
+</head>
+<body>
+
+<h1>平注 PingZhu — 注音引擎試打</h1>
+<div class="sub">
+  這是 <b>引擎</b>，不是可安裝的輸入法。平台外殼（Windows TSF／macOS IMK／Android／HarmonyOS）尚未實作。
+  這裡跑的是與測試、評測、Rust 核心完全相同的那一份解碼邏輯。
+</div>
+
+<div class="panel">
+  <div class="label">文件（Enter 送出後文字會進來）</div>
+  <textarea id="document" placeholder="在這裡打字…"></textarea>
+</div>
+
+<div class="panel">
+  <div class="label">組字中（注音）</div>
+  <div id="composing">—</div>
+  <div class="label" style="margin-top:10px">→ 中文</div>
+  <div id="sentence">—</div>
+</div>
+
+<div class="panel">
+  <div class="label">候選字</div>
+  <div id="candidates"></div>
+  <div class="meta">
+    <span id="pageinfo">—</span>
+    <span class="badge" id="mode">打字模式</span>
+    <span id="learninfo"></span>
+  </div>
+  <div id="status"></div>
+</div>
+
+<div class="panel">
+  <div class="label">大千式鍵盤（沒有注音鍵盤也能用滑鼠點）</div>
+  <div id="keyboard"></div>
+</div>
+
+<div class="panel help">
+  <b>操作</b>　
+  <kbd>空白</kbd> 開啟選字／下一頁十個　
+  <kbd>↓</kbd> 開啟選字　
+  <kbd>↑</kbd> Esc 關閉　
+  開啟後 <kbd>1</kbd>…<kbd>9</kbd><kbd>0</kbd> 選字　
+  <kbd>←</kbd><kbd>→</kbd> 移動候選游標　
+  <kbd>Backspace</kbd> 退一格　
+  <kbd>Enter</kbd> 送出　
+  <kbd>Esc</kbd> 清空<br>
+  <span style="color:var(--warn)">注意：數字鍵在「打字模式」下是注音鍵</span>
+  （1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ），這就是為什麼選字前要先開啟候選視窗。<br><br>
+  <b>試試看</b>　
+  <a href="#" data-demo="su3cl3">su3cl3 = 你好</a>　
+  <a href="#" data-demo="ji394su3">ji394su3 = 我愛你</a>　
+  <a href="#" data-demo="j0420">j0420 = 萬丹</a>　
+  <a href="#" data-demo="u6tp6">u6tp6 = 遺臣</a>
+</div>
+
+<script type="module">
+import { InputEngine } from "./engine/engine.js";
+import { Dictionary, buildSyllableInventoryFromText } from "./engine/dictionary.js";
+import { UserDictionary } from "./engine/userdict.js";
+import { LAYOUTS, STANDARD_LAYOUT } from "./engine/keyboard.js";
+
+const $ = (id) => document.getElementById(id);
+
+// ---------------------------------------------------------------- load model
+$("status").textContent = "載入語言模型（6.4 MB）…";
+const response = await fetch("../data/bopomofo-lm.tsv");
+if (!response.ok) {
+  $("status").textContent = `載入失敗：HTTP ${response.status}。請從倉庫根目錄啟動靜態伺服器。`;
+  throw new Error("language model unavailable");
+}
+const text = await response.text();
+const dict = Dictionary.fromText(text, "bopomofo-lm.tsv");
+const inventory = buildSyllableInventoryFromText(text);
+const userDict = new UserDictionary();
+const engine = new InputEngine(dict, inventory, { layout: "standard", userDictionary: userDict });
+$("status").textContent = `已載入 ${dict.size.toLocaleString()} 詞條 / ${inventory.size} 合法音節`;
+
+// ------------------------------------------------------------------ keyboard
+const ROWS = [
+  [["1","ㄅ"],["2","ㄉ"],["3","ˇ"],["4","ˋ"],["5","ㄓ"],["6","ˊ"],["7","˙"],["8","ㄚ"],["9","ㄞ"],["0","ㄢ"],["-","ㄦ"]],
+  [["q","ㄆ"],["w","ㄊ"],["e","ㄍ"],["r","ㄐ"],["t","ㄔ"],["y","ㄗ"],["u","ㄧ"],["i","ㄛ"],["o","ㄟ"],["p","ㄣ"]],
+  [["a","ㄇ"],["s","ㄋ"],["d","ㄎ"],["f","ㄑ"],["g","ㄕ"],["h","ㄘ"],["j","ㄨ"],["k","ㄜ"],["l","ㄠ"],[";","ㄤ"]],
+  [["z","ㄈ"],["x","ㄌ"],["c","ㄏ"],["v","ㄒ"],["b","ㄖ"],["n","ㄙ"],["m","ㄩ"],[",","ㄝ"],[".","ㄡ"],["/","ㄥ"]],
+];
+const kb = $("keyboard");
+for (const row of ROWS) {
+  const div = document.createElement("div");
+  div.className = "krow";
+  for (const [code, sym] of row) {
+    const k = document.createElement("div");
+    k.className = "key";
+    k.innerHTML = `<span class="b">${sym}</span><span class="s">${code}</span>`;
+    k.onclick = () => feed(code);
+    div.appendChild(k);
+  }
+  const space = document.createElement("div");
+  space.className = "key wide";
+  space.innerHTML = `<span class="b">空白</span><span class="s">開啟／下一頁</span>`;
+  space.onclick = () => { engine.nextCandidatePage(); draw(); };
+  div.appendChild(space);
+  kb.appendChild(div);
+}
+
+// ----------------------------------------------------------------- rendering
+const committed = [];
+
+function draw() {
+  const composing = engine.composing;
+  $("composing").innerHTML = composing
+    ? composing.replace(/\[([^\]]*)\]/, '<span class="pending">[$1]</span>')
+    : '<span style="color:var(--dim)">—</span>';
+  $("sentence").textContent = engine.bestSentence || "—";
+
+  const page = engine.candidatePage;
+  const keys = ["1","2","3","4","5","6","7","8","9","0"];
+  const box = $("candidates");
+  box.innerHTML = "";
+  page.entries.forEach((entry, i) => {
+    const el = document.createElement("div");
+    el.className = "cand";
+    const learned = userDict.get(entry.word, entry.reading);
+    if (learned) el.classList.add("learned");
+    el.innerHTML = `<b>${keys[i]}</b>${entry.word}`;
+    el.title = `${entry.reading}　${entry.syllables} 音節　score ${entry.score.toFixed(3)}` +
+      (learned ? `　學過 ${learned.count} 次` : "");
+    el.onclick = () => {
+      if (!engine.candidateWindowOpen) engine.openCandidateWindow();
+      const out = engine.selectCandidate(i + 1);
+      if (out) { committed.push(out); engine.reset(); }
+      draw();
+    };
+    box.appendChild(el);
+  });
+
+  $("pageinfo").textContent = page.total
+    ? `第 ${page.pageIndex + 1}/${page.pageCount} 頁　共 ${page.total} 個候選　游標在第 ${engine.candidateCursor + 1} 音節`
+    : "沒有候選";
+  const mode = $("mode");
+  mode.textContent = engine.candidateWindowOpen ? "選字模式（1-9,0 選字）" : "打字模式（數字是注音鍵）";
+  mode.classList.toggle("on", engine.candidateWindowOpen);
+  $("learninfo").textContent = userDict.size ? `已學 ${userDict.size} 個詞` : "";
+  $("document").value = committed.join("");
+}
+
+function feed(key) {
+  engine.press(key);
+  draw();
+}
+
+// -------------------------------------------------------------- key routing
+document.addEventListener("keydown", (e) => {
+  if (e.target === $("document") && !engine.isComposing()) return; // let them edit freely
+  const k = e.key;
+
+  if (k === "ArrowDown") { e.preventDefault(); engine.openCandidateWindow(); }
+  else if (k === "ArrowUp") { e.preventDefault(); engine.closeCandidateWindow(); }
+  else if (k === "ArrowLeft") { e.preventDefault(); engine.moveCandidateCursor(-1); }
+  else if (k === "ArrowRight") { e.preventDefault(); engine.moveCandidateCursor(1); }
+  else if (k === " ") { e.preventDefault(); engine.nextCandidatePage(); }
+  else if (k === "Backspace") { e.preventDefault(); engine.backspace(); }
+  else if (k === "Enter") {
+    e.preventDefault();
+    if (engine.isComposing()) { committed.push(engine.commit()); }
+    else { committed.push("\n"); }
+  } else if (k === "Escape") { e.preventDefault(); engine.reset(); }
+  else if (/^[0-9]$/.test(k)) {
+    // Digits are bopomofo keys until the candidate window is open. This is the
+    // whole reason the window has an explicit open state.
+    if (engine.candidateWindowOpen) {
+      e.preventDefault();
+      const out = engine.selectCandidate(k === "0" ? 10 : Number(k));
+      if (out) { committed.push(out); engine.reset(); }
+    } else {
+      e.preventDefault();
+      engine.press(k);
+    }
+  } else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    engine.press(k);
+  } else {
+    return;
+  }
+  draw();
+});
+
+document.querySelectorAll("[data-demo]").forEach((a) => {
+  a.onclick = (ev) => {
+    ev.preventDefault();
+    engine.reset();
+    for (const ch of a.dataset.demo) engine.press(ch);
+    draw();
+  };
+});
+
+draw();
+</script>
+</body>
+</html>

@@ -10,11 +10,14 @@ export {
   InputEngine, CANDIDATE_PAGE_SIZE, CANDIDATE_CAP,
   type EngineOptions, type CandidatePage,
 } from "./engine.ts";
-export { Dictionary, buildSyllableInventory, type Entry } from "./dictionary.ts";
+export { Dictionary, buildSyllableInventoryFromText, type Entry, type DictionaryOptions } from "./dictionary.ts";
 export {
   ReadingGrid, DEFAULT_PROMOTE_WORDS_OVER_DECOMPOSITION, DEFAULT_CANDIDATE_ORDER,
   type GridPath, type GridNode, type ReadingGridOptions, type CandidateOrder,
 } from "./grid.ts";
+export {
+  loadDictionary, loadSyllableInventory, loadUserDictionary, saveUserDictionary,
+} from "./node-data.ts";
 export {
   UserDictionary, EPOCH_DAY_MS,
   type UserEntry, type UserDictionaryOptions,

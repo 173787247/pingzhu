@@ -1,0 +1,152 @@
+k:s k:u k:3 k:c k:l k:3	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 sel:1	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 sel:3	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 space	你好	ㄋㄧˇ ㄏㄠˇ	1	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 space sel:1			0		你好
+k:s k:u k:3 k:c k:l k:3 space space	你好	ㄋㄧˇ ㄏㄠˇ	1	檷|祢|䦵|聻|𦗚|儗|坭|柅|苨|馜	
+k:s k:u k:3 k:c k:l k:3 space space sel:1			0		檷好
+k:s k:u k:3 k:c k:l k:3 open sel:2			0		妳好
+k:s k:u k:3 k:c k:l k:3 open close sel:1	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 open k:g	你好師	ㄋㄧˇ ㄏㄠˇ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:s k:u k:3 k:c k:l k:3 open bs	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 right	你好	ㄋㄧˇ ㄏㄠˇ	1	好|郝|㚼|㝀|🆗|👌|👍|🙆|🙆‍♀️|🙆‍♂️	
+k:s k:u k:3 k:c k:l k:3 right left left	你好	ㄋㄧˇ ㄏㄠˇ	1	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 left	你好	ㄋㄧˇ ㄏㄠˇ	1	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 open right sel:1			0		你好
+k:s k:u k:3 k:c k:l k:3 enter			0		你好
+k:s k:u k:3 k:c k:l k:3 space space space space	你好	ㄋㄧˇ ㄏㄠˇ	1	𢘝	
+k:s k:u k:3 k:c k:l k:3 open sel:10			0		抳好
+k:s k:u k:3 k:c k:l k:3 open sel:11	你好	ㄋㄧˇ ㄏㄠˇ	1	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 sel:1	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 sel:3	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 space	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 space sel:1			0		我愛你
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 space space	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 space space sel:1			0		我愛你
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open sel:2			0		我愛你
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open close sel:1	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open k:g	我愛你師	ㄨㄛˇ ㄞˋ ㄋㄧˇ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open bs	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 right	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	愛|礙|艾|隘|曖|誒|璦|噯|靉|乂	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 right left left	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 left	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open right sel:1			0		我愛你
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 enter			0		我愛你
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 space space space space	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open sel:10	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 open sel:11	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
+k:t k:j k:4 k:g k:/	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ sel:1	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ sel:3	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ space	畜生	ㄔㄨˋ ㄕㄥ	1	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ space sel:1			0		畜生
+k:t k:j k:4 k:g k:/ space space	畜生	ㄔㄨˋ ㄕㄥ	1	俶|亍|笜|拀|䂐|㔘|炪|誳|嘼|处	
+k:t k:j k:4 k:g k:/ space space sel:1			0		俶生
+k:t k:j k:4 k:g k:/ open sel:2			0		畜牲
+k:t k:j k:4 k:g k:/ open close sel:1	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ open k:g	畜生師	ㄔㄨˋ ㄕㄥ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:t k:j k:4 k:g k:/ open bs	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ right	畜生	ㄔㄨˋ ㄕㄥ	1	生|聲|升|昇|牲|笙|甥|陞|勝|泩	
+k:t k:j k:4 k:g k:/ right left left	畜生	ㄔㄨˋ ㄕㄥ	1	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ left	畜生	ㄔㄨˋ ㄕㄥ	1	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ open right sel:1			0		處生
+k:t k:j k:4 k:g k:/ enter			0		畜生
+k:t k:j k:4 k:g k:/ space space space space	畜生	ㄔㄨˋ ㄕㄥ	1	儊|臅|敊|㙇|㤕|㾥|䇍|䎌|䦌|傗	
+k:t k:j k:4 k:g k:/ open sel:10			0		怵生
+k:t k:j k:4 k:g k:/ open sel:11	畜生	ㄔㄨˋ ㄕㄥ	1	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:u k:6 k:t k:p k:6	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 sel:1	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 sel:3	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 space	遺臣	ㄧˊ ㄔㄣˊ	1	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 space sel:1			0		遺臣
+k:u k:6 k:t k:p k:6 space space	遺臣	ㄧˊ ㄔㄣˊ	1	姨|胰|頤|咦|羡|貽|沂|飴|痍|迤	
+k:u k:6 k:t k:p k:6 space space sel:1			0		姨陳
+k:u k:6 k:t k:p k:6 open sel:2			0		一陳
+k:u k:6 k:t k:p k:6 open close sel:1	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 open k:g	一陳屍	ㄧˊ ㄔㄣˊ ㄕ	0	陳屍|陳|沈|沉|晨|臣|塵|辰|忱|宸	
+k:u k:6 k:t k:p k:6 open bs	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 right	遺臣	ㄧˊ ㄔㄣˊ	1	陳|沈|沉|晨|臣|塵|辰|忱|宸|諶	
+k:u k:6 k:t k:p k:6 right left left	遺臣	ㄧˊ ㄔㄣˊ	1	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 left	遺臣	ㄧˊ ㄔㄣˊ	1	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 open right sel:1			0		一陳
+k:u k:6 k:t k:p k:6 enter			0		遺臣
+k:u k:6 k:t k:p k:6 space space space space	遺臣	ㄧˊ ㄔㄣˊ	1	鈶|眤|苐|沵|箷|釶|狏|虵|枱|𨗮	
+k:u k:6 k:t k:p k:6 open sel:10			0		夷陳
+k:u k:6 k:t k:p k:6 open sel:11	遺臣	ㄧˊ ㄔㄣˊ	1	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:j k:0 k:4 k:2 k:0	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 sel:1	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 sel:3	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 space	萬丹	ㄨㄢˋ ㄉㄢ	1	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 space sel:1			0		萬丹
+k:j k:0 k:4 k:2 k:0 space space	萬丹	ㄨㄢˋ ㄉㄢ	1	㬅|䕕|昘|𤡁|𢺴|忨|綄|蟃|捥|踠	
+k:j k:0 k:4 k:2 k:0 space space sel:1			0		㬅單
+k:j k:0 k:4 k:2 k:0 open sel:2			0		萬單
+k:j k:0 k:4 k:2 k:0 open close sel:1	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 open k:g	萬丹師	ㄨㄢˋ ㄉㄢ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:j k:0 k:4 k:2 k:0 open bs	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 right	萬丹	ㄨㄢˋ ㄉㄢ	1	單|擔|丹|耽|眈|簞|殫|鄲|酖|襌	
+k:j k:0 k:4 k:2 k:0 right left left	萬丹	ㄨㄢˋ ㄉㄢ	1	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 left	萬丹	ㄨㄢˋ ㄉㄢ	1	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 open right sel:1			0		萬單
+k:j k:0 k:4 k:2 k:0 enter			0		萬丹
+k:j k:0 k:4 k:2 k:0 space space space space	萬丹	ㄨㄢˋ ㄉㄢ	1	㸘|㻨|䛃|卐|貦|贃|𢪸|𢶯|𣜜	
+k:j k:0 k:4 k:2 k:0 open sel:10			0		魭單
+k:j k:0 k:4 k:2 k:0 open sel:11	萬丹	ㄨㄢˋ ㄉㄢ	1	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:g k:4	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 sel:1	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 sel:3	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 space	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 space sel:1			0		是
+k:g k:4 space space	是	ㄕˋ	1	勢|適|室|釋|氏|飾|逝|誓|仕|侍	
+k:g k:4 space space sel:1			0		勢
+k:g k:4 open sel:2			0		事
+k:g k:4 open close sel:1	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 open k:g	誓師	ㄕˋ ㄕ	0	誓師|是|事|市|式|示|視|世|士|識	
+k:g k:4 open bs	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 right	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 right left left	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 left	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 open right sel:1			0		是
+k:g k:4 enter			0		是
+k:g k:4 space space space space	是	ㄕˋ	1	豉|跩|螫|使|奭|貰|鯷|啇|𧫚|䧴	
+k:g k:4 open sel:10			0		試
+k:g k:4 open sel:11	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
+k:s k:u k:3	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 sel:1	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 sel:3	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 space	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 space sel:1			0		你
+k:s k:u k:3 space space	你	ㄋㄧˇ	1	䦵|聻|𦗚|儗|坭|柅|苨|馜|隬|譺	
+k:s k:u k:3 space space sel:1			0		䦵
+k:s k:u k:3 open sel:2			0		妳
+k:s k:u k:3 open close sel:1	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 open k:g	你師	ㄋㄧˇ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:s k:u k:3 open bs	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 right	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 right left left	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 left	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 open right sel:1			0		你
+k:s k:u k:3 enter			0		你
+k:s k:u k:3 space space space space	你	ㄋㄧˇ	1	䛏|伱|伲|儞|埿|孴|拟|鉨|𢘝	
+k:s k:u k:3 open sel:10			0		祢
+k:s k:u k:3 open sel:11	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c sel:1	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c sel:3	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c space	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c space sel:1			0		你
+k:s k:u k:3 k:c space space	你	ㄋㄧˇ [c]	1	䦵|聻|𦗚|儗|坭|柅|苨|馜|隬|譺	
+k:s k:u k:3 k:c space space sel:1			0		䦵
+k:s k:u k:3 k:c open sel:2			0		妳
+k:s k:u k:3 k:c open close sel:1	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open k:g	你	ㄋㄧˇ [cg]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open bs	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c right	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c right left left	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c left	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open right sel:1			0		你
+k:s k:u k:3 k:c enter			0		你
+k:s k:u k:3 k:c space space space space	你	ㄋㄧˇ [c]	1	䛏|伱|伲|儞|埿|孴|拟|鉨|𢘝	
+k:s k:u k:3 k:c open sel:10			0		祢
+k:s k:u k:3 k:c open sel:11	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	

@@ -12,15 +12,16 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { rmSync } from "node:fs";
-import { Dictionary, buildSyllableInventory } from "../src/dictionary.ts";
+import { loadDictionary, loadSyllableInventory } from "../src/node-data.ts";
 import { InputEngine } from "../src/engine.ts";
 import { UserDictionary } from "../src/userdict.ts";
+import { loadUserDictionary, saveUserDictionary } from "../src/node-data.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const LM = join(here, "..", "..", "data", "bopomofo-lm.tsv");
 
-const dict = Dictionary.load(LM);
-const inventory = buildSyllableInventory(LM);
+const dict = loadDictionary(LM);
+const inventory = loadSyllableInventory(LM);
 
 const DAY = 20_000;
 
@@ -91,8 +92,8 @@ test("save/load hits the disk and forget() removes", () => {
   try {
     const ud = new UserDictionary({ today: () => DAY });
     ud.record("平注", "ㄆㄧㄥˊ-ㄓㄨˋ");
-    ud.save(path);
-    const back = UserDictionary.load(path, { today: () => DAY });
+    saveUserDictionary(ud, path);
+    const back = loadUserDictionary(path, { today: () => DAY });
     assert.equal(back.size, 1);
     assert.ok(back.forget("平注", "ㄆㄧㄥˊ-ㄓㄨˋ"));
     assert.equal(back.size, 0);

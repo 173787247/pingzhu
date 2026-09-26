@@ -81,7 +81,13 @@ pub unsafe extern "C" fn engine_create(
     let Ok(dict) = Dictionary::load(&lm) else { return std::ptr::null_mut() };
     let Ok(inventory) = build_syllable_inventory(&lm) else { return std::ptr::null_mut() };
 
-    let engine = InputEngine::new(dict, inventory, EngineOptions { layout, candidate_order: order, ..Default::default() });
+    let engine = InputEngine::new(dict, inventory, EngineOptions { layout, candidate_order: order, ..Default::default() })
+        // Always attach an empty user dictionary. Without this, a fresh install
+        // has nowhere to record a correction: `select_candidate` would teach
+        // nothing, `engine_save_user_dictionary` would fail, and the user would
+        // silently lose every word they taught — until they happened to already
+        // have a dictionary file, which a new user by definition does not.
+        .with_user_dictionary(UserDictionary::new(Default::default()));
     Box::into_raw(Box::new(EngineHandle { engine }))
 }
 
@@ -258,6 +264,36 @@ pub unsafe extern "C" fn engine_candidate_page_info(handle: *mut EngineHandle) -
             (p.page_index as u64) | ((p.page_count as u64) << 32)
         }
         None => 0,
+    }
+}
+
+/// Is the candidate window open for selection? Digits are composing keys until
+/// it is.
+///
+/// # Safety
+/// `handle` must be valid.
+#[no_mangle]
+pub unsafe extern "C" fn engine_candidate_window_open(handle: *mut EngineHandle) -> bool {
+    unsafe { handle.as_mut() }.map(|h| h.engine.candidate_window_open()).unwrap_or(false)
+}
+
+/// Down arrow.
+///
+/// # Safety
+/// `handle` must be valid.
+#[no_mangle]
+pub unsafe extern "C" fn engine_open_candidate_window(handle: *mut EngineHandle) -> bool {
+    unsafe { handle.as_mut() }.map(|h| h.engine.open_candidate_window()).unwrap_or(false)
+}
+
+/// Up arrow or Esc.
+///
+/// # Safety
+/// `handle` must be valid.
+#[no_mangle]
+pub unsafe extern "C" fn engine_close_candidate_window(handle: *mut EngineHandle) {
+    if let Some(h) = unsafe { handle.as_mut() } {
+        h.engine.close_candidate_window();
     }
 }
 

@@ -61,7 +61,23 @@ Rust 的價值在於**能被嵌進別人的行程**（TSF 是 in-proc DLL、IMK 
 Android／鴻蒙需要 `.so`），不是速度。距離 10 ms 的體驗門檻還有三個數量級，
 所以刻意不做微觀最佳化。
 
-### M4 · Windows TSF 外殼（4–6 週）
+### M4a · Windows 可攜版外殼 ✅
+
+托盤常駐 + `WH_KEYBOARD_LL` 全域鉤子 + 候選視窗 + `SendInput` 注入。
+
+- 按鍵路由寫成**不含 `<windows.h>` 的純函式**，因此可以無頭測試
+- 引擎以 `LoadLibrary` 載入，ABI 版本不符時給出可讀錯誤而不是崩潰
+- 從 WSL 用 MSVC 交叉編譯（`windows/build.sh`）
+
+**驗證**：Windows 原生 `pingzhu-router-test.exe`（按鍵路由）與
+`pingzhu-engine-test.exe`（透過真實 DLL 驅動引擎：你好／我愛你／萬丹／學習）。
+
+**這個整合測試抓到一個真實缺陷**：`engine_create` 原本不附帶使用者詞庫，
+只有在詞庫檔已存在時才裝上——**全新安裝的使用者永遠學不了字**。已修。
+
+**它做不到的**：不是 TSF，所以不進語言列，也無法對管理員權限的視窗輸入（UIPI）。
+
+### M4b · Windows TSF 外殼（4–6 週）
 
 | 項目 | 說明 |
 |---|---|
@@ -155,7 +171,8 @@ Android／鴻蒙需要 `.so`），不是速度。距離 10 ms 的體驗門檻還
 | M1 資料 | ✅ | — | — |
 | M2 個人化 | ✅ | — | — |
 | M3 Rust 核心 | ✅ | — | — |
-| M4 Windows TSF | 4–6 週 | 13 週 | **高** |
+| M4a 可攜版 | ✅ | — | — |
+| M4b Windows TSF | 4–6 週 | 13 週 | **高** |
 | M5 macOS IMK | 3–4 週 | 17 週 | 中 |
 | M6 Android | 3–4 週 | 21 週 | 低—中 |
 | M7 HarmonyOS | 未知 | — | **未知** |

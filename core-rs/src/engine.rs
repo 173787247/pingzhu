@@ -84,6 +84,7 @@ pub struct InputEngine {
     all_candidates: Vec<Entry>,
     cursor_index: usize,
     candidate_offset: usize,
+    candidates_open: bool,
     segmentation: Option<Segmentation>,
 }
 
@@ -101,6 +102,7 @@ impl InputEngine {
             all_candidates: Vec::new(),
             cursor_index: 0,
             candidate_offset: 0,
+            candidates_open: false,
             segmentation: None,
         };
         engine.decode();
@@ -143,6 +145,7 @@ impl InputEngine {
         if !self.options.layout.is_composing_key(k) {
             return false;
         }
+        self.candidates_open = false; // typing resumes composing
         self.keys.push(k);
         self.decode();
         true
@@ -155,9 +158,14 @@ impl InputEngine {
     }
 
     pub fn backspace(&mut self) -> bool {
-        if self.keys.pop().is_none() {
+        if self.keys.is_empty() {
             return false;
         }
+        if self.candidates_open {
+            self.close_candidate_window();
+            return true;
+        }
+        self.keys.pop();
         self.decode();
         true
     }
@@ -247,8 +255,39 @@ impl InputEngine {
         }
     }
 
-    /// Space, in the 自然輸入法 convention.
+    /// Is the candidate window open for selection?
+    ///
+    /// Not a UI detail — it decides what the number keys mean. On a 大千 keyboard
+    /// `1234567890` *are* bopomofo keys (1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ), so if a
+    /// digit selected while composing, `su3cl3` would be untypeable.
+    pub fn candidate_window_open(&self) -> bool {
+        self.candidates_open
+    }
+
+    /// ↓ — open the list without changing the page.
+    pub fn open_candidate_window(&mut self) -> bool {
+        if self.all_candidates.is_empty() {
+            return false;
+        }
+        self.candidates_open = true;
+        true
+    }
+
+    /// ↑ or Esc — back to composing.
+    pub fn close_candidate_window(&mut self) {
+        self.candidates_open = false;
+        self.candidate_offset = 0;
+    }
+
+    /// Space. Opens the window if it is closed; otherwise moves on ten.
     pub fn next_candidate_page(&mut self) -> bool {
+        if self.all_candidates.is_empty() {
+            return false;
+        }
+        if !self.candidates_open {
+            self.candidates_open = true;
+            return true;
+        }
         if self.candidate_offset + CANDIDATE_PAGE_SIZE >= self.all_candidates.len() {
             return false;
         }
@@ -257,7 +296,7 @@ impl InputEngine {
     }
 
     pub fn prev_candidate_page(&mut self) -> bool {
-        if self.candidate_offset == 0 {
+        if !self.candidates_open || self.candidate_offset == 0 {
             return false;
         }
         self.candidate_offset = self.candidate_offset.saturating_sub(CANDIDATE_PAGE_SIZE);
@@ -265,22 +304,29 @@ impl InputEngine {
     }
 
     /// Move the candidate window along the composing buffer, the way arrows do.
+    /// Returns true when the state changed — including merely opening the window.
     pub fn move_candidate_cursor(&mut self, delta: isize) -> bool {
-        if self.syllables.is_empty() {
+        if self.all_candidates.is_empty() {
             return false;
         }
-        let max = self.syllables.len() - 1;
+        let was_open = self.candidates_open;
+        self.candidates_open = true;
+        let max = self.syllables.len().saturating_sub(1);
         let next = (self.cursor_index as isize + delta).clamp(0, max as isize) as usize;
         if next == self.cursor_index {
-            return false;
+            return !was_open; // opened, but nowhere to move
         }
         self.cursor_index = next;
         self.refresh_candidates();
+        self.candidates_open = true;
         true
     }
 
     /// Pick candidate `one_based` (1..=10) from the visible page.
     pub fn select_candidate(&mut self, one_based: usize) -> String {
+        if !self.candidates_open {
+            return String::new(); // digits are composing keys until the list is open
+        }
         if one_based < 1 || one_based > CANDIDATE_PAGE_SIZE {
             return String::new();
         }
@@ -401,6 +447,7 @@ impl InputEngine {
         self.all_candidates = Vec::new();
         self.cursor_index = 0;
         self.candidate_offset = 0;
+        self.candidates_open = false;
         self.segmentation = None;
         if self.keys.is_empty() {
             return;

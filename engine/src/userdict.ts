@@ -25,8 +25,6 @@
  * UserDictionaryOptions so bench-learn.mjs can measure them and a future version
  * can tune them against real typing data instead of my intuition.
  */
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
 
 export interface UserEntry {
   word: string;
@@ -228,12 +226,4 @@ export class UserDictionary {
     return d;
   }
 
-  static load(path: string, options: UserDictionaryOptions = {}): UserDictionary {
-    return UserDictionary.fromText(readFileSync(path, "utf8"), options);
-  }
-
-  save(path: string): void {
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, this.toText());
-  }
 }

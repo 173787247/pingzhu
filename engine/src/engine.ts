@@ -106,6 +106,7 @@ export class InputEngine {
   private currentGrid: ReadingGrid | null = null;
   private cursorIndex = 0;
   private candidateOffset = 0;
+  private candidatesOpen = false;
 
   constructor(dict: Dictionary, inventory: Set<string>, options: EngineOptions = {}) {
     this.dict = dict;
@@ -127,6 +128,7 @@ export class InputEngine {
   press(key: string): boolean {
     const k = key.length === 1 ? key.toLowerCase() : key;
     if (!this.layout.keyToComponents.has(k)) return false;
+    this.candidatesOpen = false; // typing resumes composing
     this.keys.push(k);
     this.decode();
     return true;
@@ -134,6 +136,10 @@ export class InputEngine {
 
   backspace(): boolean {
     if (this.keys.length === 0) return false;
+    if (this.candidatesOpen) {
+      this.closeCandidateWindow();
+      return true;
+    }
     this.keys.pop();
     this.decode();
     return true;
@@ -226,15 +232,50 @@ export class InputEngine {
     };
   }
 
-  /** Space, in the 自然輸入法 convention. Returns false when already on the last page. */
+  /**
+   * Is the candidate window open for selection?
+   *
+   * This is not a UI detail — it decides what the number keys mean. On a 大千
+   * keyboard `1234567890` *are* bopomofo keys (1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ),
+   * so if a digit selected a candidate while composing, `su3cl3` would be
+   * untypeable: the `3` would pick a candidate instead of adding ˇ.
+   *
+   * Every Taiwanese IME resolves this the same way: the digits compose, and
+   * selection happens only once the list is open. ↓ or space opens it (space
+   * also pages, which is why 自然輸入法 users describe it as "space for the next
+   * ten"). Typing anything else closes it again.
+   */
+  get candidateWindowOpen(): boolean {
+    return this.candidatesOpen;
+  }
+
+  /** ↓ — open the list without changing the page. */
+  openCandidateWindow(): boolean {
+    if (this.allCandidates.length === 0) return false;
+    this.candidatesOpen = true;
+    return true;
+  }
+
+  /** ↑ or Esc — back to composing. */
+  closeCandidateWindow(): void {
+    this.candidatesOpen = false;
+    this.candidateOffset = 0;
+  }
+
+  /** Space. Opens the window if it is closed; otherwise moves on ten. */
   nextCandidatePage(): boolean {
+    if (this.allCandidates.length === 0) return false;
+    if (!this.candidatesOpen) {
+      this.candidatesOpen = true;
+      return true;
+    }
     if (this.candidateOffset + CANDIDATE_PAGE_SIZE >= this.allCandidates.length) return false;
     this.candidateOffset += CANDIDATE_PAGE_SIZE;
     return true;
   }
 
   prevCandidatePage(): boolean {
-    if (this.candidateOffset === 0) return false;
+    if (!this.candidatesOpen || this.candidateOffset === 0) return false;
     this.candidateOffset = Math.max(0, this.candidateOffset - CANDIDATE_PAGE_SIZE);
     return true;
   }
@@ -245,10 +286,14 @@ export class InputEngine {
    * word still under the cursor.
    */
   moveCandidateCursor(delta: number): boolean {
+    if (this.allCandidates.length === 0) return false;
+    const wasOpen = this.candidatesOpen;
+    this.candidatesOpen = true;
     const next = Math.min(Math.max(this.cursorIndex + delta, 0), this.syllables.length - 1);
-    if (next === this.cursorIndex) return false;
+    if (next === this.cursorIndex) return !wasOpen; // opened, but nowhere to move
     this.cursorIndex = next;
     this.refreshCandidates();
+    this.candidatesOpen = true;
     return true;
   }
 
@@ -258,6 +303,7 @@ export class InputEngine {
    * the path that teaches the user dictionary.
    */
   selectCandidate(oneBased: number): string {
+    if (!this.candidatesOpen) return ""; // digits are composing keys until the list is open
     if (oneBased < 1 || oneBased > CANDIDATE_PAGE_SIZE) return "";
     return this.chooseAt(this.cursorIndex, this.candidateOffset + oneBased - 1);
   }
@@ -364,6 +410,7 @@ export class InputEngine {
     this.currentGrid = null;
     this.cursorIndex = 0;
     this.candidateOffset = 0;
+    this.candidatesOpen = false;
     this.currentSegmentation = null;
     if (this.keys.length === 0) return;
 

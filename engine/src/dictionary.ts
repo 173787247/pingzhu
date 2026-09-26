@@ -6,7 +6,6 @@
  *     reading<TAB>word<TAB>log10_probability
  * where the reading is a '-' joined sequence of composed bopomofo syllables.
  */
-import { readFileSync } from "node:fs";
 import { splitReading } from "./syllable.ts";
 
 export interface Entry {
@@ -35,14 +34,17 @@ export class Dictionary {
   }
 
   /**
-   * Load the compiled TSV. The format is deliberately plain text: it is the
-   * project's portable interchange format, so a Rust/Rust-for-Android or ArkTS
-   * port can read exactly the same bytes.
+   * Build from the compiled TSV *text*. The format is deliberately plain text:
+   * it is the project's portable interchange format, so the Rust core, an ArkTS
+   * shell and a browser page all read exactly the same bytes.
+   *
+   * Reading the file is the caller's job — `node-data.ts` does it for Node, and
+   * a platform shell does it with whatever its own filesystem API is. Keeping
+   * this function pure is what lets the very same module run in a browser.
    */
-  static load(path: string | URL, options: DictionaryOptions = {}): Dictionary {
+  static fromText(text: string, source = "<text>", options: DictionaryOptions = {}): Dictionary {
     const maxCandidates = options.maxCandidatesPerReading ?? 128;
-    const text = readFileSync(path, "utf8");
-    const dict = new Dictionary(String(path));
+    const dict = new Dictionary(source);
     let maxSpan = 1;
     for (const line of text.split("\n")) {
       if (!line || line.startsWith("#")) continue;
@@ -85,8 +87,7 @@ export class Dictionary {
  * The set of legal syllables, derived from the dictionary rather than typed by
  * hand: a syllable is legal iff some word in the language model is read that way.
  */
-export function buildSyllableInventory(lmPath: string | URL): Set<string> {
-  const text = readFileSync(lmPath, "utf8");
+export function buildSyllableInventoryFromText(text: string): Set<string> {
   const set = new Set<string>();
   for (const line of text.split("\n")) {
     if (!line || line.startsWith("#")) continue;

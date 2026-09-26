@@ -11,13 +11,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Dictionary, buildSyllableInventory } from "../src/dictionary.ts";
+import { loadDictionary, loadSyllableInventory } from "../src/node-data.ts";
 import { InputEngine, CANDIDATE_PAGE_SIZE } from "../src/engine.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const LM = join(here, "..", "..", "data", "bopomofo-lm.tsv");
-const dict = Dictionary.load(LM);
-const inventory = buildSyllableInventory(LM);
+const dict = loadDictionary(LM);
+const inventory = loadSyllableInventory(LM);
 
 function type(keys, options = {}) {
   const engine = new InputEngine(dict, inventory, { layout: "standard", ...options });
@@ -36,8 +36,15 @@ test("a page holds ten, addressed by 1234567890", () => {
   assert.equal(page.hasPrevious, false);
 });
 
-test("space moves on ten at a time and stops at the end", () => {
+test("space opens the window, then moves on ten at a time", () => {
   const engine = type("tj4g/");
+  assert.equal(engine.candidateWindowOpen, false);
+
+  // first space only opens; it does not skip the first page
+  assert.equal(engine.nextCandidatePage(), true);
+  assert.equal(engine.candidateWindowOpen, true);
+  assert.equal(engine.candidatePage.pageIndex, 0);
+
   const total = engine.candidatePage.total;
   let pages = 1;
   while (engine.nextCandidatePage()) pages++;
@@ -50,8 +57,46 @@ test("space moves on ten at a time and stops at the end", () => {
   assert.equal(engine.candidatePage.pageIndex, 0);
 });
 
+test("digits compose until the candidate window is open", () => {
+  // The whole point. On a 大千 keyboard 1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ, so a
+  // digit that selected a candidate while composing would make su3cl3 untypeable.
+  const engine = type("su3cl3");
+  assert.equal(engine.bestSentence, "你好");
+  assert.equal(engine.candidateWindowOpen, false);
+  assert.equal(engine.selectCandidate(1), "", "digits must not select while composing");
+
+  // open it, and the same key now selects
+  assert.equal(engine.openCandidateWindow(), true);
+  assert.equal(engine.candidateWindowOpen, true);
+  const first = engine.candidatePage.entries[0].word;
+  assert.equal(engine.selectCandidate(1), first);
+});
+
+test("typing closes the candidate window again", () => {
+  const engine = type("tj4g/");
+  engine.openCandidateWindow();
+  assert.equal(engine.candidateWindowOpen, true);
+  engine.press("g"); // back to composing
+  assert.equal(engine.candidateWindowOpen, false);
+  assert.equal(engine.selectCandidate(1), "");
+});
+
+test("a digit fed through press() still composes", () => {
+  // The shell's key router feeds digits to press() unless the window is open;
+  // this pins the engine half of that contract. `su3` is ㄋㄧˇ, so the extra `3`
+  // is a second tone key with no syllable to land on: it must end up pending,
+  // which is only possible if it composed instead of selecting.
+  const engine = type("su3");
+  assert.equal(engine.bestSentence, "你");
+  assert.equal(engine.press("3"), true, "3 is a composing key");
+  assert.equal(engine.composing, "ㄋㄧˇ [3]");
+  assert.equal(engine.bestSentence, "你", "the buffer was not committed");
+  assert.equal(engine.isComposing(), true);
+});
+
 test("selectCandidate addresses the visible page, one-based", () => {
   const engine = type("tj4g/");
+  engine.openCandidateWindow();
   const first = engine.candidatePage.entries[0].word;
   assert.equal(engine.selectCandidate(1), first);
   assert.equal(engine.isComposing(), false, "selecting commits");
@@ -60,6 +105,7 @@ test("selectCandidate addresses the visible page, one-based", () => {
   // rest of it: picking the single character 怵 for ㄔㄨˋ leaves ㄕㄥ to decode,
   // so the returned sentence is 怵生, not 怵.
   const again = type("tj4g/");
+  again.openCandidateWindow();
   const tenth = again.candidatePage.entries[9].word;
   const committed = again.selectCandidate(10);
   assert.ok(committed.startsWith(tenth), `expected ${committed} to start with ${tenth}`);
@@ -67,6 +113,7 @@ test("selectCandidate addresses the visible page, one-based", () => {
 
 test("selectCandidate rejects numbers off the page", () => {
   const engine = type("tj4g/");
+  engine.openCandidateWindow();
   assert.equal(engine.selectCandidate(0), "");
   assert.equal(engine.selectCandidate(11), "");
   assert.equal(engine.selectCandidate(-1), "");
@@ -75,6 +122,7 @@ test("selectCandidate rejects numbers off the page", () => {
 
 test("selecting from the second page picks the right word", () => {
   const engine = type("tj4g/");
+  engine.openCandidateWindow();
   assert.ok(engine.nextCandidatePage());
   const target = engine.candidatePage.entries[0].word;
   assert.ok(engine.selectCandidate(1).startsWith(target));
@@ -86,9 +134,10 @@ test("the candidate window starts on the word still under the cursor", () => {
   assert.equal(engine.candidatePage.entries[0].word, "你好");
 });
 
-test("arrow keys walk the window along the buffer", () => {
+test("arrow keys walk the window along the buffer, and open it", () => {
   const engine = type("su3cl3");
   assert.equal(engine.moveCandidateCursor(1), true);
+  assert.equal(engine.candidateWindowOpen, true, "arrows imply the user is choosing");
   assert.equal(engine.candidateCursor, 1);
   assert.equal(engine.moveCandidateCursor(1), false, "already at the last syllable");
   assert.equal(engine.moveCandidateCursor(-1), true);

@@ -18,14 +18,19 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 | 平台 | 官方框架 | 引擎 | 外殼狀態 |
 |---|---|---|---|
-| Windows 10/11 (x64 + Arm64) | Text Services Framework (TSF) | ✅ C ABI | 待做（技術完全開放，工作量最大） |
+| **Windows 10/11** | **可攜版（托盤 + 全域鉤子 + 注入）** | ✅ C ABI | ✅ **可執行**（[windows/](windows/README.md)） |
+| Windows 10/11 | Text Services Framework (TSF) | ✅ C ABI | 待做（進語言列、支援管理員視窗） |
 | macOS 12+ | InputMethodKit (IMK) | ✅ C ABI | 待做（走 Developer ID + 公證，非 App Store） |
 | Android 8+ | `InputMethodService` | ✅ C ABI（JNI） | 待做（缺口最大、風險最低） |
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI（NAPI） | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | 選配 |
 
-**現況：M0 – M3 完成** —— 解碼引擎、資料管線、個人化學習，以及**可被四個平台外殼連結的
-Rust 核心 ＋ C ABI**。平台外殼本身尚未開始。
+**現況：M0 – M4（可攜版）完成** —— 解碼引擎、資料管線、個人化學習、Rust 核心 ＋ C ABI，
+以及**一個現在就能在 Windows 上跑的輸入法**（[windows/](windows/README.md)）。
+
+Windows 可攜版是托盤常駐 + 全域鍵盤鉤子 + 候選視窗 + 字元注入：不需要安裝、不需要管理員權限、
+不需要 COM 註冊。它**不是 TSF**，所以不進語言列、對管理員視窗無效；TSF 版是下一步，
+會共用同一份引擎與同一個候選視窗。
 
 | | TypeScript 參考實作 | Rust 核心 |
 |---|---|---|
@@ -229,7 +234,8 @@ $ node engine/bench-learn.mjs 5000
 | **M1** | 資料管線：從 McBopomofo 開放資料編譯出可攜語言模型 | ✅ 已完成 |
 | **M2** | 個人化：使用者詞庫、學習排序、候選翻頁 | ✅ 已完成 |
 | **M3** | Rust 核心 ＋ C ABI（差異化測試對 TS 參考實作） | ✅ 已完成 |
-| **M4** | Windows TSF 外殼 | 待做 |
+| **M4a** | Windows 可攜版外殼（托盤／鉤子／候選視窗／注入） | ✅ 已完成 |
+| **M4b** | Windows TSF 外殼（語言列整合） | 待做 |
 | **M5** | macOS IMK 外殼 | 待做 |
 | **M6** | Android `InputMethodService` 外殼 | 待做 |
 | **M7** | HarmonyOS IME Kit 外殼 | 研究中 |
@@ -252,6 +258,7 @@ $ node engine/bench-learn.mjs 5000
 | [docs/06-engine-design.md](docs/06-engine-design.md) | 引擎內部：切分演算法、讀字格、資料格式、評測方法 |
 | [docs/07-research-tooling.md](docs/07-research-tooling.md) | 本倉庫的調研工具鏈（可重現取證） |
 | [core-rs/README.md](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外殼怎麼接、怎麼驗證 |
+| [windows/README.md](windows/README.md) | **Windows 可攜版輸入法**：操作、建置、限制 |
 | [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [03](research/03-platform-ime-frameworks.md) · [04](research/04-zhuyin-ime-internals.md) | 四份原始調研報告（約 34 萬字，含逐條來源與【已查證】/【推測】/【需查證】三級標記） |
 
 ---

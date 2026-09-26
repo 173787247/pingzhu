@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Dictionary, buildSyllableInventory } from "./src/dictionary.ts";
+import { loadDictionary, loadSyllableInventory } from "./src/node-data.ts";
 import { InputEngine } from "./src/engine.ts";
 import { STANDARD_LAYOUT } from "./src/keyboard.ts";
 import { splitReading } from "./src/syllable.ts";
@@ -17,8 +17,8 @@ import { splitReading } from "./src/syllable.ts";
 const here = dirname(fileURLToPath(import.meta.url));
 export const LM = join(here, "..", "data", "bopomofo-lm.tsv");
 
-export const dict = Dictionary.load(LM);
-export const inventory = buildSyllableInventory(LM);
+export const dict = loadDictionary(LM);
+export const inventory = loadSyllableInventory(LM);
 
 /** reverse of the keyboard table: component -> key */
 const componentToKey = new Map();

@@ -57,6 +57,13 @@ size_t engine_syllable_count(EngineHandle *handle);
 size_t engine_candidate_count(EngineHandle *handle);
 const char *engine_candidate_at(EngineHandle *handle, size_t index);
 uint64_t engine_candidate_page_info(EngineHandle *handle); /* page | (count << 32) */
+
+/* Digits are bopomofo keys (1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ) until the window
+ * is open: a shell must route 1-9,0 to engine_select_candidate only when
+ * engine_candidate_window_open() is true, and to engine_feed_key otherwise. */
+bool engine_candidate_window_open(EngineHandle *handle);
+bool engine_open_candidate_window(EngineHandle *handle);   /* Down arrow */
+void engine_close_candidate_window(EngineHandle *handle);  /* Up arrow / Esc */
 bool engine_next_candidate_page(EngineHandle *handle);
 bool engine_prev_candidate_page(EngineHandle *handle);
 bool engine_move_candidate_cursor(EngineHandle *handle, int32_t delta);

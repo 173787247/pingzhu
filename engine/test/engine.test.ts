@@ -7,14 +7,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Dictionary, buildSyllableInventory } from "../src/dictionary.ts";
+import { loadDictionary, loadSyllableInventory } from "../src/node-data.ts";
 import { InputEngine } from "../src/engine.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const LM = join(here, "..", "..", "data", "bopomofo-lm.tsv");
 
-const dict = Dictionary.load(LM);
-const inventory = buildSyllableInventory(LM);
+const dict = loadDictionary(LM);
+const inventory = loadSyllableInventory(LM);
 
 function type(keys: string, layout = "standard") {
   const engine = new InputEngine(dict, inventory, { layout });
