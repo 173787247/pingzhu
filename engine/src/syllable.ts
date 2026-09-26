@@ -77,26 +77,28 @@ const SYLLABIC_CONSONANTS = new Set([15, 16, 17, 18, 19, 20, 21]);
  * finished?
  *
  * This is what stops the composer from spitting out a character the moment you
- * press one key. Typing "su3c" leaves ㄏ dangling: it has no vowel and no medial,
- * and only ㄓㄔㄕㄖㄗㄘㄙ may stand alone — and those only once a tone key (or
- * space) says the syllable is over, which is why "g4" is 是 but a lone "g" is
- * still being typed.
+ * press one key. Typing "su3c" leaves ㄏ dangling: ㄏ cannot be a syllable on its
+ * own, so it stays in the pending slot instead of turning into the ㄏ symbol.
  *
- * Data also contains standalone bopomofo *symbols* (ㄅ, ㄏ, ˇ) so that users can
- * type the letters themselves; those readings deliberately fail this test and
- * are reachable only through an explicit tone or space.
+ * The test is therefore about *shape*, not about tones. ㄓㄔㄕㄖㄗㄘㄙ genuinely
+ * are whole syllables without any vowel — 吃 is just ㄔ, 詩 is just ㄕ, 思 is just
+ * ㄙ — and they are extremely common, so they must pass even with no tone key
+ * pressed. Everything else needs a vowel or a medial.
+ *
+ * Data also contains standalone bopomofo *symbols* (ㄅ, ㄏ, ˇ) so users can type
+ * the letters themselves; those readings deliberately fail this test and are
+ * reachable only through an explicit tone or space.
  */
 export function isWellFormedComponents(chunk: KeyComponent[]): boolean {
-  let consonant = 0, medial = 0, vowel = 0, hasTone = false;
+  let consonant = 0, medial = 0, vowel = 0;
   for (const c of chunk) {
     if (c.kind === "consonant") consonant = c.index;
     else if (c.kind === "medial") medial = c.index;
     else if (c.kind === "vowel") vowel = c.index;
-    else hasTone = true;
   }
   if (vowel) return true;   // ㄚ ㄛ ㄜ ... and everything built on them
   if (medial) return true;  // ㄧ ㄨ ㄩ alone (yi/wu/yu) or ㄏㄨ style, checked against the inventory
-  return consonant !== 0 && SYLLABIC_CONSONANTS.has(consonant) && hasTone;
+  return SYLLABIC_CONSONANTS.has(consonant);
 }
 
 /** Split "ㄋㄧˇ-ㄏㄠˇ" into syllables. */

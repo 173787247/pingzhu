@@ -104,6 +104,25 @@ export class InputEngine {
     return this.path ? this.path.score : 0;
   }
 
+  /**
+   * True when some syllable in the chosen path had no dictionary word at all and
+   * had to be passed through as raw bopomofo.
+   *
+   * When this is false the output is *provably* read exactly as typed: every
+   * node on the path is a dictionary entry whose reading matches the syllables
+   * it covers. That makes it the honest way for a caller (or a benchmark) to ask
+   * "did the engine actually understand this input", rather than comparing
+   * against a specific expected word.
+   */
+  get usedFallback(): boolean {
+    return this.path ? this.path.nodes.some((n) => n.fallback) : false;
+  }
+
+  /** The chosen path, for callers that want to render per-word state. */
+  get chosenPath(): GridPath | null {
+    return this.path;
+  }
+
   /** Candidate words for the last complete syllable, best first. */
   get candidates(): Entry[] {
     return this.bestCandidates;

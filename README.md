@@ -49,7 +49,8 @@ $ node engine/cli.ts su3cl3 ji394su3 w96j0
 
 ### 1. 自然輸入法沒有行動版，而且官方寫得很清楚
 
-自然輸入法（網際智慧 IQ Technology，產品始於 1995 年）是目前台灣最成熟的商業注音輸入法。
+自然輸入法（網際智慧 IQ Technology；1990 年由中央研究院許聞廉博士以「國音輸入法」起家，
+是台灣唯一仍在維護的付費商業注音輸入法）是目前台灣最成熟的注音輸入法。
 但它的平台覆蓋在 2026 年仍然只有兩個桌面系統：
 
 - Windows 專業版 `V13.1.1.35084`（2026/09/08），Windows 11／10 1903+，支援 Windows on Arm
@@ -61,8 +62,9 @@ $ node engine/cli.ts su3cl3 ji394su3 w96j0
 - 【不支援】自然輸入法有 Linux 版嗎？
 - 【不支援】如何在 WIN10 平板上使用自然輸入法？
 
-也就是說，**Android、iOS、Linux、HarmonyOS 全部是空的**。台灣使用者手機上打注音至今仍只能
-將就內建鍵盤或 Gboard，而 Gboard 注音在台灣的維護狀況長期被使用者抱怨。
+也就是說，**Android、iOS、Linux、HarmonyOS 全部是空的**。而且這不是「沒人做過」——
+Google 注音輸入法與 IQQI 智能輸入法都曾在台灣行動市場存在，如今都已從 App Store 消失。
+台灣使用者手機上打注音，至今仍只能將就內建鍵盤或 Gboard。
 
 ### 2. 授權模式製造了大量摩擦
 
@@ -111,8 +113,9 @@ node engine/cli.ts
 node engine/cli.ts su3cl3 ji394su3 w96j0
 node engine/cli.ts --layout eten ne3     # 倚天鍵盤
 
-# 測試
+# 測試與評測
 cd engine && node --test "test/*.test.ts"
+node engine/bench.mjs 5000
 ```
 
 | 按鍵 | 輸出 | 說明 |
@@ -162,6 +165,24 @@ cd engine && node --test "test/*.test.ts"
 
 輸入法可接受的候選字延遲是 10 ms 等級，這裡差了三個數量級——**延遲不是這個專案的風險**。
 
+### 解碼品質（可重跑）
+
+```console
+$ node engine/bench.mjs 5000
+
+  top-1 accuracy    83.22%   (4161/5000)  exact word match
+  reading accuracy  100.00%   (5000/5000)  output reads as typed
+    of which homophone ties: 839
+  KSPC              2.986 keys per character
+```
+
+兩個數字的差距就是**同音詞**：`遺臣` 與 `一陳` 讀音完全相同，任何注音解碼器在沒有上下文時
+都無法分辨。5,000 個樣本裡**沒有任何一次真正的解碼失敗**——輸出永遠讀得回你打的音。
+要把 83% 往上推需要的是 bigram／上下文模型，不是更大的詞庫。
+
+> ⚠️ 樣本取自語言模型本身，因此這是**自我一致性**（上界）與**回歸守門**，不是與競品的對比數字。
+> 真正的對比需要真實使用者的打字語料，目前不存在。詳見 [docs/06](docs/06-engine-design.md)。
+
 ---
 
 ## 專案狀態
@@ -186,13 +207,14 @@ cd engine && node --test "test/*.test.ts"
 
 | 文件 | 內容 |
 |---|---|
-| [docs/01-competitive-analysis.md](docs/01-competitive-analysis.md) | 自然輸入法產品拆解：30 年版本史、功能清單、定價、平台矩陣、使用者痛點 |
+| [docs/01-competitive-analysis.md](docs/01-competitive-analysis.md) | 自然輸入法產品拆解：35 年版本史、功能清單、定價、平台矩陣、技術架構、使用者痛點 |
 | [docs/02-architecture.md](docs/02-architecture.md) | 架構決策：為何寬鬆授權核心、為何四平台原生殼、為何不用 Flutter |
 | [docs/03-platform-matrix.md](docs/03-platform-matrix.md) | 四平台輸入法框架能力、簽章與上架限制、HarmonyOS 可行性 |
 | [docs/04-data-and-licensing.md](docs/04-data-and-licensing.md) | 每一個可用元件的授權、資料來源合規、地雷清單 |
 | [docs/05-roadmap.md](docs/05-roadmap.md) | MVP → v1 的路線、工作量估算、風險與退路 |
 | [docs/06-engine-design.md](docs/06-engine-design.md) | 引擎內部：切分演算法、讀字格、資料格式、評測方法 |
 | [docs/07-research-tooling.md](docs/07-research-tooling.md) | 本倉庫的調研工具鏈（可重現取證） |
+| [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [04](research/04-zhuyin-ime-internals.md) | 三份原始調研報告（含逐條來源與「未能查證」標記） |
 
 ---
 
