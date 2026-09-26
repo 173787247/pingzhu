@@ -48,6 +48,33 @@ impl Layout {
         }
     }
 
+    /// The keyboard as it should be drawn: four rows of `(key, label)`.
+    ///
+    /// Derived from the same table `components_for` uses rather than kept as a
+    /// second copy. A hand-maintained keyboard picture is the kind of thing that
+    /// drifts one key at a time and is only noticed by someone who already knows
+    /// the layout by heart — which is exactly the person who does not need the
+    /// picture. `the_drawn_keyboard_matches_the_decoder` pins them together.
+    ///
+    /// A key with no label is not a composing key; the shell draws it dimmed.
+    pub fn key_rows(self) -> Vec<Vec<(char, &'static str)>> {
+        const ROWS: [&str; 4] = ["1234567890-", "qwertyuiop", "asdfghjkl;", "zxcvbnm,./"];
+        ROWS.iter()
+            .map(|row| {
+                row.chars()
+                    .map(|key| {
+                        let label = self
+                            .components_for(key)
+                            .first()
+                            .map(|component| component.ch())
+                            .unwrap_or("");
+                        (key, label)
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+
     pub fn is_composing_key(self, key: char) -> bool {
         !self.components_for(key).is_empty()
     }
@@ -214,5 +241,60 @@ mod tests {
         // n=ㄋ, e=ㄧ, 3=ˇ
         let comps: Vec<_> = "ne3".chars().map(|k| Layout::ETen.components_for(k)[0]).collect();
         assert_eq!(crate::syllable::compose_syllable(&comps).unwrap(), "ㄋㄧˇ");
+    }
+
+    /// The drawn keyboard and the decoding keyboard come from one table, and
+    /// this is what says so. Without it, `key_rows` could be "derived" in name
+    /// only the first time someone finds it easier to special-case a label.
+    #[test]
+    fn the_drawn_keyboard_matches_the_decoder() {
+        for layout in [Layout::Standard, Layout::ETen] {
+            for row in layout.key_rows() {
+                for (key, label) in row {
+                    match layout.components_for(key).first() {
+                        Some(component) => assert_eq!(
+                            component.ch(),
+                            label,
+                            "{:?}: key {:?} is drawn as {:?} but decodes as {:?}",
+                            layout,
+                            key,
+                            label,
+                            component.ch()
+                        ),
+                        None => assert_eq!(
+                            label, "",
+                            "{:?}: key {:?} has no component but is drawn as {:?}",
+                            layout, key, label
+                        ),
+                    }
+                }
+            }
+        }
+    }
+
+    /// Every composing key must appear somewhere on the drawn keyboard, or the
+    /// picture is missing a key the user can actually press.
+    #[test]
+    fn every_composing_key_is_drawn() {
+        const ALL_KEYS: &str = "1234567890-qwertyuiopasdfghjkl;zxcvbnm,./";
+        for layout in [Layout::Standard, Layout::ETen] {
+            let drawn: Vec<char> = layout
+                .key_rows()
+                .iter()
+                .flatten()
+                .filter(|(_, label)| !label.is_empty())
+                .map(|(key, _)| *key)
+                .collect();
+            for key in ALL_KEYS.chars() {
+                if layout.is_composing_key(key) {
+                    assert!(
+                        drawn.contains(&key),
+                        "{:?}: key {:?} composes but is not on the drawn keyboard",
+                        layout,
+                        key
+                    );
+                }
+            }
+        }
     }
 }

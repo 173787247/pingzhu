@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A 注 in a rounded square: the same mark the language-bar icon draws on
+     Windows, so the two platforms are recognisably the same input method. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#2B396B"
+        android:pathData="M8,4h32a4,4 0 0 1 4,4v32a4,4 0 0 1 -4,4h-32a4,4 0 0 1 -4,-4v-32a4,4 0 0 1 4,-4z" />
+    <path
+        android:fillColor="#F2F5FF"
+        android:pathData="M13,15h22v3h-22z M13,22h22v3h-22z M13,29h14v3h-14z" />
+</vector>

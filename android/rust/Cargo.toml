@@ -1,0 +1,26 @@
+[package]
+name = "pingzhu-android"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "平注 PingZhu — JNI bindings so the Android IME shell can use the shared Rust core"
+license = "MIT"
+repository = "https://github.com/173787247/pingzhu"
+
+[lib]
+name = "pingzhu_android"
+crate-type = ["cdylib"]
+
+[dependencies]
+pingzhu-core = { path = "../../core-rs" }
+# Types for the JNI ABI only — the platform's own vocabulary, with no logic and
+# no transitive dependencies. The full `jni` crate would bring a dependency tree
+# into a project whose whole point is that the engine has none, to save a few
+# dozen lines of calling through a function table.
+jni-sys = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

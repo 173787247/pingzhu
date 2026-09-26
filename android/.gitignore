@@ -1,0 +1,9 @@
+# Copied from ../data by the copyEngineData Gradle task. The language model is
+# already in the repository once; a second copy here would be another 6.4 MB in
+# every clone and a second thing to keep in step.
+app/src/main/assets/
+app/src/main/jniLibs/
+.gradle/
+build/
+app/build/
+local.properties
