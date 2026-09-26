@@ -1,33 +1,33 @@
-# pingzhu-core — Rust 核心與 C ABI
+# pingzhu-core — Rust 核心与 C ABI
 
-這是四個平台外殼**唯一需要依賴的東西**。
+这是四个平台外壳**唯一需要依赖的东西**。
 
-| 平台 | 外殼 | 如何接到這裡 |
+| 平台 | 外壳 | 如何接到这里 |
 |---|---|---|
-| Windows 10/11 | TSF 文字服務（in-proc COM DLL） | 連結 C ABI（C++） |
-| macOS 12+ | InputMethodKit | Swift `@_silgen_name` 或一層 C shim |
+| Windows 10/11 | TSF 文字服务（in-proc COM DLL） | 连结 C ABI（C++） |
+| macOS 12+ | InputMethodKit | Swift `@_silgen_name` 或一层 C shim |
 | Android 8+ | `InputMethodService` | JNI |
 | HarmonyOS NEXT | `InputMethodExtensionAbility` | NAPI |
 
-## 為什麼是 Rust，而不是「因為 Rust 比較快」
+## 为什么是 Rust，而不是「因为 Rust 比较快」
 
-先講清楚：**移植並沒有讓它變快。**
+先讲清楚：**移植并没有让它变快。**
 
-| | TypeScript 參考實作 | Rust 核心 |
+| | TypeScript 参考实作 | Rust 核心 |
 |---|---|---|
-| 每按鍵解碼 | 15.2 µs | 16.5 µs |
-| 吞吐 | 65,934 鍵/秒 | 60,731 鍵/秒 |
-| 語言模型載入 | 273 ms | **154 ms** |
+| 每按键解码 | 15.2 µs | 16.5 µs |
+| 吞吐 | 65,934 键/秒 | 60,731 键/秒 |
+| 语言模型载入 | 273 ms | **154 ms** |
 
-兩者都在同一個數量級，因為時間幾乎都花在同一個演算法上（每個切分都要建一次讀字格）。
-Rust 的價值不在速度，而在**能被嵌進別人的行程裡**：
+两者都在同一个数量级，因为时间几乎都花在同一个演算法上（每个切分都要建一次读字格）。
+Rust 的价值不在速度，而在**能被嵌进别人的行程里**：
 
-- Windows 的 TSF 文字服務是 **in-proc DLL**，被載入應用程式的行程。它沒有地方放一個 VM。
-- macOS 的輸入法是一個 `.app` bundle，啟動延遲直接影響使用者在每個文字框的第一個字。
-- Android 與 HarmonyOS 需要 `.so` 加 JNI／NAPI 橋接。
+- Windows 的 TSF 文字服务是 **in-proc DLL**，被载入应用程式的行程。它没有地方放一个 VM。
+- macOS 的输入法是一个 `.app` bundle，启动延迟直接影响使用者在每个文字框的第一个字。
+- Android 与 HarmonyOS 需要 `.so` 加 JNI／NAPI 桥接。
 
-而 16.5 µs 距離輸入法 10 ms 的體驗門檻還有**三個數量級**，所以沒有任何理由為了速度
-去最佳化（例如把 `String` 換成 `Rc<str>`）。這是刻意的決定，不是疏忽。
+而 16.5 µs 距离输入法 10 ms 的体验门槛还有**三个数量级**，所以没有任何理由为了速度
+去最佳化（例如把 `String` 换成 `Rc<str>`）。这是刻意的决定，不是疏忽。
 
 ## 建置
 
@@ -40,7 +40,7 @@ cargo build --release
 #   target/release/libpingzhu_core.rlib ← Rust 呼叫端
 ```
 
-## 驗證
+## 验证
 
 ```bash
 cargo test                      # 16 個單元測試 + 差異化測試
@@ -67,38 +67,38 @@ abi version: 1
 all C ABI checks passed
 ```
 
-## 這個移植怎麼被信任
+## 这个移植怎么被信任
 
-**TypeScript 版是規格書。** 它背後有 37 個測試、兩套評測工具，以及寫在註解裡的推理。
-在第二種語言裡重新推導「什麼叫正確」，正是移植會悄悄分歧的方式——而那些分歧的角落，
-就是輸入法打錯字的地方。
+**TypeScript 版是规格书。** 它背后有 37 个测试、两套评测工具，以及写在注解里的推理。
+在第二种语言里重新推导「什么叫正确」，正是移植会悄悄分歧的方式——而那些分歧的角落，
+就是输入法打错字的地方。
 
-所以 `tests/differential.rs` 重播一份從參考實作匯出的 fixture：
+所以 `tests/differential.rs` 重播一份从参考实作汇出的 fixture：
 
 ```bash
 cd engine && node dump-fixture.mjs 1500 > ../core-rs/tests/fixture.tsv
 ```
 
-1,529 個真實按鍵字串，逐項比對 composing／sentence／score／usedFallback／斷詞／候選第一頁。
+1,529 个真实按键字串，逐项比对 composing／sentence／score／usedFallback／断词／候选第一页。
 
-**這個綠色是有意義的，因為它會紅。** 突變測試：
+**这个绿色是有意义的，因为它会红。** 突变测试：
 
-| 突變 | 結果 |
+| 突变 | 结果 |
 |---|---|
-| 關閉 promotion | ❌ 20+ 處不一致（`u6tp6`：`一陳` ≠ `遺臣`） |
-| 候選排序改成純詞頻 | ❌ 不一致（`su3cl3` 第一頁變成 `你\|妳\|擬\|你好…`） |
-| 還原 | ✅ 通過 |
+| 关闭 promotion | ❌ 20+ 处不一致（`u6tp6`：`一陳` ≠ `遺臣`） |
+| 候选排序改成纯词频 | ❌ 不一致（`su3cl3` 第一页变成 `你\|妳\|擬\|你好…`） |
+| 还原 | ✅ 通过 |
 
-## C ABI 的三個設計約束
+## C ABI 的三个设计约束
 
-1. **回傳字串的所有權固定在引擎**，呼叫端不負責釋放。否則 TSF DLL、Swift 的
+1. **回传字串的所有权固定在引擎**，呼叫端不负责释放。否则 TSF DLL、Swift 的
    `IMKInputController`、Kotlin 的 `InputMethodService`、ArkTS 的
-   `InputMethodExtensionAbility` 要各自寫一套配對的 free——四個執行環境，四次洩漏或
-   重複釋放的機會。字串放在執行緒區域緩衝區，直到同一執行緒的下一次呼叫前有效。
-2. **按鍵以 UTF-8 文字傳入，不是 keycode。** 鍵盤排列的知識留在核心，
-   所以日後補上許氏鍵盤不需要動四個平台。
-3. **沒有非同步介面。** 解碼是 16.5 µs 的同步純計算；引入非同步只會讓四個外殼
-   各自發明一套 callback 生命週期。
+   `InputMethodExtensionAbility` 要各自写一套配对的 free——四个执行环境，四次泄漏或
+   重复释放的机会。字串放在执行绪区域缓冲区，直到同一执行绪的下一次呼叫前有效。
+2. **按键以 UTF-8 文字传入，不是 keycode。** 键盘排列的知识留在核心，
+   所以日后补上许氏键盘不需要动四个平台。
+3. **没有非同步介面。** 解码是 16.5 µs 的同步纯计算；引入非同步只会让四个外壳
+   各自发明一套 callback 生命周期。
 
 ```c
 EngineHandle *engine_create(const char *data_dir, const char *layout, const char *candidate_order);
@@ -110,10 +110,10 @@ const char *engine_select_candidate(EngineHandle *, size_t one_based);  /* 1..10
 const char *engine_commit(EngineHandle *);
 ```
 
-完整介面見 [`include/pingzhu.h`](include/pingzhu.h)。
+完整介面见 [`include/pingzhu.h`](include/pingzhu.h)。
 
-`engine_abi_version()` 讓外殼可以拒絕載入版本不符的函式庫，而不是直接損壞記憶體。
+`engine_abi_version()` 让外壳可以拒绝载入版本不符的函式库，而不是直接损坏记忆体。
 
-## 授權
+## 授权
 
-MIT。語言模型資料衍生自 McBopomofo（MIT），見倉庫根目錄 [NOTICE](../NOTICE)。
+MIT。语言模型资料衍生自 McBopomofo（MIT），见仓库根目录 [NOTICE](../NOTICE)。

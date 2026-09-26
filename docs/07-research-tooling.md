@@ -1,71 +1,71 @@
-# 07 · 調研工具鏈（可重現取證）
+# 07 · 调研工具链（可重现取证）
 
-> 這個倉庫的每一項事實都應該能被重新取得。這份文件記錄工具與方法，
-> 讓「這些數字哪裡來的」有答案。
+> 这个仓库的每一项事实都应该能被重新取得。这份文件记录工具与方法，
+> 让「这些数字哪里来的」有答案。
 
-## 背景：`web_search` 工具在本次調研中全程失效
+## 背景：`web_search` 工具在本次调研中全程失效
 
-本次調研期間，dsh 的 `web_search` 工具在所有查詢上都失敗：
+本次调研期间，dsh 的 `web_search` 工具在所有查询上都失败：
 
 ```
 DeepSeek returned an unprocessable response body: SyntaxError: Unexpected token 'e',
 "e \u0000\u0010-\u0000\u0000����"... is not valid JSON
 ```
 
-根因已知（見 `~/GO/dsh-websearch-修复记录.md`）：dsh 把 undici 8.x 的 `ProxyAgent`
-裝成 Node 內建 fetch（undici 7.x）的全局 dispatcher，跨大版本時**回應標頭遺失**，
-導致 brotli 壓縮的回應未被解壓就送進 `JSON.parse`。修法是讓 dsh 用與 Node 同版的
-undici，但**需要重啟 dsh 才生效**——而重啟會中斷當時的工作階段，因此本次調研全程
+根因已知（见 `~/GO/dsh-websearch-修复记录.md`）：dsh 把 undici 8.x 的 `ProxyAgent`
+装成 Node 内建 fetch（undici 7.x）的全局 dispatcher，跨大版本时**回应标头遗失**，
+导致 brotli 压缩的回应未被解压就送进 `JSON.parse`。修法是让 dsh 用与 Node 同版的
+undici，但**需要重启 dsh 才生效**——而重启会中断当时的工作阶段，因此本次调研全程
 改用下列替代通道完成。
 
-**這件事的副產品**：本倉庫的工具鏈不依賴任何「AI 搜尋」服務，全部是可重跑的 HTTP 請求。
+**这件事的副产品**：本仓库的工具链不依赖任何「AI 搜寻」服务，全部是可重跑的 HTTP 请求。
 
 ## 工具
 
 | 工具 | 用途 |
 |---|---|
-| `tools/search.py` | 多引擎搜尋（Bing RSS／Google News RSS／維基百科 API／Hacker News／PTT／GitHub） |
-| `tools/webfetch.sh` | 走代理抓取單一 URL 並轉純文字 |
-| `tools/h2t.py` | HTML → 純文字（stdlib，無依賴） |
-| `tools/crawl.sh` | 批次抓取 URL 清單，存 HTML 與純文字兩份 |
-| `tools/page.py` | 去重後印出爬取結果的正文（跳過導覽列） |
-| `tools/zd.py` | 傾印 Zendesk 客服中心（本專案最重要的單一資料來源） |
+| `tools/search.py` | 多引擎搜寻（Bing RSS／Google News RSS／维基百科 API／Hacker News／PTT／GitHub） |
+| `tools/webfetch.sh` | 走代理抓取单一 URL 并转纯文字 |
+| `tools/h2t.py` | HTML → 纯文字（stdlib，无依赖） |
+| `tools/crawl.sh` | 批次抓取 URL 清单，存 HTML 与纯文字两份 |
+| `tools/page.py` | 去重后印出爬取结果的正文（跳过导览列） |
+| `tools/zd.py` | 倾印 Zendesk 客服中心（本专案最重要的单一资料来源） |
 
-所有工具都走 `HTTPS_PROXY`（本機 `127.0.0.1:16006`），不需要額外設定。
+所有工具都走 `HTTPS_PROXY`（本机 `127.0.0.1:16006`），不需要额外设定。
 
-## 實測可用的通道
+## 实测可用的通道
 
-| 通道 | 端點 | 結果 |
+| 通道 | 端点 | 结果 |
 |---|---|---|
-| Google News RSS | `news.google.com/rss/search?q=…&hl=zh-TW&gl=TW&ceid=TW:zh-Hant` | ✅ 最適合找媒體報導 |
-| Bing RSS | `bing.com/search?q=…&format=rss` | ✅ 中文查詢不穩，英文可用 |
-| 維基百科 API | `zh.wikipedia.org/w/api.php?action=query&list=search` | ✅ |
+| Google News RSS | `news.google.com/rss/search?q=…&hl=zh-TW&gl=TW&ceid=TW:zh-Hant` | ✅ 最适合找媒体报导 |
+| Bing RSS | `bing.com/search?q=…&format=rss` | ✅ 中文查询不稳，英文可用 |
+| 维基百科 API | `zh.wikipedia.org/w/api.php?action=query&list=search` | ✅ |
 | Hacker News（Algolia） | `hn.algolia.com/api/v1/search` | ✅ |
-| PTT 站內搜尋 | `ptt.cc/bbs/{board}/search?q=…` | ✅ 痛點證據 |
-| GitHub API | 經 `gh api`（已登入，避免匿名限流） | ✅ 授權與活躍度查證的主力 |
-| **Zendesk 公開 API** | `{site}/api/v2/help_center/{locale}/articles.json` | ✅ **本次關鍵突破** |
+| PTT 站内搜寻 | `ptt.cc/bbs/{board}/search?q=…` | ✅ 痛点证据 |
+| GitHub API | 经 `gh api`（已登入，避免匿名限流） | ✅ 授权与活跃度查证的主力 |
+| **Zendesk 公开 API** | `{site}/api/v2/help_center/{locale}/articles.json` | ✅ **本次关键突破** |
 | DuckDuckGo / Mojeek 直抓 | — | ❌ CAPTCHA |
 | Yep API | `api.yep.com/fs/2/search` | ❌ 403 |
 
-## 關鍵突破：客服中心是公開 API
+## 关键突破：客服中心是公开 API
 
-`text.tw` 是 **Strikingly** 架站，正文由 JS 從 JSON 拉取，直接抓 HTML 只會拿到導覽列。
-但導覽列裡露出一個網址：`support.iqt.ai` —— 那是 **Zendesk**，而 Zendesk 的
-Help Center API 預設公開：
+`text.tw` 是 **Strikingly** 架站，正文由 JS 从 JSON 拉取，直接抓 HTML 只会拿到导览列。
+但导览列里露出一个网址：`support.iqt.ai` —— 那是 **Zendesk**，而 Zendesk 的
+Help Center API 预设公开：
 
 ```bash
 python3 tools/zd.py https://support.iqt.ai zh-tw ~/GO/raw/zendesk
 # → 201 篇文章，含標題、更新時間、正文
 ```
 
-這份資料的價值遠高於行銷頁面：**它無意間揭露了產品的真實問題分布**
-（25% 的條目是授權／訂閱／付款問題，Android 相關條目為零）。
-行銷頁面會說自己多好；客服中心會說使用者實際上遇到什麼。
+这份资料的价值远高于行销页面：**它无意间揭露了产品的真实问题分布**
+（25% 的条目是授权／订阅／付款问题，Android 相关条目为零）。
+行销页面会说自己多好；客服中心会说使用者实际上遇到什么。
 
-## 另一個坑：Strikingly 的正文是轉義過的
+## 另一个坑：Strikingly 的正文是转义过的
 
-抓下 `text.tw` 的 HTML 後，`<script>` 裡是 `\uXXXX` 轉義的 JSON，
-所以「去標籤」會把正文一起丟掉。正確做法是**先還原轉義再去除標籤**：
+抓下 `text.tw` 的 HTML 后，`<script>` 里是 `\uXXXX` 转义的 JSON，
+所以「去标签」会把正文一起丢掉。正确做法是**先还原转义再去除标签**：
 
 ```python
 s = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), s)
@@ -74,20 +74,20 @@ s = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', ' ', s)
 t = re.sub(r'(?s)<[^>]+>', ' ', s)
 ```
 
-`tools/h2t.py` 保留的是「純 HTML」路徑；上述變體用於 Strikingly 站台。
+`tools/h2t.py` 保留的是「纯 HTML」路径；上述变体用于 Strikingly 站台。
 
-## 取證清單
+## 取证清单
 
-| 主張 | 來源 | 取證方式 |
+| 主张 | 来源 | 取证方式 |
 |---|---|---|
-| 自然輸入法無 Android／iOS／Linux 版 | support.iqt.ai 條目標題 | Zendesk API，見 [01](01-competitive-analysis.md) |
-| 定價 NT$2,800 起、訂閱 NT$129/月起 | iqt.ai/price | 爬取 + 轉義還原 |
-| V13 於 2023-09 上市 | 工商時報（Google News RSS） | `search.py news` |
-| 客服 201 篇中 51 篇為授權／訂閱／付款 | support.iqt.ai 全量 | 分類統計腳本（見 [01](01-competitive-analysis.md) 第 5 節） |
-| McBopomofo 為 MIT、840★ | GitHub API | `gh api repos/openvanilla/McBopomofo` |
-| libchewing 已重寫為 Rust、遷至 Codeberg | Codeberg API + crates.io | `codeberg.org/api/v1/repos/chewing/libchewing`、`crates.io/api/v1/crates/chewing` |
-| libchewing-data 為 CC BY 4.0 | Codeberg 檔案樹 | `LICENSES/CC-BY-4.0.txt` |
-| RIME 官方前端全為 GPL-3.0 | GitHub API | `gh api repos/rime/weasel` 等 |
+| 自然输入法无 Android／iOS／Linux 版 | support.iqt.ai 条目标题 | Zendesk API，见 [01](01-competitive-analysis.md) |
+| 定价 NT$2,800 起、订阅 NT$129/月起 | iqt.ai/price | 爬取 + 转义还原 |
+| V13 于 2023-09 上市 | 工商时报（Google News RSS） | `search.py news` |
+| 客服 201 篇中 51 篇为授权／订阅／付款 | support.iqt.ai 全量 | 分类统计脚本（见 [01](01-competitive-analysis.md) 第 5 节） |
+| McBopomofo 为 MIT、840★ | GitHub API | `gh api repos/openvanilla/McBopomofo` |
+| libchewing 已重写为 Rust、迁至 Codeberg | Codeberg API + crates.io | `codeberg.org/api/v1/repos/chewing/libchewing`、`crates.io/api/v1/crates/chewing` |
+| libchewing-data 为 CC BY 4.0 | Codeberg 档案树 | `LICENSES/CC-BY-4.0.txt` |
+| RIME 官方前端全为 GPL-3.0 | GitHub API | `gh api repos/rime/weasel` 等 |
 
 ## 重跑方式
 
@@ -107,5 +107,5 @@ python3 tools/search.py gh "bopomofo"
 gh api repos/openvanilla/McBopomofo --jq '{license:.license.spdx_id, stars:.stargazers_count}'
 ```
 
-`research/02-opensource-stack.md` 是另一份獨立的技術棧調研報告，
-含更完整的授權表格與來源清單。
+`research/02-opensource-stack.md` 是另一份独立的技术栈调研报告，
+含更完整的授权表格与来源清单。

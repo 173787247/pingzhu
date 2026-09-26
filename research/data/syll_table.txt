@@ -1,9 +1,9 @@
-# 由 McBopomofo BPMFBase.txt + BPMFMappings.txt 實測推導
-# 相異無聲調音節: 429
-# 相異含聲調音節: 1413
-# 解析失敗 token 種類: 4
+# 由 McBopomofo BPMFBase.txt + BPMFMappings.txt 实测推导
+# 相异无声调音节: 429
+# 相异含声调音节: 1413
+# 解析失败 token 种类: 4
 
-## 無聲調音節（依注音符號順序）
+## 无声调音节（依注音符号顺序）
 ㄅㄧㄝ 407
 ㄅㄧㄠ 676
 ㄅㄧㄢ 1228

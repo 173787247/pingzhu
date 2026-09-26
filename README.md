@@ -33,7 +33,9 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z` 切换中英，
 打 `su3cl3` 会出现「你好」。详细操作见 [windows/README.md](windows/README.md)。
 
-**现况：M0 – M4b 完成（Windows 双外壳皆可用）** —— 解码引擎、资料管线、个人化学习、Rust 核心 ＋ C ABI、
+## 现况
+
+**M0 – M4b 完成（Windows 双外壳皆可用）** —— 解码引擎、资料管线、个人化学习、Rust 核心 ＋ C ABI、
 以及**一个现在就能在 Windows 上跑的输入法**（[windows/](windows/README.md)）。
 
 Windows 有两个外壳，共用同一份引擎与同一个候选视窗：
