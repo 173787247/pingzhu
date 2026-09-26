@@ -38,6 +38,45 @@ void check(const char *what, bool ok, const char *detail = "") {
 /* A CLSID that is certainly not ours. */
 const CLSID kBogusClsid = {0x00000000, 0x0000, 0x0000, {0, 0, 0, 0, 0, 0, 0, 0xff}};
 
+/* Where the service keeps its files: beside the *registered* DLL, not beside
+ * this executable. The two coincide in the build tree and differ everywhere
+ * else, so resolving it in one place and sharing it is the only way to stop
+ * getting it wrong twice — which is exactly what happened. */
+std::wstring serviceDirectory() {
+    HKEY key = nullptr;
+    if (RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            L"SOFTWARE\\Classes\\CLSID\\{C2A55EB0-4391-4204-ABCF-4631BEA80A8F}\\InprocServer32",
+            0, KEY_READ | KEY_WOW64_64KEY, &key) == ERROR_SUCCESS) {
+        wchar_t dllPath[MAX_PATH] = {0};
+        DWORD size = sizeof(dllPath);
+        DWORD type = 0;
+        if (RegQueryValueExW(key, nullptr, nullptr, &type,
+                             reinterpret_cast<BYTE *>(dllPath), &size) == ERROR_SUCCESS &&
+            type == REG_SZ) {
+            RegCloseKey(key);
+            std::wstring path(dllPath);
+            return path.substr(0, path.find_last_of(L"\\/"));
+        }
+        RegCloseKey(key);
+    }
+    wchar_t exePath[MAX_PATH] = {0};
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+    std::wstring path(exePath);
+    return path.substr(0, path.find_last_of(L"\\/"));
+}
+
+std::string readWholeFile(const std::wstring &path) {
+    FILE *f = _wfopen(path.c_str(), L"rb");
+    if (!f) return std::string();
+    std::string out;
+    char buf[4096];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) out.append(buf, n);
+    fclose(f);
+    return out;
+}
+
 using DllGetClassObjectFn = HRESULT(WINAPI *)(REFCLSID, REFIID, void **);
 using DllCanUnloadNowFn = HRESULT(WINAPI *)();
 
@@ -287,10 +326,7 @@ int main(int argc, char **argv) {
      */
     std::printf("\nlanguage bar button\n");
     {
-        wchar_t exePath[MAX_PATH] = {0};
-        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-        std::wstring dir(exePath);
-        dir = dir.substr(0, dir.find_last_of(L"\\/"));
+        const std::wstring dir = serviceDirectory();
 
         ITfThreadMgr *threadMgr = nullptr;
         ITfTextInputProcessorEx *service = nullptr;
@@ -310,14 +346,9 @@ int main(int argc, char **argv) {
             threadMgr->Release();
         }
 
-        FILE *f = _wfopen((dir + L"\\pingzhu-tsf.log").c_str(), L"rb");
-        std::string logText;
-        if (f) {
-            char buf[4096];
-            size_t n;
-            while ((n = fread(buf, 1, sizeof(buf), f)) > 0) logText.append(buf, n);
-            fclose(f);
-        }
+        const std::wstring logPath = dir + L"\\pingzhu-tsf.log";
+        const std::string logText = readWholeFile(logPath);
+        std::printf("  log: %ls (%zu bytes)\n", logPath.c_str(), logText.size());
         /* Only the attempt can be asserted here. A console process has no
          * language bar of its own, so AddItem legitimately refuses — asserting
          * success would fail for the right reason in the wrong place. Whether
@@ -349,49 +380,11 @@ int main(int argc, char **argv) {
      */
     std::printf("\nsettings are re-read on every activation\n");
     {
-        /* The settings file is resolved from the *registered DLL's* directory,
-         * not this executable's. They are the same in the build tree and
-         * different everywhere else, so writing next to the test binary silently
-         * exercises a file no service ever reads — which is exactly how this
-         * passed in one layout and failed in another. */
-        std::wstring dir;
-        {
-            HKEY key = nullptr;
-            if (RegOpenKeyExW(
-                    HKEY_LOCAL_MACHINE,
-                    L"SOFTWARE\\Classes\\CLSID\\{C2A55EB0-4391-4204-ABCF-4631BEA80A8F}\\InprocServer32",
-                    0, KEY_READ | KEY_WOW64_64KEY, &key) == ERROR_SUCCESS) {
-                wchar_t dllPath[MAX_PATH] = {0};
-                DWORD size = sizeof(dllPath);
-                DWORD type = 0;
-                if (RegQueryValueExW(key, nullptr, nullptr, &type,
-                                     reinterpret_cast<BYTE *>(dllPath), &size) == ERROR_SUCCESS &&
-                    type == REG_SZ) {
-                    dir = dllPath;
-                    dir = dir.substr(0, dir.find_last_of(L"\\/"));
-                }
-                RegCloseKey(key);
-            }
-        }
-        if (dir.empty()) {
-            wchar_t exePath[MAX_PATH] = {0};
-            GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-            dir = exePath;
-            dir = dir.substr(0, dir.find_last_of(L"\\/"));
-        }
+        const std::wstring dir = serviceDirectory();
         std::printf("  (settings file directory: %ls)\n", dir.c_str());
         std::wstring iniPath = dir + L"\\pingzhu.ini";
 
-        auto readFile = [](const std::wstring &path) {
-            FILE *f = _wfopen(path.c_str(), L"rb");
-            if (!f) return std::string();
-            std::string out;
-            char buf[2048];
-            size_t n;
-            while ((n = fread(buf, 1, sizeof(buf), f)) > 0) out.append(buf, n);
-            fclose(f);
-            return out;
-        };
+        auto readFile = readWholeFile;
         auto writeFile = [](const std::wstring &path, const std::string &text) {
             FILE *f = _wfopen(path.c_str(), L"wb");
             if (!f) return false;
