@@ -6,7 +6,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 [![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases)
 [![engine tests](https://img.shields.io/badge/engine%20tests-11%2F11-brightgreen)](#現況)
-[![license](https://img.shields.io/badge/code-Apache--2.0-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
 
 ---
@@ -222,9 +222,15 @@ $ node engine/bench.mjs 5000
 
 ## 授權與致謝
 
-- **程式碼**：Apache-2.0，見 [LICENSE](LICENSE)
+**整包 MIT**——程式碼與資料同一個授權，見 [LICENSE](LICENSE)。
+
+- **程式碼**：MIT
 - **語言模型資料**：衍生自 **McBopomofo**（MIT，Copyright © 2022 and onwards The McBopomofo Authors），
-  其詞庫 `BPMFMappings.txt` 又衍生自 libtabe 的 `tsi.src`（BSD）。授權鏈與逐項聲明見 [NOTICE](NOTICE)
+  其詞庫 `BPMFMappings.txt` 又衍生自 libtabe 的 `tsi.src`（BSD）
+
+選 MIT 而非 Apache-2.0 的理由：本專案零程式碼依賴，且資料本身即衍生自 MIT 來源，
+單一授權讓整條授權鏈一致；MIT 同時與 GPL-2.0-only 相容，而 Apache-2.0 不相容
+（見 [docs/02](docs/02-architecture.md) 決策 6）。授權鏈與逐項聲明見 [NOTICE](NOTICE)。
 
 平注與網際智慧股份有限公司（IQ Technology Inc.）無任何關聯；「自然輸入法」為其商標，
 本專案僅在評論與相容性描述中提及該產品名稱。

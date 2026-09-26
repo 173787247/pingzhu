@@ -1,7 +1,12 @@
 平注 PingZhu
-Copyright 2026 The PingZhu Authors
+Copyright (c) 2026 The PingZhu Authors
+
+This project is licensed under the MIT License — see LICENSE.
 
 This product includes software and data developed by third parties.
+The notices below are retained to satisfy the attribution terms of those
+licences; they do not add any restriction beyond what each upstream licence
+already requires.
 
 ===============================================================================
 1. Language model data — data/bopomofo-lm.tsv, data/bopomofo-chars.tsv
