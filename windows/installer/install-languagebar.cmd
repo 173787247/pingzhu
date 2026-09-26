@@ -26,5 +26,12 @@ echo.
 echo   If it says 已加入, press Win+Space and pick 平注注音輸入法.
 echo   If it does not, the UAC prompt was probably declined.
 echo.
+echo   IMPORTANT - apps that were already open keep the OLD version loaded.
+echo   Windows cannot replace a loaded DLL, and COM reuses an in-process server
+echo   it has already loaded without re-reading the registry. So:
+echo.
+echo     - close and reopen any app you want to type in
+echo     - or sign out and back in, which is simplest and always works
+echo.
 pause
 endlocal
