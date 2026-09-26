@@ -4,6 +4,7 @@
 #include <olectl.h>
 
 #include <cstdio>
+#include <cwchar>
 
 #include "guids.h"
 
@@ -112,6 +113,32 @@ HRESULT unregisterProfiles() {
     return S_OK;
 }
 
+HRESULT installLayoutOrTip(bool install) {
+    HMODULE inputDll = LoadLibraryW(L"input.dll");
+    if (!inputDll) return HRESULT_FROM_WIN32(GetLastError());
+    using Fn = HRESULT(WINAPI *)(PCWSTR, DWORD);
+    auto installFn = reinterpret_cast<Fn>(GetProcAddress(inputDll, "InstallLayoutOrTip"));
+    if (!installFn) {
+        FreeLibrary(inputDll);
+        return E_NOTIMPL;
+    }
+
+    wchar_t clsidText[64] = {0};
+    wchar_t profileText[64] = {0};
+    StringFromGUID2(CLSID_PingZhuTextService, clsidText, 64);
+    StringFromGUID2(GUID_PingZhuProfile, profileText, 64);
+
+    /* "0404:{CLSID}{PROFILE}" — the layout-or-tip identifier format. */
+    std::wstring spec = L"0404:";
+    spec += clsidText;
+    spec += profileText;
+
+    const DWORD kIlorUninstall = 0x00000001;
+    HRESULT hr = installFn(spec.c_str(), install ? 0 : kIlorUninstall);
+    FreeLibrary(inputDll);
+    return hr;
+}
+
 bool isRegistered() {
     HKEY key = nullptr;
     LONG status = RegOpenKeyExW(HKEY_LOCAL_MACHINE, kClsidKey, 0, KEY_READ | KEY_WOW64_64KEY,
@@ -136,6 +163,50 @@ bool isRegistered() {
                                        GUID_PingZhuProfile, &enabled);
     profiles->Release();
     return SUCCEEDED(hr);
+}
+
+bool isInLanguageList() {
+    /* The list the Settings UI shows lives here, and the input method spec is the
+     * *value name*, not the data:
+     *
+     *   [HKCU\Control Panel\International\User Profile\zh-Hant-TW]
+     *   "0404:{CLSID}{PROFILE}"=dword:00000002
+     *
+     * Reading the data instead is an easy mistake and produces a confident "not
+     * installed" while the input method sits in the language bar. */
+    HKEY root = nullptr;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Control Panel\\International\\User Profile", 0,
+                      KEY_READ, &root) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    wchar_t clsidText[64] = {0};
+    StringFromGUID2(CLSID_PingZhuTextService, clsidText, 64);
+    const std::wstring needle(clsidText);
+
+    bool found = false;
+    for (DWORD index = 0; !found; ++index) {
+        wchar_t languageName[128] = {0};
+        DWORD nameLength = 128;
+        if (RegEnumKeyExW(root, index, languageName, &nameLength, nullptr, nullptr, nullptr,
+                          nullptr) != ERROR_SUCCESS) {
+            break;
+        }
+        HKEY language = nullptr;
+        if (RegOpenKeyExW(root, languageName, 0, KEY_READ, &language) != ERROR_SUCCESS) continue;
+        for (DWORD valueIndex = 0; !found; ++valueIndex) {
+            wchar_t valueName[256] = {0};
+            DWORD valueNameLength = 256;
+            if (RegEnumValueW(language, valueIndex, valueName, &valueNameLength, nullptr, nullptr,
+                              nullptr, nullptr) != ERROR_SUCCESS) {
+                break;
+            }
+            if (std::wstring(valueName).find(needle) != std::wstring::npos) found = true;
+        }
+        RegCloseKey(language);
+    }
+    RegCloseKey(root);
+    return found;
 }
 
 std::wstring describe(HRESULT hr) {

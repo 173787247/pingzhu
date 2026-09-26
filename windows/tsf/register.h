@@ -30,9 +30,22 @@ HRESULT unregisterComServer();
 HRESULT registerProfiles();
 HRESULT unregisterProfiles();
 
+/* Add or remove the input method in the *user's* language list.
+ *
+ * Registering a TIP makes it available; it does not put it in the language bar.
+ * The user's list of input methods lives elsewhere, and the supported way to
+ * change it programmatically is InstallLayoutOrTip in input.dll — undocumented,
+ * but it is what every IME installer uses, Microsoft's own included. Without
+ * this call the text service is registered, correct, and completely invisible. */
+HRESULT installLayoutOrTip(bool install);
+
 /* True when the language profile is present, so an installer can report state
  * instead of guessing. Read-only; works without elevation. */
 bool isRegistered();
+
+/* True when the input method is in the current user's language list, i.e. the
+ * user can actually select it. */
+bool isInLanguageList();
 
 /* Human-readable description of an HRESULT for the installer's output. */
 std::wstring describe(HRESULT hr);

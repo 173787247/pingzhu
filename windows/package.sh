@@ -16,7 +16,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-VERSION="${1:-0.4.0}"
+VERSION="${1:-0.5.0}"
 STAGE="${PINGZHU_STAGE:-/mnt/c/Users/rchua/pingzhu-build}"
 DIST="$ROOT/dist"
 PKG="$DIST/pingzhu-$VERSION-win-x64"
@@ -34,6 +34,9 @@ rm -rf "$PKG"
 mkdir -p "$PKG"
 cp "$STAGE/pingzhu-ime.exe"    "$PKG/"
 cp "$STAGE/pingzhu_core.dll"   "$PKG/"
+cp "$STAGE/pingzhu-tsf.dll"    "$PKG/"
+cp "$STAGE/pingzhu-regtool.exe" "$PKG/"
+cp "$STAGE/pingzhu-tsf-test.exe" "$PKG/" 2>/dev/null || true
 cp "$STAGE/pingzhu-router-test.exe" "$PKG/" 2>/dev/null || true
 cp "$STAGE/pingzhu-engine-test.exe" "$PKG/" 2>/dev/null || true
 cp "$ROOT/data/bopomofo-lm.tsv" "$PKG/"
@@ -49,7 +52,7 @@ text = open(src, encoding="utf-8-sig").read().replace("\r\n", "\n").replace("\n"
 open(dst, "w", encoding="utf-8-sig", newline="").write(text)
 PY
 done
-for f in install.cmd uninstall.cmd; do
+for f in install.cmd uninstall.cmd install-languagebar.cmd uninstall-languagebar.cmd; do
   sed 's/\r$//; s/$/\r/' "$HERE/installer/$f" > "$PKG/$f"
 done
 
@@ -67,6 +70,11 @@ cp "$ROOT/NOTICE" "$PKG/NOTICE.txt" 2>/dev/null || true
 ( cd "$PKG" && ./pingzhu-engine-test.exe . >/tmp/pkg-engine-test.log 2>&1 ) \
   && log "engine test from the flat package: passed" \
   || { log "engine test FAILED from the flat package"; tail -5 /tmp/pkg-engine-test.log; exit 1; }
+
+# And the text service must still honour its COM contract after packaging.
+( cd "$PKG" && ./pingzhu-tsf-test.exe >/tmp/pkg-tsf-test.log 2>&1 ) \
+  && log "COM contract test from the flat package: passed" \
+  || { log "COM contract test FAILED from the flat package"; tail -5 /tmp/pkg-tsf-test.log; exit 1; }
 
 # --------------------------------------------------------------------- zip
 log "zipping"
@@ -99,7 +107,7 @@ import os, sys
 pkg, sed_path, target, pkg_win, version = sys.argv[1:6]
 files = sorted(f for f in os.listdir(pkg) if os.path.isfile(os.path.join(pkg, f)))
 # Test executables would only confuse the user; leave them out of the installer.
-skip = {"pingzhu-router-test.exe", "pingzhu-engine-test.exe"}
+skip = {"pingzhu-router-test.exe", "pingzhu-engine-test.exe", "pingzhu-tsf-test.exe"}
 files = [f for f in files if f not in skip]
 lines = [
     "[Version]", "Class=IEXPRESS", "SEDVersion=3", "[Options]",
