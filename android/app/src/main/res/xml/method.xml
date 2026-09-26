@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="tw.pingzhu.ime.SetupActivity">
+    <subtype
+        android:label="@string/ime_subtype"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="false" />
+</input-method>

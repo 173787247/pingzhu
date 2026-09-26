@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">平注 PingZhu</string>
+    <string name="ime_name">平注注音輸入法</string>
+    <string name="ime_subtype">注音（大千式）</string>
+
+    <string name="setup_intro">一套注音輸入法。解碼引擎與 Windows 版共用同一份 Rust 核心，所以兩邊的選字結果一致。\n\n不需要任何權限：語言模型在 APK 裡，使用者詞庫在自己的目錄裡，不會連網。</string>
+    <string name="setup_enable">1. 啟用輸入法</string>
+    <string name="setup_select">2. 選擇輸入法</string>
+    <string name="setup_how">怎麼打</string>
+    <string name="setup_how_body">直接打注音，例如：\n\n　su3cl3　　　→ 你好\n　ji394su3　　→ 我愛你\n　w96j0　　　 → 台灣\n\n空白鍵：有選字單時換下一頁，否則送出整句。\n數字鍵：選字單開著時選字，否則照打（1 是 ㄅ、2 是 ㄉ）。\n↓ 或長按：打開選字單。</string>
+    <string name="setup_script">輸出字形</string>
+    <string name="setup_script_body">引擎內部全程使用繁體（讀音、語言模型、詞庫），簡體是輸出時轉換的結果。兩者共用同一個詞頻庫，所以選字順序不會因為字形而改變。</string>
+    <string name="script_current_traditional">目前：繁體（點一下改成簡體）</string>
+    <string name="script_current_simplified">目前：簡體（點一下改成繁體）</string>
+
+    <string name="engine_missing">找不到語言模型——這是建置錯誤，不是設定問題。</string>
+</resources>

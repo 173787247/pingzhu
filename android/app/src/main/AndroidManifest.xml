@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- An input method needs no permissions at all. No network, no storage, no
+         contacts: the language model ships in the APK, the user dictionary lives
+         in the app's own directory, and nothing is ever sent anywhere. -->
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+        android:theme="@style/AppTheme">
+
+        <!-- The input method itself. `BIND_INPUT_METHOD` is what lets the system
+             bind to it; without the permission check the service would be
+             startable by any app. -->
+        <service
+            android:name=".PingZhuImeService"
+            android:exported="true"
+            android:label="@string/ime_name"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
+
+        <!-- Where the user turns the keyboard on. Android requires this: an input
+             method cannot enable itself, and an app that does not offer a route
+             to the settings screen leaves the user hunting through Settings. -->
+        <activity
+            android:name=".SetupActivity"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
