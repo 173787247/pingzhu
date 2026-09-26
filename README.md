@@ -4,6 +4,7 @@
 
 Windows · macOS · Android · HarmonyOS NEXT · Linux
 
+[![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases)
 [![engine tests](https://img.shields.io/badge/engine%20tests-11%2F11-brightgreen)](#現況)
 [![license](https://img.shields.io/badge/code-Apache--2.0-blue)](LICENSE)
 [![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
