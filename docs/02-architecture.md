@@ -35,8 +35,8 @@
 
 | 平台 | 進入點 | 需要什麼 |
 |---|---|---|
-| Windows TSF | `ITfTextInputProcessor` | 一組 COM 介面實作 |
-| macOS IMK | `IMKInputController` | 一個 Objective-C/Swift 類別 |
+| Windows TSF | `ITfTextInputProcessor` | 一組 COM 介面實作（in-proc DLL） |
+| macOS IMK | `IMKInputController` + `IMKServerInput` | 一個 Objective-C/Swift 類別 |
 | Android | `InputMethodService` | 一個 Service 子類 |
 | HarmonyOS | `InputMethodExtensionAbility` | 一個 ArkTS ExtensionAbility |
 
@@ -86,8 +86,15 @@ Flutter 能做的只有「鍵盤 UI」這一小塊，而那一塊每個平台本
 3. **移植有明確的驗收標準。** Rust 版只要對同一批輸入產生同樣輸出，就算移植成功——
    測試案例已經寫好了。
 
-Rust 版是**出貨形態**（crates.io 已有 `chewing` 0.14 證明 Rust 核心在輸入法場景可行，
-且官方同時提供 C API、Swift Package，見 [04](04-data-and-licensing.md)）。
+Rust 版是**出貨形態**。三個佐證：
+
+1. crates.io 已有 `chewing` 0.14（libchewing 的 Rust 重寫）證明 Rust 核心在輸入法場景可行，
+   且它同時提供 C API 與官方 Swift Package。
+2. **唯一被實證的跨平台輸入法架構是「C/C++ 核心 + 各平台原生殼」**（librime →
+   Weasel／Squirrel／Trime／fcitx5-rime 全生態）。Rust + C ABI 在這個架構裡
+   與 C++ 核心**等價**——風險相同，語言更好。
+3. **但要記得一個差異**：HarmonyOS **沒有 Rust target**。鴻蒙端仍必須自己寫 NAPI 橋接層
+   呼叫 C ABI。這不改變架構，但是 M7 的一個已知工作量。
 
 **否決「一開始就寫 Rust」。** 沒有 `rustc` 的環境要先裝工具鏈，且演算法還在變動期，
 編譯—測試迴圈會拖慢探索。語言選擇不該擋住演算法驗證。

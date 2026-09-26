@@ -17,10 +17,10 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 | 平台 | 官方框架 | 狀態 |
 |---|---|---|
-| Windows 10/11 (x64 + Arm64) | Text Services Framework (TSF) | 規劃中 |
-| macOS 12+ | InputMethodKit (IMK) | 規劃中 |
-| Android 8+ | `InputMethodService` | 規劃中 |
-| HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | 研究中（見 [docs/03](docs/03-platform-matrix.md)） |
+| Windows 10/11 (x64 + Arm64) | Text Services Framework (TSF) | 規劃中（技術完全開放，工作量最大） |
+| macOS 12+ | InputMethodKit (IMK) | 規劃中（走 Developer ID + 公證，非 App Store） |
+| Android 8+ | `InputMethodService` | 規劃中（缺口最大、風險最低） |
+| HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
 | Linux | fcitx5 / ibus addon | 選配 |
 
 **現況：M0 —— 解碼引擎已可運作，並通過測試。** 平台外殼尚未開始。
@@ -214,7 +214,7 @@ $ node engine/bench.mjs 5000
 | [docs/05-roadmap.md](docs/05-roadmap.md) | MVP → v1 的路線、工作量估算、風險與退路 |
 | [docs/06-engine-design.md](docs/06-engine-design.md) | 引擎內部：切分演算法、讀字格、資料格式、評測方法 |
 | [docs/07-research-tooling.md](docs/07-research-tooling.md) | 本倉庫的調研工具鏈（可重現取證） |
-| [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [04](research/04-zhuyin-ime-internals.md) | 三份原始調研報告（含逐條來源與「未能查證」標記） |
+| [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [03](research/03-platform-ime-frameworks.md) · [04](research/04-zhuyin-ime-internals.md) | 四份原始調研報告（約 34 萬字，含逐條來源與【已查證】/【推測】/【需查證】三級標記） |
 
 ---
 
