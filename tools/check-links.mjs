@@ -87,6 +87,7 @@ function anchors(text) {
 let problems = 0;
 let checkedUrls = 0;
 let checkedAnchors = 0;
+let added = 0;
 const changedFiles = [];
 
 for (const file of files) {
@@ -99,10 +100,18 @@ for (const file of files) {
     const afterUrls = urls(current);
     const lost = [...beforeUrls].filter((u) => !afterUrls.has(u));
     const gained = [...afterUrls].filter((u) => !beforeUrls.has(u));
-    if (lost.length || gained.length) {
+    /* Only a *lost* URL is damage. A gained one is new content — adding a link
+     * is not corruption, and treating it as such made this check report a
+     * perfectly good commit as broken. A mangled URL still shows up, because
+     * mangling removes the old string as well. */
+    if (lost.length) {
       problems++;
-      console.log(`URL CHANGED  ${file}`);
+      console.log(`URL LOST  ${file}`);
       for (const u of lost) console.log(`   - ${u}`);
+    }
+    if (gained.length) {
+      added++;
+      console.log(`URL ADDED  ${file}`);
       for (const u of gained) console.log(`   + ${u}`);
     }
     checkedUrls += beforeUrls.size;
@@ -134,6 +143,7 @@ for (const file of files) {
 console.log(`\nfiles scanned      ${files.length}`);
 console.log(`files converted    ${changedFiles.length}`);
 console.log(`URLs compared      ${checkedUrls}`);
+console.log(`URLs added         ${added}   (new links, not damage)`);
 console.log(`anchors resolved   ${checkedAnchors}`);
 console.log(problems === 0 ? "\nno link or anchor damage" : `\n${problems} PROBLEM(S)`);
 process.exit(problems === 0 ? 0 : 1);
