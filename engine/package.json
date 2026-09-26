@@ -1,0 +1,16 @@
+{
+  "name": "pingzhu-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cross-platform Bopomofo (Zhuyin) input method engine — reference core",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "demo": "node cli.ts",
+    "test": "node --test test/",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

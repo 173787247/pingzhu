@@ -1,0 +1,15 @@
+# third-party source data (fetch with data/fetch-source.sh, ~4.3 MB)
+data/vendor/
+
+# generated artefacts that are machine-specific
+node_modules/
+*.log
+.DS_Store
+
+# research scratch (raw crawls live outside the repo under ~/GO/raw)
+research/raw/
+research/parts/
+
+# editor
+.vscode/
+.idea/
