@@ -15,20 +15,68 @@
  */
 import { LAYOUTS, STANDARD_LAYOUT, type KeyboardLayout } from "./keyboard.ts";
 import {
-  composeSyllable, componentChar, isWellFormedComponents, type KeyComponent,
+  composeSyllable, componentChar, isCanonicalComponentOrder, isWellFormedComponents,
+  type KeyComponent,
 } from "./syllable.ts";
 import { Dictionary } from "./dictionary.ts";
-import { ReadingGrid, type Entry, type GridPath } from "./grid.ts";
+import {
+  ReadingGrid, type CandidateOrder, type Entry, type GridPath, type ReadingGridOptions,
+} from "./grid.ts";
+import type { UserDictionary } from "./userdict.ts";
 
 export interface EngineOptions {
   layout?: string | KeyboardLayout;
   /** cap on segmentations explored per keystroke */
   maxSegmentations?: number;
+  /** learned words, applied as log10 bonuses on top of the language model */
+  userDictionary?: UserDictionary;
+  /** see ReadingGridOptions.promoteWordsOverDecomposition — measure before changing */
+  promoteWordsOverDecomposition?: boolean;
+  /** margin by which a word must beat its own decomposition */
+  promotionEpsilon?: number;
+  /** candidate window ordering; see ReadingGridOptions.candidateOrder */
+  candidateOrder?: CandidateOrder;
+  /**
+   * Whether committing the auto-selected sentence counts as teaching.
+   *
+   * Default false, and that is a deliberate choice rather than an oversight:
+   * when the user accepts an auto-selected homophone they may be endorsing it,
+   * or they may simply not have noticed. Learning from that would entrench
+   * exactly the mistakes the user is least likely to catch. Explicit selection
+   * (choose()/chooseAt()) is unambiguous evidence and is always learned from.
+   *
+   * A future version with real typing data should test whether the added
+   * coverage of commit-learning outweighs the risk of entrenching errors.
+   */
+  learnFromCommit?: boolean;
 }
 
 interface Segmentation {
   syllables: string[];
   consumedKeys: number;
+}
+
+/**
+ * Ten, because that is how many a keyboard can address with 1234567890 — the
+ * convention Taiwanese IMEs have used for decades, 自然輸入法 included.
+ */
+export const CANDIDATE_PAGE_SIZE = 10;
+
+/** Upper bound on candidates kept per position; the data caps a reading at 100. */
+export const CANDIDATE_CAP = 200;
+
+export interface CandidatePage {
+  /** the words on this page, longest span first */
+  entries: Entry[];
+  /** syllable index the window is anchored to */
+  cursor: number;
+  /** index of the first entry on this page within the full list */
+  offset: number;
+  pageIndex: number;
+  pageCount: number;
+  total: number;
+  hasMore: boolean;
+  hasPrevious: boolean;
 }
 
 function resolveLayout(layout: string | KeyboardLayout | undefined): KeyboardLayout {
@@ -44,18 +92,32 @@ export class InputEngine {
   private readonly inventory: Set<string>;
   private readonly layout: KeyboardLayout;
   private readonly maxSegmentations: number;
+  private readonly userDict?: UserDictionary;
+  private readonly learnFromCommit: boolean;
+  private readonly promote: boolean | undefined;
+  private readonly promotionEpsilon?: number;
+  private readonly candidateOrder?: CandidateOrder;
 
   private keys: string[] = [];
   private syllables: string[] = [];
   private pendingKeys: string[] = [];
   private path: GridPath | null = null;
-  private bestCandidates: Entry[] = [];
+  private allCandidates: Entry[] = [];
+  private currentGrid: ReadingGrid | null = null;
+  private cursorIndex = 0;
+  private candidateOffset = 0;
 
   constructor(dict: Dictionary, inventory: Set<string>, options: EngineOptions = {}) {
     this.dict = dict;
     this.inventory = inventory;
     this.layout = resolveLayout(options.layout);
     this.maxSegmentations = options.maxSegmentations ?? 4000;
+    this.userDict = options.userDictionary;
+    this.learnFromCommit = options.learnFromCommit ?? false;
+    // left undefined on purpose: ReadingGrid owns the default (see its options type)
+    this.promote = options.promoteWordsOverDecomposition;
+    this.promotionEpsilon = options.promotionEpsilon;
+    this.candidateOrder = options.candidateOrder;
     this.decode();
   }
 
@@ -123,9 +185,81 @@ export class InputEngine {
     return this.path;
   }
 
-  /** Candidate words for the last complete syllable, best first. */
+  /**
+   * Every candidate for the syllable the candidate window is sitting on,
+   * longest span first. Use candidatePage for what the user actually sees.
+   */
   get candidates(): Entry[] {
-    return this.bestCandidates;
+    return this.allCandidates;
+  }
+
+  /** Syllable index the candidate window is anchored to. */
+  get candidateCursor(): number {
+    return this.cursorIndex;
+  }
+
+  /**
+   * The ten candidates the user is looking at right now.
+   *
+   * Ten because that is how many a keyboard can address with 1234567890, which is
+   * the convention Taiwanese IMEs have used for decades — 自然輸入法 included.
+   * Paging is what makes explicit selection a complete answer to homophones: the
+   * user does not need the engine to guess right, only to offer the right word
+   * within a keystroke or two.
+   */
+  get candidatePage(): CandidatePage {
+    const total = this.allCandidates.length;
+    const pageCount = Math.max(1, Math.ceil(total / CANDIDATE_PAGE_SIZE));
+    const pageIndex = Math.floor(this.candidateOffset / CANDIDATE_PAGE_SIZE);
+    return {
+      entries: this.allCandidates.slice(
+        this.candidateOffset,
+        this.candidateOffset + CANDIDATE_PAGE_SIZE,
+      ),
+      cursor: this.cursorIndex,
+      offset: this.candidateOffset,
+      pageIndex,
+      pageCount,
+      total,
+      hasMore: this.candidateOffset + CANDIDATE_PAGE_SIZE < total,
+      hasPrevious: this.candidateOffset > 0,
+    };
+  }
+
+  /** Space, in the 自然輸入法 convention. Returns false when already on the last page. */
+  nextCandidatePage(): boolean {
+    if (this.candidateOffset + CANDIDATE_PAGE_SIZE >= this.allCandidates.length) return false;
+    this.candidateOffset += CANDIDATE_PAGE_SIZE;
+    return true;
+  }
+
+  prevCandidatePage(): boolean {
+    if (this.candidateOffset === 0) return false;
+    this.candidateOffset = Math.max(0, this.candidateOffset - CANDIDATE_PAGE_SIZE);
+    return true;
+  }
+
+  /**
+   * Move the candidate window along the composing buffer, the way arrow keys do.
+   * Defaults to the start of the last word the engine chose, because that is the
+   * word still under the cursor.
+   */
+  moveCandidateCursor(delta: number): boolean {
+    const next = Math.min(Math.max(this.cursorIndex + delta, 0), this.syllables.length - 1);
+    if (next === this.cursorIndex) return false;
+    this.cursorIndex = next;
+    this.refreshCandidates();
+    return true;
+  }
+
+  /**
+   * Pick candidate `oneBased` (1..10) from the visible page. This is the path the
+   * 1234567890 keys take, and — because a deliberate pick is evidence of intent —
+   * the path that teaches the user dictionary.
+   */
+  selectCandidate(oneBased: number): string {
+    if (oneBased < 1 || oneBased > CANDIDATE_PAGE_SIZE) return "";
+    return this.chooseAt(this.cursorIndex, this.candidateOffset + oneBased - 1);
   }
 
   get syllableCount(): number {
@@ -136,28 +270,88 @@ export class InputEngine {
     return this.keys.length > 0;
   }
 
+  /** Grid settings shared by every decode in this engine instance. */
+  private get gridOptions(): ReadingGridOptions {
+    return {
+      userDict: this.userDict,
+      promoteWordsOverDecomposition: this.promote,
+      promotionEpsilon: this.promotionEpsilon,
+      candidateOrder: this.candidateOrder,
+    };
+  }
+
+  /** Recompute the visible candidate list for the current cursor position. */
+  private refreshCandidates(): void {
+    this.candidateOffset = 0;
+    if (!this.currentGrid) {
+      this.allCandidates = [];
+      return;
+    }
+    this.allCandidates = this.currentGrid.candidatesForSpan(this.cursorIndex, CANDIDATE_CAP);
+  }
+
   /** The segmentation chosen for the current buffer (exposed for tests/debug). */
   currentSegmentation: Segmentation | null = null;
 
   /** Accept the auto-selected sentence and clear the buffer. */
   commit(): string {
     const out = this.bestSentence;
+    if (this.learnFromCommit && this.userDict && this.path) {
+      for (const node of this.path.nodes) {
+        if (node.fallback) continue;
+        this.userDict.record(node.entry.word, node.entry.reading);
+      }
+    }
     this.reset();
     return out;
   }
 
-  /** Accept candidate `index` for the last syllable, keeping the rest. */
+  /** Candidate words for the last syllable, indexed for choose(). */
   choose(index: number): string {
-    const entry = this.bestCandidates[index];
+    return this.chooseAt(this.syllables.length - 1, index);
+  }
+
+  /** Candidate words attached to the span that starts at `syllableIndex`. */
+  candidatesAt(syllableIndex: number, limit = 9): Entry[] {
+    if (syllableIndex < 0 || syllableIndex >= this.syllables.length) return [];
+    // The live grid already has the user dictionary and promotion applied; reuse
+    // it when the cursor has not moved so the list matches what the user sees.
+    const grid = this.currentGrid && syllableIndex === this.cursorIndex
+      ? this.currentGrid
+      : new ReadingGrid(this.syllables, this.dict, this.gridOptions);
+    return grid.candidatesForSpan(syllableIndex, limit);
+  }
+
+  /**
+   * Pick candidate `index` for the span starting at `syllableIndex`, decode
+   * whatever surrounds it, and commit the result.
+   *
+   * This is the path a cursor-positioned candidate window takes in a real IME,
+   * and it is also the only place learning happens: a deliberate selection is
+   * evidence of intent, an auto-selected homophone is not.
+   */
+  chooseAt(syllableIndex: number, index: number): string {
+    if (!this.path || syllableIndex < 0 || syllableIndex >= this.syllables.length) return "";
+    const grid = this.currentGrid && syllableIndex === this.cursorIndex
+      ? this.currentGrid
+      : new ReadingGrid(this.syllables, this.dict, this.gridOptions);
+    const entry = grid.candidatesForSpan(syllableIndex, CANDIDATE_CAP)[index];
     if (!entry) return "";
-    const n = entry.syllables;
-    const headSyllables = this.syllables.slice(0, this.syllables.length - n);
-    const head = headSyllables.length
-      ? new ReadingGrid(headSyllables, this.dict).bestPath().words.join("")
+
+    const start = syllableIndex;
+    const end = Math.min(start + entry.syllables, this.syllables.length);
+    const before = this.syllables.slice(0, start);
+    const after = this.syllables.slice(end);
+    const head = before.length
+      ? new ReadingGrid(before, this.dict, this.gridOptions).bestPath().words.join("")
       : "";
-    const out = head + entry.word;
+    const tail = after.length
+      ? new ReadingGrid(after, this.dict, this.gridOptions).bestPath().words.join("")
+      : "";
+
+    this.userDict?.record(entry.word, entry.reading);
     this.reset();
-    return out;
+    return head + entry.word + tail;
   }
 
   // ------------------------------------------------------------- decoding
@@ -166,7 +360,10 @@ export class InputEngine {
     this.syllables = [];
     this.pendingKeys = [];
     this.path = null;
-    this.bestCandidates = [];
+    this.allCandidates = [];
+    this.currentGrid = null;
+    this.cursorIndex = 0;
+    this.candidateOffset = 0;
     this.currentSegmentation = null;
     if (this.keys.length === 0) return;
 
@@ -193,7 +390,7 @@ export class InputEngine {
 
     let best: { seg: Segmentation; grid: ReadingGrid; path: GridPath } | null = null;
     for (const seg of pool) {
-      const grid = new ReadingGrid(seg.syllables, this.dict);
+      const grid = new ReadingGrid(seg.syllables, this.dict, this.gridOptions);
       const path = grid.bestPath();
       if (!best || path.score > best.path.score) best = { seg, grid, path };
     }
@@ -202,7 +399,12 @@ export class InputEngine {
     this.syllables = winner.seg.syllables;
     this.pendingKeys = this.keys.slice(winner.seg.consumedKeys);
     this.path = winner.path;
-    this.bestCandidates = winner.grid.candidatesForSpan(this.syllables.length - 1, 9);
+    this.currentGrid = winner.grid;
+    // The candidate window sits on the word the engine is least done with: the
+    // last one, which is still under the cursor.
+    const lastNode = winner.path.nodes[winner.path.nodes.length - 1];
+    this.cursorIndex = lastNode ? lastNode.start : 0;
+    this.refreshCandidates();
   }
 
   /**
@@ -233,6 +435,7 @@ export class InputEngine {
           const syllable = composeSyllable(chunk);
           if (!syllable || !this.inventory.has(syllable)) continue;
           if (!isWellFormedComponents(chunk)) continue; // still being typed
+          if (!isCanonicalComponentOrder(chunk)) continue; // keys out of order
           advanced = true;
           syllables.push(syllable);
           walk(pos + len);

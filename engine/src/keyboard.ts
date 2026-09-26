@@ -54,11 +54,12 @@ export const STANDARD_LAYOUT = layout(
     ["4", [comp("tone", 3)]],
     ["6", [comp("tone", 1)]],
     ["7", [comp("tone", 4)]],
-    // "1" stays ㄅ: on a 大千 keyboard 一聲 is the absence of a tone mark, and
-    // space is what users press to close a syllable, not a tone key proper.
-    [" ", [comp("tone", 0)]],
+    // "1" stays ㄅ: on a 大千 keyboard 一聲 is the absence of a tone mark.
+    // Space is deliberately NOT a composing key — it pages the candidate window,
+    // following 自然輸入法. 一聲 needs no key at all: a syllable is closed by the
+    // next syllable's first key or by a tone key, and ㄓㄔㄕㄖㄗㄘㄙ stand alone.
   ],
-  [" "],
+  [],
 );
 
 export const ETEN_LAYOUT = layout(
@@ -78,10 +79,11 @@ export const ETEN_LAYOUT = layout(
     ["z", [comp("vowel", 7)]], ["y", [comp("vowel", 8)]], ["8", [comp("vowel", 9)]],
     ["9", [comp("vowel", 10)]], ["0", [comp("vowel", 11)]], ["-", [comp("vowel", 12)]],
     ["=", [comp("vowel", 13)]],
-    [" ", [comp("tone", 0)]], ["2", [comp("tone", 1)]], ["3", [comp("tone", 2)]],
+    ["2", [comp("tone", 1)]], ["3", [comp("tone", 2)]],
     ["4", [comp("tone", 3)]], ["1", [comp("tone", 4)]],
+    // space pages the candidate window; see the Standard layout note
   ],
-  [" "],
+  [],
 );
 
 export const LAYOUTS: Record<string, KeyboardLayout> = {

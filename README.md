@@ -5,7 +5,7 @@
 Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 [![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases)
-[![engine tests](https://img.shields.io/badge/engine%20tests-11%2F11-brightgreen)](#現況)
+[![engine tests](https://img.shields.io/badge/engine%20tests-37%2F37-brightgreen)](#現況)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
 
@@ -24,7 +24,8 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
 | Linux | fcitx5 / ibus addon | 選配 |
 
-**現況：M0 —— 解碼引擎已可運作，並通過測試。** 平台外殼尚未開始。
+**現況：M0 + M1 + M2 完成** —— 解碼引擎、資料管線、個人化學習皆可運作，37 項測試通過。
+平台外殼尚未開始。
 
 ```console
 $ node engine/cli.ts su3cl3 ji394su3 w96j0
@@ -115,8 +116,11 @@ node engine/cli.ts su3cl3 ji394su3 w96j0
 node engine/cli.ts --layout eten ne3     # 倚天鍵盤
 
 # 測試與評測
-cd engine && node --test "test/*.test.ts"
-node engine/bench.mjs 5000
+cd engine && node --test "test/*.test.ts"   # 37 項
+node engine/bench.mjs 5000                  # 解碼品質
+node engine/bench.mjs 5000 --compare        # promotion 開啟前後的逐例對比
+node engine/bench-learn.mjs 5000            # 學習前後對比
+node engine/bench-learn.mjs 5000 --recall   # 候選可達性
 ```
 
 | 按鍵 | 輸出 | 說明 |
@@ -126,6 +130,9 @@ node engine/bench.mjs 5000
 | `w96j0` | 台灣 | ㄊㄞˊ ㄨㄢ（第二音節省略聲調鍵） |
 | `rupwu0` | 今天 | ㄐㄧㄣ ㄊㄧㄢ（一聲不打調號） |
 | `g4` | 是 | ㄕˋ（單獨成音的ㄕ） |
+| `j0420` | 萬丹 | ㄨㄢˋ ㄉㄢ（聲調不會跑到下一個音節） |
+
+互動模式下：`1`-`9`/`0` 選字、`空白鍵` 翻下一頁十個、`←`/`→` 移動候選游標。
 
 ---
 
@@ -171,15 +178,37 @@ node engine/bench.mjs 5000
 ```console
 $ node engine/bench.mjs 5000
 
-  top-1 accuracy    83.22%   (4161/5000)  exact word match
+  top-1 accuracy    90.38%   (4519/5000)  exact word match
   reading accuracy  100.00%   (5000/5000)  output reads as typed
-    of which homophone ties: 839
+    homophone ties        480   (another real word, same reading)
+    lost to decomposition   1   (a word existed and lost to single characters)
   KSPC              2.986 keys per character
 ```
 
-兩個數字的差距就是**同音詞**：`遺臣` 與 `一陳` 讀音完全相同，任何注音解碼器在沒有上下文時
-都無法分辨。5,000 個樣本裡**沒有任何一次真正的解碼失敗**——輸出永遠讀得回你打的音。
-要把 83% 往上推需要的是 bigram／上下文模型，不是更大的詞庫。
+**沒選對的 481 例，480 例是同音詞**：`畜牲`/`畜生`、`申飭`/`申斥` 讀音完全相同，
+任何注音解碼器在沒有上下文時都無法分辨。5,000 個樣本裡**沒有任何一次真正的解碼失敗**
+——輸出永遠讀得回你打的音。
+
+### 個人化：教一次就記住（可重跑）
+
+```console
+$ node engine/bench-learn.mjs 5000
+
+                              before      after
+  top-1 accuracy              90.38%      99.54%
+  homophone ties                480          21
+  fixed by learning         464    regressed 6 (5 例是測試集碰撞，1 例已知副作用)
+```
+
+同音詞的答案不是「讓模型更聰明」，而是**讓使用者自己選，並且記住**：
+
+| 操作 | 行為 |
+|---|---|
+| `1`…`9`、`0` | 選目前頁面的第 1…10 個候選 |
+| `空白鍵` | 翻到下一頁（十個） |
+| `←` `→` | 沿組字緩衝區移動候選游標 |
+
+引擎選錯時，正確的字有 **99.8%** 落在第一頁——所以更正的成本是一個按鍵。
 
 > ⚠️ 樣本取自語言模型本身，因此這是**自我一致性**（上界）與**回歸守門**，不是與競品的對比數字。
 > 真正的對比需要真實使用者的打字語料，目前不存在。詳見 [docs/06](docs/06-engine-design.md)。
@@ -190,9 +219,9 @@ $ node engine/bench.mjs 5000
 
 | 里程碑 | 內容 | 狀態 |
 |---|---|---|
-| **M0** | 解碼引擎：鍵盤／切分／讀字格 Viterbi／候選；11 項測試 | ✅ 已完成 |
+| **M0** | 解碼引擎：鍵盤／切分／讀字格 Viterbi／候選視窗；37 項測試 | ✅ 已完成 |
 | **M1** | 資料管線：從 McBopomofo 開放資料編譯出可攜語言模型 | ✅ 已完成 |
-| **M2** | 個人化：使用者詞庫、學習排序、詞頻匯入匯出 | 待做 |
+| **M2** | 個人化：使用者詞庫、學習排序、候選翻頁 | ✅ 已完成 |
 | **M3** | 核心移植（Rust）＋ C ABI／JNI／NAPI／Swift 綁定 | 待做 |
 | **M4** | Windows TSF 外殼 | 待做 |
 | **M5** | macOS IMK 外殼 | 待做 |

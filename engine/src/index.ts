@@ -6,9 +6,19 @@
  * macOS InputMethodKit, Android InputMethodService and HarmonyOS IME Kit shells
  * can all sit on exactly one decoder.
  */
-export { InputEngine, type EngineOptions } from "./engine.ts";
+export {
+  InputEngine, CANDIDATE_PAGE_SIZE, CANDIDATE_CAP,
+  type EngineOptions, type CandidatePage,
+} from "./engine.ts";
 export { Dictionary, buildSyllableInventory, type Entry } from "./dictionary.ts";
-export { ReadingGrid, type GridPath, type GridNode } from "./grid.ts";
+export {
+  ReadingGrid, DEFAULT_PROMOTE_WORDS_OVER_DECOMPOSITION, DEFAULT_CANDIDATE_ORDER,
+  type GridPath, type GridNode, type ReadingGridOptions, type CandidateOrder,
+} from "./grid.ts";
+export {
+  UserDictionary, EPOCH_DAY_MS,
+  type UserEntry, type UserDictionaryOptions,
+} from "./userdict.ts";
 export { LAYOUTS, PLANNED_LAYOUTS, STANDARD_LAYOUT, ETEN_LAYOUT, type KeyboardLayout } from "./keyboard.ts";
 export {
   CONSONANTS, MEDIALS, VOWELS, TONES,

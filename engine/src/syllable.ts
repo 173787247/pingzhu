@@ -72,6 +72,49 @@ export function decomposeSyllable(syllable: string): KeyComponent[] | null {
 /** Indices of ㄓㄔㄕㄖㄗㄘㄙ — the only consonants that stand alone as syllables. */
 const SYLLABIC_CONSONANTS = new Set([15, 16, 17, 18, 19, 20, 21]);
 
+/** Canonical typing order: 聲母 then 介音 then 韻母 then 聲調. */
+const CLASS_RANK: Record<ComponentKind, number> = {
+  consonant: 0,
+  medial: 1,
+  vowel: 2,
+  tone: 3,
+};
+
+/** Index of ˙ (輕聲) in TONES — the one tone written *before* its syllable. */
+const NEUTRAL_TONE = 4;
+
+/**
+ * Did the user press these keys in an order a syllable can actually be spelled in?
+ *
+ * Without this check the grid treats a syllable as an unordered bag of components,
+ * because composeSyllable merges by class. That is not a theoretical worry — it
+ * produced real misreadings:
+ *
+ *     keys "jptjp6"  for ㄨㄣ-ㄔㄨㄣˊ (溫純)
+ *     chunk [ㄨ ㄣ ㄔ] composed to ㄔㄨㄣ   ← the ㄔ jumped in front of ㄨㄣ
+ *     result: ㄔㄨㄣ-ㄨㄣˊ, a reading the user never typed
+ *
+ *     keys "j0420"   for ㄨㄢˋ-ㄉㄢ (萬丹)
+ *     chunk [ˋ ㄉ ㄢ] composed to ㄉㄢˋ     ← the tone moved to the next syllable
+ *     result: ㄨㄢ-ㄉㄢˋ, with the word 萬丹 unreachable entirely
+ *
+ * Requiring strictly increasing class rank inside a chunk forbids both. The single
+ * exception is ˙, which Taiwanese convention writes before the syllable (˙ㄉㄜ),
+ * so a leading neutral tone is allowed.
+ */
+export function isCanonicalComponentOrder(chunk: KeyComponent[]): boolean {
+  if (chunk.length === 0) return false;
+  let rest = chunk;
+  if (chunk[0].kind === "tone" && chunk[0].index === NEUTRAL_TONE) {
+    rest = chunk.slice(1);
+    if (rest.length === 0) return false; // a bare ˙ is not a syllable
+  }
+  for (let i = 1; i < rest.length; i++) {
+    if (CLASS_RANK[rest[i].kind] <= CLASS_RANK[rest[i - 1].kind]) return false;
+  }
+  return true;
+}
+
 /**
  * Is this run of components a syllable a speaker of Mandarin would recognise as
  * finished?

@@ -94,9 +94,41 @@ test("commit() empties the composer", () => {
 });
 
 test("倚天 layout reaches the same result by a different path", () => {
-  // ETen: n=ㄋ, e=ㄧ, 3=ˇ, / =ㄏ?  -- this asserts the layout table is wired in,
-  // not that ETen is feature complete (Hsu/ETen26 are still to be ported).
+  // ETen: n=ㄋ, e=ㄧ, 3=ˇ -- this asserts the layout table is wired in, not that
+  // ETen is feature complete (Hsu/ETen26 are still to be ported).
   const engine = type("ne3", "eten");
   assert.equal(engine.composing, "ㄋㄧˇ");
   assert.equal(engine.bestSentence, "你");
+});
+
+// ------------------------------------------------------- keystroke order
+
+test("components may not be reordered inside a syllable", () => {
+  // "jptjp6" is ㄨㄣ then ㄔㄨㄣˊ. Without an order check the grid composes the
+  // bag [ㄨ ㄣ ㄔ] into ㄔㄨㄣ -- the ㄔ jumps in front of the ㄨ -- and the engine
+  // answered ㄔㄨㄣ-ㄨㄣˊ, a reading nobody typed.
+  const engine = type("jptjp6");
+  assert.equal(engine.composing, "ㄨㄣ ㄔㄨㄣˊ");
+  assert.equal(engine.bestSentence, "溫純");
+});
+
+test("a tone key cannot migrate to the next syllable", () => {
+  // "j0420" is ㄨㄢˋ then ㄉㄢ. Composing the bag [ˋ ㄉ ㄢ] into ㄉㄢˋ moved the
+  // tone off the first syllable and made 萬丹 unreachable entirely.
+  const engine = type("j0420");
+  assert.equal(engine.composing, "ㄨㄢˋ ㄉㄢ");
+  assert.equal(engine.bestSentence, "萬丹");
+});
+
+test("˙ is accepted before its syllable, the traditional written order", () => {
+  assert.equal(type("2k7").bestSentence, "的"); // tone last
+  const neutralFirst = type("72k");
+  assert.equal(neutralFirst.composing, "ㄉㄜ˙");
+  assert.equal(neutralFirst.bestSentence, "的");
+});
+
+test("a bare tone key is not a syllable", () => {
+  const engine = type("4");
+  assert.equal(engine.bestSentence, "");
+  assert.equal(engine.composing, "[4]");
 });
