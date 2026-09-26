@@ -26,6 +26,11 @@ struct CandidateView {
     int cursor = 0;        /* which syllable the window is anchored to */
     bool selectionMode = false;
     bool faithful = true;  /* false => the output is a guess, show it differently */
+    /* When the caller knows where the caret is — a TSF text service does, via
+     * ITfContextView::GetTextExt — it says so here instead of letting the window
+     * guess from the foreground thread. */
+    bool hasAnchor = false;
+    POINT anchor = {0, 0};
 };
 
 class CandidateWindow {

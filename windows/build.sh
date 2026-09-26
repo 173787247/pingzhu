@@ -38,10 +38,12 @@ if tasklist.exe /FI "IMAGENAME eq pingzhu-ime.exe" 2>/dev/null | grep -qi pingzh
 fi
 
 log "staging into $STAGE"
-rm -rf "$STAGE/src" "$STAGE/tests" "$STAGE/build"
-mkdir -p "$STAGE/src" "$STAGE/tests" "$STAGE/build" "$STAGE/data"
+rm -rf "$STAGE/src" "$STAGE/tests" "$STAGE/tsf" "$STAGE/build"
+mkdir -p "$STAGE/src" "$STAGE/tests" "$STAGE/tsf" "$STAGE/build" "$STAGE/data"
 cp "$HERE"/src/*.h "$HERE"/src/*.cpp "$STAGE/src/"
 cp "$HERE"/tests/*.cpp "$STAGE/tests/"
+cp "$HERE"/tsf/*.h "$HERE"/tsf/*.cpp "$HERE"/tsf/*.def "$STAGE/tsf/"
+mkdir -p "$STAGE/tsf/tests" && cp "$HERE"/tsf/tests/*.cpp "$STAGE/tsf/tests/"
 cp "$DLL" "$STAGE/"
 cp "$ROOT/data/bopomofo-lm.tsv" "$STAGE/data/"
 # MSVC's batch parser wants CRLF.

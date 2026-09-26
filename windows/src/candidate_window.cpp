@@ -139,7 +139,7 @@ void CandidateWindow::reposition() {
     /* composing line + candidate line + a thin status line */
     int height = kPadY * 2 + sComposing.cy + maxItemH + 18;
 
-    POINT at = caretAnchor();
+    POINT at = view_.hasAnchor ? view_.anchor : caretAnchor();
     int screenW = GetSystemMetrics(SM_CXSCREEN);
     int screenH = GetSystemMetrics(SM_CYSCREEN);
     if (at.x + width > screenW) at.x = std::max<LONG>(0, screenW - width - 8);
