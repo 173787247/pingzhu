@@ -29,10 +29,15 @@ DLL="$CARGO_TARGET_DIR/x86_64-pc-windows-msvc/release/pingzhu_core.dll"
 file "$DLL" | sed 's/^/      /'
 
 # ------------------------------------------------------------- stage for MSVC
-# Windows keeps a loaded DLL locked, so a running instance would make the copy
-# below fail with a bare "Permission denied". Stop it first and say so.
+# Windows keeps a loaded DLL locked for the lifetime of every process that
+# mapped it. That now includes Notepad, Explorer and WeChat — the input method
+# is running inside them. Killing the portable shell is not enough.
+#
+# Windows does allow *renaming* a locked file, only overwriting it is refused.
+# So anything already in place is moved aside first; the old image stays mapped
+# in the processes that hold it and the file becomes deletable once they exit.
 if tasklist.exe /FI "IMAGENAME eq pingzhu-ime.exe" 2>/dev/null | grep -qi pingzhu-ime; then
-  log "stopping the running pingzhu-ime.exe (its DLL is locked)"
+  log "stopping the running pingzhu-ime.exe"
   taskkill.exe /IM pingzhu-ime.exe /F >/dev/null 2>&1 || true
   sleep 1
 fi
@@ -44,6 +49,12 @@ cp "$HERE"/src/*.h "$HERE"/src/*.cpp "$STAGE/src/"
 cp "$HERE"/tests/*.cpp "$STAGE/tests/"
 cp "$HERE"/tsf/*.h "$HERE"/tsf/*.cpp "$HERE"/tsf/*.def "$STAGE/tsf/"
 mkdir -p "$STAGE/tsf/tests" && cp "$HERE"/tsf/tests/*.cpp "$STAGE/tsf/tests/"
+# Move any locked predecessor aside, then place the new build.
+for existing in "$STAGE"/pingzhu_core*.dll "$STAGE"/pingzhu-tsf*.dll; do
+  [ -e "$existing" ] || continue
+  mv -f "$existing" "$existing.previous" 2>/dev/null || true
+done
+rm -f "$STAGE"/pingzhu-tsf-*.dll.previous 2>/dev/null || true
 cp "$DLL" "$STAGE/"
 cp "$ROOT/data/bopomofo-lm.tsv" "$STAGE/data/"
 # MSVC's batch parser wants CRLF.

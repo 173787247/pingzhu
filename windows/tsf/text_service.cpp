@@ -3,6 +3,8 @@
 #include <functional>
 #include <new>
 
+#include "../src/data_dir.h"
+#include "../src/log.h"
 #include "../src/router.h"
 #include "class_factory.h"
 #include "guids.h"
@@ -115,23 +117,25 @@ std::wstring widen(const std::string &utf8) {
     return out;
 }
 
-/* The data directory is the DLL's own directory: an IME is loaded into other
- * people's processes, so the working directory is meaningless here. */
-std::wstring defaultDataDir() {
+/* The DLL's own directory. An IME is loaded into other people's processes, so
+ * the working directory means nothing here — everything is resolved from where
+ * the DLL actually sits. */
+/* Which application are we inside? A text service is loaded into other people's
+ * processes, and "it works here but not there" is the normal shape of a TSF bug.
+ * Without the host's name the log says a service activated but not where. */
+std::string hostName() {
+    wchar_t path[MAX_PATH] = {0};
+    GetModuleFileNameW(nullptr, path, MAX_PATH);
+    std::wstring name(path);
+    size_t slash = name.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) name = name.substr(slash + 1);
+    return toUtf8(name);
+}
+
+std::wstring moduleDir() {
     std::wstring path = modulePath();
     size_t slash = path.find_last_of(L"\\/");
     return slash == std::wstring::npos ? L"." : path.substr(0, slash);
-}
-
-/* The engine's file APIs take UTF-8 narrow strings. */
-std::string toUtf8(const std::wstring &wide) {
-    if (wide.empty()) return "";
-    int need = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), static_cast<int>(wide.size()),
-                                   nullptr, 0, nullptr, nullptr);
-    std::string out(static_cast<size_t>(need), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), static_cast<int>(wide.size()), out.data(), need,
-                        nullptr, nullptr);
-    return out;
 }
 
 }  // namespace
@@ -184,6 +188,8 @@ STDMETHODIMP TextService::Activate(ITfThreadMgr *threadMgr, TfClientId clientId)
 
 STDMETHODIMP TextService::ActivateEx(ITfThreadMgr *threadMgr, TfClientId clientId, DWORD) {
     if (!threadMgr) return E_INVALIDARG;
+    startLog(moduleDir(), L"pingzhu-tsf.log");
+    log("--- activated in " + hostName() + " ---");
     threadMgr_ = threadMgr;
     threadMgr_->AddRef();
     clientId_ = clientId;
@@ -278,6 +284,12 @@ STDMETHODIMP TextService::OnSetFocus(BOOL) { return S_OK; }
 
 STDMETHODIMP TextService::OnTestKeyDown(ITfContext *, WPARAM vkey, LPARAM, BOOL *eaten) {
     if (!eaten) return E_INVALIDARG;
+    *eaten = FALSE;
+    /* Must agree with OnKeyDown exactly. Answering "yes, I want this key" here
+     * and then "no" in OnKeyDown is a contract violation, and an input method
+     * that cannot load its engine has no business claiming any key at all. */
+    if (!engineReady_) return S_OK;
+
     /* Decide without side effects: TSF calls this to find out whether the key
      * would be consumed, and the answer must match what OnKeyDown will do. */
     char ch = 0;
@@ -298,6 +310,13 @@ STDMETHODIMP TextService::OnTestKeyDown(ITfContext *, WPARAM vkey, LPARAM, BOOL 
      * doing this properly instead of hooking the keyboard. */
     Decision decision = route(key, state, true);
     *eaten = (decision.action != Action::Pass) ? TRUE : FALSE;
+    if (!reportedTestKey_) {
+        reportedTestKey_ = true;
+        /* Whether any key reaches the sink at all is the first thing to know,
+         * and it is the difference between "the IME is not selected" and "the
+         * IME is selected but refusing the key". The key itself is not recorded. */
+        log(std::string("first test-key: eaten=") + (*eaten ? "yes" : "no"));
+    }
     return S_OK;
 }
 
@@ -344,7 +363,14 @@ HRESULT TextService::FocusedContext(ITfContext **out) {
 
 bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
     *eaten = false;
-    if (!engineReady_ || !context) return false;
+    if (!engineReady_) {
+        if (!reportedNotReady_) {
+            reportedNotReady_ = true;
+            log("key pressed but the engine is not ready; passing it through");
+        }
+        return false;
+    }
+    if (!context) return false;
 
     char ch = 0;
     KeyEvent key;
@@ -362,6 +388,12 @@ bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
     Decision decision = route(key, state, true);
     if (decision.action == Action::Pass) return false;
     *eaten = true;
+    if (!sawFirstKey_) {
+        /* Recorded once, without the character: enough to prove the key path is
+         * alive without turning the log into a record of what was typed. */
+        sawFirstKey_ = true;
+        log("first key handled");
+    }
 
     switch (decision.action) {
         case Action::Compose:
@@ -620,19 +652,36 @@ void TextService::EnsureEngineLoaded() {
     if (engineTried_) return;
     engineTried_ = true;
 
-    dataDir_ = defaultDataDir();
-    if (!candidates_.create(moduleHandle())) return;
+    /* Resolve the data directory by looking for the file, not by assuming a
+     * layout. Assuming is how this shipped broken: the engine wants
+     * <dir>\bopomofo-lm.tsv, this passed the DLL's directory while the model sat
+     * in <dir>\data, and every key then passed silently through to the
+     * application with nothing anywhere to say why. */
+    dataDir_ = resolveDataDir(moduleDir());
+    log("activate: dll dir = " + toUtf8(moduleDir()));
+    log("activate: data dir = " + toUtf8(dataDir_));
+    {
+        std::wstring model = dataDir_ + L"\\bopomofo-lm.tsv";
+        bool present = GetFileAttributesW(model.c_str()) != INVALID_FILE_ATTRIBUTES;
+        log(std::string("activate: bopomofo-lm.tsv ") + (present ? "found" : "MISSING") + " at " +
+            toUtf8(model));
+    }
 
+    /* A missing candidate window is worth reporting but not worth refusing to
+     * type over: the engine is the part that matters. */
+    if (!candidates_.create(moduleHandle())) {
+        log("candidate window creation failed; typing will work without it");
+    }
     displayAttribute_ = new (std::nothrow) DisplayAttributeInfo();
 
-    std::wstring coreDll = dataDir_ + L"\\pingzhu_core.dll";
-    if (engine_.load(coreDll, toUtf8(dataDir_), "standard", nullptr)) {
-        /* Learned words live beside the input method. Several host processes may
-         * load this DLL at once, so the file is read at activation and written at
-         * deactivation rather than kept open. */
-        engine_.loadUserDictionaryFile(toUtf8(dataDir_ + L"\\pingzhu-userdict.txt"));
-        engineReady_ = true;
+    std::wstring coreDll = moduleDir() + L"\\pingzhu_core.dll";
+    if (!engine_.load(coreDll, toUtf8(dataDir_), "standard", nullptr)) {
+        log("ENGINE LOAD FAILED: " + engine_.lastError());
+        return;
     }
+    engine_.loadUserDictionaryFile(toUtf8(dataDir_ + L"\\pingzhu-userdict.txt"));
+    engineReady_ = true;
+    log("engine ready");
 }
 
 /* -------------------------------------------------- display attribute provider */

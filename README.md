@@ -18,8 +18,8 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 | 平台 | 官方框架 | 引擎 | 外殼狀態 |
 |---|---|---|---|
-| **Windows 10/11** | **可攜版（托盤 + 全域鉤子 + 注入）** | ✅ C ABI | ✅ **可執行**（[windows/](windows/README.md)） |
-| Windows 10/11 | Text Services Framework (TSF) | ✅ C ABI | 待做（進語言列、支援管理員視窗） |
+| **Windows 10/11** | **TSF 文字服務（進語言列）** | ✅ C ABI | ✅ **可用**（[windows/](windows/README.md)） |
+| Windows 10/11 | 可攜版（托盤 + 全域鉤子 + 注入） | ✅ C ABI | ✅ 可用（不需管理員權限） |
 | macOS 12+ | InputMethodKit (IMK) | ✅ C ABI | 待做（走 Developer ID + 公證，非 App Store） |
 | Android 8+ | `InputMethodService` | ✅ C ABI（JNI） | 待做（缺口最大、風險最低） |
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI（NAPI） | **技術已確認可行**，商業流程待查證（見 [docs/03](docs/03-platform-matrix.md)） |
@@ -27,13 +27,13 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 ### 下載（Windows）
 
-**[⬇ 安裝包 pingzhu-0.4.0-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.4.0/pingzhu-0.4.0-setup.exe)**
-　·　[可攜版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.4.0/pingzhu-0.4.0-win-x64.zip)
+**[⬇ 安裝包 pingzhu-0.5.1-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.5.1/pingzhu-0.5.1-setup.exe)**
+　·　[可攜版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.5.1/pingzhu-0.5.1-win-x64.zip)
 
 裝到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理員權限。裝好後 `Ctrl+Alt+Z` 切換中英，
 打 `su3cl3` 會出現「你好」。詳細操作見 [windows/README.md](windows/README.md)。
 
-**現況：M0 – M4（可攜版）完成** —— 解碼引擎、資料管線、個人化學習、Rust 核心 ＋ C ABI，
+**現況：M0 – M4b 完成（Windows 雙外殼皆可用）** —— 解碼引擎、資料管線、個人化學習、Rust 核心 ＋ C ABI，
 以及**一個現在就能在 Windows 上跑的輸入法**（[windows/](windows/README.md)）。
 
 Windows 可攜版是托盤常駐 + 全域鍵盤鉤子 + 候選視窗 + 字元注入：不需要安裝、不需要管理員權限、

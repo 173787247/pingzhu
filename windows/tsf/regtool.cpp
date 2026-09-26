@@ -81,12 +81,33 @@ int wmain(int argc, wchar_t **argv) {
     }
 
     if (action == L"install") {
-        wchar_t dllPath[MAX_PATH] = {0};
-        GetModuleFileNameW(nullptr, dllPath, MAX_PATH);
-        std::wstring path(dllPath);
-        size_t slash = path.find_last_of(L"\\/");
-        if (slash != std::wstring::npos) {
-            path = path.substr(0, slash + 1) + L"pingzhu-tsf.dll";
+        /* The DLL to register is normally the one sitting next to this tool, but
+         * an explicit path is accepted because the file name carries a version:
+         * a new build registers a new name. */
+        wchar_t selfPath[MAX_PATH] = {0};
+        GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
+        std::wstring directory(selfPath);
+        size_t slash = directory.find_last_of(L"\\/");
+        directory = (slash == std::wstring::npos) ? L"." : directory.substr(0, slash);
+
+        std::wstring path;
+        if (argc > 2 && argv[2][0]) {
+            path = argv[2];
+        } else {
+            /* Newest pingzhu-tsf*.dll wins, so an upgrade needs no extra flag. */
+            WIN32_FIND_DATAW found;
+            HANDLE search = FindFirstFileW((directory + L"\\pingzhu-tsf*.dll").c_str(), &found);
+            if (search != INVALID_HANDLE_VALUE) {
+                FILETIME newest = {0, 0};
+                do {
+                    if (CompareFileTime(&found.ftLastWriteTime, &newest) > 0) {
+                        newest = found.ftLastWriteTime;
+                        path = directory + L"\\" + found.cFileName;
+                    }
+                } while (FindNextFileW(search, &found));
+                FindClose(search);
+            }
+            if (path.empty()) path = directory + L"\\pingzhu-tsf.dll";
         }
 
         print(L"COM 伺服器：%s", path.c_str());

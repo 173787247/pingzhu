@@ -16,7 +16,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-VERSION="${1:-0.5.0}"
+VERSION="${1:-0.5.1}"
 STAGE="${PINGZHU_STAGE:-/mnt/c/Users/rchua/pingzhu-build}"
 DIST="$ROOT/dist"
 PKG="$DIST/pingzhu-$VERSION-win-x64"
@@ -34,7 +34,9 @@ rm -rf "$PKG"
 mkdir -p "$PKG"
 cp "$STAGE/pingzhu-ime.exe"    "$PKG/"
 cp "$STAGE/pingzhu_core.dll"   "$PKG/"
-cp "$STAGE/pingzhu-tsf.dll"    "$PKG/"
+# The text service DLL carries a version in its file name, so the package must
+# take whatever the build produced rather than a fixed name.
+cp "$STAGE"/pingzhu-tsf-*.dll "$PKG/"
 cp "$STAGE/pingzhu-regtool.exe" "$PKG/"
 cp "$STAGE/pingzhu-tsf-test.exe" "$PKG/" 2>/dev/null || true
 cp "$STAGE/pingzhu-router-test.exe" "$PKG/" 2>/dev/null || true
@@ -72,7 +74,7 @@ cp "$ROOT/NOTICE" "$PKG/NOTICE.txt" 2>/dev/null || true
   || { log "engine test FAILED from the flat package"; tail -5 /tmp/pkg-engine-test.log; exit 1; }
 
 # And the text service must still honour its COM contract after packaging.
-( cd "$PKG" && ./pingzhu-tsf-test.exe >/tmp/pkg-tsf-test.log 2>&1 ) \
+( cd "$PKG" && ./pingzhu-tsf-test.exe "$(ls pingzhu-tsf-*.dll | head -1)" >/tmp/pkg-tsf-test.log 2>&1 ) \
   && log "COM contract test from the flat package: passed" \
   || { log "COM contract test FAILED from the flat package"; tail -5 /tmp/pkg-tsf-test.log; exit 1; }
 

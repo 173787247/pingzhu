@@ -13,9 +13,12 @@
  */
 #include <windows.h>
 #include <msctf.h>
+#include <objbase.h>
 
 #include <cstdio>
 
+#include "../../src/data_dir.h"
+#include "../../src/engine_api.h"
 #include "../guids.h"
 
 namespace {
@@ -40,7 +43,15 @@ using DllCanUnloadNowFn = HRESULT(WINAPI *)();
 }  // namespace
 
 int main(int argc, char **argv) {
-    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf.dll";
+    /* Initialised once for the whole run: a CoUninitialize between the sections
+     * leaves later CoCreateInstance calls failing with CO_E_NOTINITIALIZED,
+     * which looks exactly like a broken registration. */
+    HRESULT comInit = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+    /* Default to the versioned build. The text service DLL carries a version in
+     * its name (Windows locks a loaded DLL), so a fixed default silently tests
+     * a stale file and reports on code that is not the code being developed. */
+    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.5.1.dll";
 
     HMODULE module = LoadLibraryA(path);
     if (!module) {
@@ -140,6 +151,101 @@ int main(int argc, char **argv) {
     check("DllCanUnloadNow says yes once released", canUnloadNow() == S_OK);
 
     FreeLibrary(module);
+
+    /* ---------------------------------------------------------------- engine
+     * The text service resolves its data directory from the DLL's own location.
+     * Get that wrong and every key passes silently through to the application —
+     * the input method appears to do nothing at all, with no error anywhere.
+     * That is exactly what happened once, so it is checked here rather than
+     * trusted.
+     */
+    std::printf("\nengine resolution (the same path the text service takes)\n");
+    {
+        std::wstring dllDir = pingzhu::resolveDataDir(L".");
+        /* Resolve relative to this executable's directory, which is where the
+         * test runs from — the same relationship the service has to its DLL. */
+        wchar_t exePath[MAX_PATH] = {0};
+        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+        std::wstring exeDir(exePath);
+        exeDir = exeDir.substr(0, exeDir.find_last_of(L"\\/"));
+        dllDir = pingzhu::resolveDataDir(exeDir);
+        std::string narrow = pingzhu::toUtf8(dllDir);
+        check("data directory resolves", !narrow.empty(), narrow.c_str());
+
+        std::wstring model = dllDir + L"\\bopomofo-lm.tsv";
+        check("bopomofo-lm.tsv is there",
+              GetFileAttributesW(model.c_str()) != INVALID_FILE_ATTRIBUTES);
+
+        pingzhu::Engine engine;
+        bool loaded = engine.load(exeDir + L"\\pingzhu_core.dll", narrow, "standard", nullptr);
+        check("engine loads from the resolved directory", loaded,
+              loaded ? "" : engine.lastError().c_str());
+        if (loaded) {
+            for (const char *k = "su3cl3"; *k; ++k) engine.feedKey(*k);
+            check("and decodes su3cl3 -> 你好", engine.sentence() == "你好", engine.sentence().c_str());
+        }
+    }
+
+    /* ------------------------------------------------------- registry path
+     * Everything above bypassed the registry on purpose. This last part does not:
+     * it asks COM to create the object the way Windows will, which is the only
+     * way to catch a registration that is present but unusable — the failure the
+     * user sees as "input method not found".
+     */
+    std::printf("\nregistry-based creation (what the language bar does)\n");
+    {
+        ITfTextInputProcessorEx *fromRegistry = nullptr;
+        HRESULT hr = CoCreateInstance(CLSID_PingZhuTextService, nullptr, CLSCTX_INPROC_SERVER,
+                                      IID_ITfTextInputProcessorEx,
+                                      reinterpret_cast<void **>(&fromRegistry));
+        char detail[128];
+        std::snprintf(detail, sizeof(detail), "hr=0x%08lX", static_cast<unsigned long>(hr));
+        check("CoCreateInstance finds the text service", SUCCEEDED(hr) && fromRegistry != nullptr,
+              detail);
+        if (fromRegistry) fromRegistry->Release();
+    }
+
+    /* ---------------------------------------------------- real activation
+     * The closest this can get to what Windows does when the user picks the
+     * input method: a genuine TSF thread manager, a genuine client id, and the
+     * service's own Activate. Everything that can only be exercised on the real
+     * path — sink registration, engine loading, logging — happens here.
+     */
+    std::printf("\nreal activation (the path Windows takes)\n");
+    {
+        ITfThreadMgr *threadMgr = nullptr;
+        HRESULT hr = CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER,
+                                      IID_ITfThreadMgr,
+                                      reinterpret_cast<void **>(&threadMgr));
+        char detail[128];
+        std::snprintf(detail, sizeof(detail), "hr=0x%08lX", static_cast<unsigned long>(hr));
+        check("TSF thread manager is available", SUCCEEDED(hr) && threadMgr != nullptr, detail);
+        if (threadMgr) {
+            TfClientId clientId = TF_CLIENTID_NULL;
+            hr = threadMgr->Activate(&clientId);
+            check("thread manager activates", SUCCEEDED(hr));
+
+            ITfTextInputProcessorEx *service = nullptr;
+            hr = CoCreateInstance(CLSID_PingZhuTextService, nullptr, CLSCTX_INPROC_SERVER,
+                                  IID_ITfTextInputProcessorEx,
+                                  reinterpret_cast<void **>(&service));
+            if (SUCCEEDED(hr) && service) {
+                hr = service->ActivateEx(threadMgr, clientId, 0);
+                std::snprintf(detail, sizeof(detail), "hr=0x%08lX",
+                              static_cast<unsigned long>(hr));
+                check("text service activates", SUCCEEDED(hr), detail);
+                hr = service->Deactivate();
+                check("text service deactivates", SUCCEEDED(hr));
+                service->Release();
+            } else {
+                check("text service created for activation", false);
+            }
+            threadMgr->Deactivate();
+            threadMgr->Release();
+        }
+    }
+
+    if (SUCCEEDED(comInit)) CoUninitialize();
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nall COM checks passed\n", failures);
     return failures ? 1 : 0;
 }

@@ -42,7 +42,7 @@ set COMMON=/nologo /std:c++17 /EHsc /W4 /O2 /MD /utf-8 /DNOMINMAX /DWIN32_LEAN_A
 set LIBS=user32.lib shell32.lib gdi32.lib
 
 echo [build] pingzhu-ime.exe
-cl %COMMON% src\main.cpp src\router.cpp src\engine_api.cpp src\candidate_window.cpp src\inject.cpp /Fe:pingzhu-ime.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:WINDOWS
+cl %COMMON% src\main.cpp src\router.cpp src\engine_api.cpp src\candidate_window.cpp src\inject.cpp src\data_dir.cpp /Fe:pingzhu-ime.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:WINDOWS
 if errorlevel 1 exit /b 1
 
 echo [build] pingzhu-router-test.exe
@@ -50,7 +50,7 @@ cl %COMMON% tests\test_router.cpp src\router.cpp /Fe:pingzhu-router-test.exe /Fo
 if errorlevel 1 exit /b 1
 
 echo [build] pingzhu-engine-test.exe
-cl %COMMON% tests\test_engine.cpp src\engine_api.cpp /Fe:pingzhu-engine-test.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:CONSOLE
+cl %COMMON% tests\test_engine.cpp src\engine_api.cpp src\data_dir.cpp /Fe:pingzhu-engine-test.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:CONSOLE
 if errorlevel 1 exit /b 1
 
 rem --------------------------------------------------------------- TSF shell
@@ -64,9 +64,16 @@ rem uuid.lib. Only CoCreateInstance (ole32) is a real import.
 set TSFLIBS=ole32.lib oleaut32.lib uuid.lib user32.lib shell32.lib gdi32.lib advapi32.lib
 if not exist build\tsf mkdir build\tsf
 
-echo [build] pingzhu-tsf.dll
-cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp ^
-   /Fo:build\tsf\ /LD /Fe:pingzhu-tsf.dll ^
+rem The text service DLL carries a version in its file name. This is not
+rem cosmetic: Windows keeps a loaded DLL locked for the lifetime of every process
+rem that mapped it, so a stable name means an upgrade cannot replace the file
+rem while any application is running. Registering a new name sidesteps it, and
+rem the old file is removed on the next reboot.
+set TSFDLL=pingzhu-tsf-0.5.1.dll
+
+echo [build] %TSFDLL%
+cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\data_dir.cpp src\log.cpp ^
+   /Fo:build\tsf\ /LD /Fe:%TSFDLL% ^
    /link %TSFLIBS% /DEF:tsf\pingzhu-tsf.def /SUBSYSTEM:WINDOWS
 if errorlevel 1 exit /b 1
 
@@ -76,7 +83,7 @@ cl %COMMON% tsf\regtool.cpp tsf\register.cpp ^
 if errorlevel 1 exit /b 1
 
 echo [build] pingzhu-tsf-test.exe
-cl %COMMON% -I tsf tsf\tests\test_com.cpp /Fe:pingzhu-tsf-test.exe /Fo:build\tsf\ /link %TSFLIBS% /SUBSYSTEM:CONSOLE
+cl %COMMON% -I tsf tsf\tests\test_com.cpp src\engine_api.cpp src\router.cpp src\data_dir.cpp /Fe:pingzhu-tsf-test.exe /Fo:build\tsf\ /link %TSFLIBS% /SUBSYSTEM:CONSOLE
 if errorlevel 1 exit /b 1
 
 echo [build] ok

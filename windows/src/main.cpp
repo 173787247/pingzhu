@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "candidate_window.h"
+#include "data_dir.h"
 #include "engine_api.h"
 #include "inject.h"
 #include "router.h"
@@ -53,35 +54,12 @@ std::wstring executableDir() {
     return slash == std::wstring::npos ? L"." : s.substr(0, slash);
 }
 
-std::string toUtf8(const std::wstring &wide) {
-    if (wide.empty()) return "";
-    int need = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), static_cast<int>(wide.size()),
-                                   nullptr, 0, nullptr, nullptr);
-    std::string out(static_cast<size_t>(need), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), static_cast<int>(wide.size()), out.data(), need,
-                        nullptr, nullptr);
-    return out;
-}
+std::string toUtf8(const std::wstring &wide) { return pingzhu::toUtf8(wide); }
 
-/* The language model sits next to the executable in a packaged build (flat, so
- * the self-extracting installer can carry it), in `data/` in a repository build,
- * and two levels up when running straight out of windows/build. */
-std::string resolveDataDir() {
-    std::wstring exeDir = executableDir();
-    const std::wstring candidates[] = {
-        exeDir,
-        exeDir + L"\\data",
-        exeDir + L"\\..\\..\\data",
-        exeDir + L"\\..\\data",
-    };
-    for (const std::wstring &dir : candidates) {
-        std::wstring probe = dir + L"\\bopomofo-lm.tsv";
-        if (GetFileAttributesW(probe.c_str()) != INVALID_FILE_ATTRIBUTES) {
-            return toUtf8(dir);
-        }
-    }
-    return toUtf8(exeDir + L"\\data");
-}
+/* Both shells resolve the data directory through the same function on purpose:
+ * two copies of this logic already diverged once, and the TSF service silently
+ * failed to load its engine because of it. */
+std::string resolveDataDir() { return pingzhu::toUtf8(pingzhu::resolveDataDir(executableDir())); }
 
 std::string userDictPath() { return toUtf8(executableDir() + L"\\pingzhu-userdict.txt"); }
 

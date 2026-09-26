@@ -109,6 +109,9 @@ private:
     bool hasPendingAnchor_ = false;
     bool engineTried_ = false;
     bool engineReady_ = false;
+    bool sawFirstKey_ = false;
+    bool reportedTestKey_ = false;
+    bool reportedNotReady_ = false;
     std::wstring dataDir_;
 };
 

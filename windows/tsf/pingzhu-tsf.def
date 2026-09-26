@@ -1,8 +1,11 @@
-LIBRARY pingzhu-tsf
 EXPORTS
     ; The four entry points COM and regsvr32 look for. STDAPI does not imply
     ; dllexport, so they have to be listed here or the DLL loads and then fails
     ; to produce a class with a bare "Class not registered".
+    ;
+    ; No LIBRARY statement: the output name carries a version and is decided by
+    ; the build, so naming the library here only makes the linker complain that
+    ; the two disagree.
     DllGetClassObject   PRIVATE
     DllCanUnloadNow     PRIVATE
     DllRegisterServer   PRIVATE
