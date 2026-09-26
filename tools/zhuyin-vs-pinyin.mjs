@@ -67,6 +67,11 @@ for (const line of readFileSync(LM, "utf8").split("\n")) {
     reading,
     pinyin,
     score,
+    /* The model's score is a log10 probability, so 10^score is the relative
+     * frequency. Averaging without it counts a word nobody types as heavily as
+     * 我們 — and the frequent words are exactly the ones whose spelling is short
+     * in Pinyin, so the unweighted number flatters Bopomofo. */
+    weight: Math.pow(10, score),
     bopomofoKeys: keys,
     pinyinKeys: [...pinyin].length,
     characters: [...word].length,
@@ -128,8 +133,12 @@ function measure(pool) {
 
   return {
     count: pool.length,
-    bopomofo: summarise(pool, "bopomofo", bopomofoGroups),
-    pinyin: summarise(pool, "pinyin", pinyinGroups),
+    bopomofo: summarise(pool, "bopomofo", bopomofoGroups, false),
+    pinyin: summarise(pool, "pinyin", pinyinGroups, false),
+    weighted: {
+      bopomofo: summarise(pool, "bopomofo", bopomofoGroups, true),
+      pinyin: summarise(pool, "pinyin", pinyinGroups, true),
+    },
   };
 }
 
@@ -137,7 +146,11 @@ function measure(pool) {
  * ten per page, so a rank beyond ten costs page-downs first. */
 const selectionCost = (rank) => (rank === 1 ? 0 : 1 + Math.floor((rank - 1) / 10));
 
-function summarise(pool, label, groups) {
+/* Composition and selection are reported separately. The first version of this
+ * tool folded them together and reported one number, which hid the actual
+ * finding: spelling cost is nearly a wash and the difference lives almost
+ * entirely in how often the user has to pick a candidate. */
+function summarise(pool, label, groups, weighted) {
   let composition = 0;
   let characters = 0;
   let effective = 0;
@@ -146,27 +159,32 @@ function summarise(pool, label, groups) {
   let rankSum = 0;
   let groupSizes = 0;
 
+  let selection = 0;
   for (const entry of pool) {
-    composition += label === "bopomofo" ? entry.bopomofoKeys : entry.pinyinKeys;
-    characters += entry.characters;
+    const w = weighted ? entry.weight : 1;
+    const keys = label === "bopomofo" ? entry.bopomofoKeys : entry.pinyinKeys;
     const rank = label === "bopomofo" ? entry.bopomofoRank : entry.pinyinRank;
-    effective += (label === "bopomofo" ? entry.bopomofoKeys : entry.pinyinKeys) + selectionCost(rank);
-    if (rank === 1) top1++;
-    if (rank <= 10) inPage1++;
-    rankSum += rank;
+    composition += keys * w;
+    selection += selectionCost(rank) * w;
+    effective += (keys + selectionCost(rank)) * w;
+    characters += entry.characters * w;
+    if (rank === 1) top1 += w;
+    if (rank <= 10) inPage1 += w;
+    rankSum += rank * w;
   }
   for (const list of groups.values()) groupSizes += list.length * list.length;
 
-  const n = pool.length;
+  const totalWeight = weighted ? pool.reduce((a, e) => a + e.weight, 0) : pool.length;
   return {
     compositionPerCharacter: composition / characters,
+    selectionPerCharacter: selection / characters,
     effectivePerCharacter: effective / characters,
-    top1: (top1 / n) * 100,
-    inPage1: (inPage1 / n) * 100,
-    meanRank: rankSum / n,
+    top1: (top1 / totalWeight) * 100,
+    inPage1: (inPage1 / totalWeight) * 100,
+    meanRank: rankSum / totalWeight,
     /* Mean group size weighted by entry count: the average number of candidates
      * a keystroke sequence offers, as experienced by the words in the model. */
-    meanAmbiguity: groupSizes / n,
+    meanAmbiguity: groupSizes / totalWeight,
     groups: groups.size,
   };
 }
@@ -201,15 +219,33 @@ for (const [name, label] of [
   console.log(`  ${count.toLocaleString()} 條\n`);
   console.log(`                             注音        拼音`);
   console.log(`  組字按鍵／字          ${f(bo.compositionPerCharacter)}  ${f(py.compositionPerCharacter)}`);
+  console.log(`  選字按鍵／字          ${f(bo.selectionPerCharacter)}  ${f(py.selectionPerCharacter)}`);
   console.log(`  有效按鍵／字          ${f(bo.effectivePerCharacter)}  ${f(py.effectivePerCharacter)}`);
   console.log(`  首選正確率            ${pct(bo.top1)}  ${pct(py.top1)}`);
   console.log(`  前十個內找得到        ${pct(bo.inPage1)}  ${pct(py.inPage1)}`);
   console.log(`  目標詞平均名次        ${f(bo.meanRank)}  ${f(py.meanRank)}`);
   console.log(`  平均同碼候選數        ${f(bo.meanAmbiguity)}  ${f(py.meanAmbiguity)}`);
   console.log(`  相異按鍵序列數        ${f(bo.groups, 0)}  ${f(py.groups, 0)}`);
-  const ratio = py.effectivePerCharacter / bo.effectivePerCharacter;
+  const wbo = results[name].weighted.bopomofo;
+  const wpy = results[name].weighted.pinyin;
+  console.log(`\n  詞頻加權（10^score，反映實際會打的分布）`);
+  console.log(`  組字按鍵／字          ${f(wbo.compositionPerCharacter)}  ${f(wpy.compositionPerCharacter)}`);
+  console.log(`  選字按鍵／字          ${f(wbo.selectionPerCharacter)}  ${f(wpy.selectionPerCharacter)}`);
+  console.log(`  有效按鍵／字          ${f(wbo.effectivePerCharacter)}  ${f(wpy.effectivePerCharacter)}`);
+  console.log(`  首選正確率            ${pct(wbo.top1)}  ${pct(wpy.top1)}`);
+
+  const gap = wpy.effectivePerCharacter - wbo.effectivePerCharacter;
+  const fromSpelling = wpy.compositionPerCharacter - wbo.compositionPerCharacter;
+  const fromSelection = wpy.selectionPerCharacter - wbo.selectionPerCharacter;
+  const ratio = wpy.effectivePerCharacter / wbo.effectivePerCharacter;
   console.log(
     `\n  有效按鍵比（拼音／注音）：${ratio.toFixed(3)}  ` +
       (ratio > 1 ? `→ 注音少 ${((1 - 1 / ratio) * 100).toFixed(1)}% 的按鍵` : `→ 拼音較少`),
   );
+  if (gap > 0) {
+    console.log(
+      `  差距的 ${((fromSpelling / gap) * 100).toFixed(0)}% 來自組字、` +
+        `${((fromSelection / gap) * 100).toFixed(0)}% 來自選字`,
+    );
+  }
 }
