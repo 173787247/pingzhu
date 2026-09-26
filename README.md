@@ -211,25 +211,20 @@ node engine/bench-learn.mjs 5000 --recall   # 候選可達性
 
 ## 架构
 
-```
-                     ┌──────────────────────────────┐
-   按鍵 ───────────▶ │  KeyboardLayout              │  大千式／倚天式（許氏、倚天26 待補）
-                     │  key → component             │
-                     └──────────────┬───────────────┘
-                                    ▼
-                     ┌──────────────────────────────┐
-                     │  音節切分 (segmentation)      │  列舉所有合法切分；含「打一半」狀態
-                     │  components → syllables      │
-                     └──────────────┬───────────────┘
-                                    ▼
-                     ┌──────────────────────────────┐
-                     │  ReadingGrid + Viterbi       │  音節格上鋪所有詞，取總分最高路徑
-                     │  切分 × 詞彙 聯合評分          │  log10 機率，多字詞自然勝過逐字
-                     └──────────────┬───────────────┘
-                                    ▼
-                     最佳句子 ＋ 候選詞清單
+```mermaid
+flowchart TB
+    keys(["按键<br/>keystrokes"])
+    layout["<b>KeyboardLayout</b><br/>key → component<br/><i>大千式 / 倚天式（许氏、倚天26 待补）</i>"]
+    seg["<b>音节切分</b> segmentation<br/>components → syllables<br/><i>列举所有合法切分；含「打一半」状态</i>"]
+    grid["<b>ReadingGrid + Viterbi</b><br/>切分 × 词汇 联合评分<br/><i>音节格上铺所有词，取总分最高路径<br/>log10 机率，多字词自然胜过逐字</i>"]
+    out(["最佳句子<br/>＋ 候选词清单"])
+    lm[("语言模型<br/>bopomofo-lm.tsv<br/>169,604 词条 / 131,048 读音 / 1,413 合法音节")]
 
-   語言模型：data/bopomofo-lm.tsv（169,604 詞條／131,048 讀音／1,413 合法音節）
+    keys --> layout --> seg --> grid --> out
+    lm -.-> grid
+
+    classDef data fill:#eef2ff,stroke:#8b93c8,stroke-dasharray:4 3
+    class lm data
 ```
 
 这个分层不是为了好看，而是为了**平台外壳可以极薄**：TSF、IMK、`InputMethodService`、
@@ -270,7 +265,7 @@ $ node engine/bench-learn.mjs 5000
                               before      after
   top-1 accuracy              90.38%      99.54%
   homophone ties                480          21
-  fixed by learning         464    regressed 6 (5 例是測試集碰撞，1 例已知副作用)
+  fixed by learning         464    regressed 6 (5 例是测试集碰撞，1 例已知副作用)
 ```
 
 同音词的答案不是「让模型更聪明」，而是**让使用者自己选，并且记住**：
