@@ -28,6 +28,13 @@ DEFINE_GUID(GUID_PingZhuProfile,
 DEFINE_GUID(GUID_PingZhuDisplayAttribute,
             0x76dcf6f6, 0xc27d, 0x4ccd, 0x9c, 0xc3, 0x1a, 0xde, 0xee, 0xa5, 0xd1, 0x38);
 
+/* The language bar button. Distinct from the profile GUID: the profile is what
+ * the language bar lists as an input method, this is the item attached to it. */
+/* {ACA08321-C39E-4213-9346-5696E32B16E7} */
+DEFINE_GUID(GUID_PingZhuLangBarItem,
+            0x7ac196b6, 0x1230, 0x4572,
+            0x91, 0x7b, 0x81, 0x8a, 0xc6, 0x51, 0xca, 0x4e);
+
 /* {D7C42B11-849C-41EA-8A07-81BA1EAD7AB8} */
 DEFINE_GUID(GUID_PingZhuRegisterTool,
             0xd7c42b11, 0x849c, 0x41ea, 0x8a, 0x07, 0x81, 0xba, 0x1e, 0xad, 0x7a, 0xb8);

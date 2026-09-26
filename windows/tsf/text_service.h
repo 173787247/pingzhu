@@ -24,6 +24,7 @@
 #include <string>
 
 #include "../src/candidate_window.h"
+#include "lang_bar.h"
 #include "../src/engine_api.h"
 
 namespace pingzhu::tsf {
@@ -103,6 +104,9 @@ private:
 
     Engine engine_;
     CandidateWindow candidates_;
+    /* The button in the language bar. Owned here; it holds callbacks back into
+     * this object, so it must be released before the engine is destroyed. */
+    LangBarButton *langBar_ = nullptr;
     /* Held for as long as a composition carries this display attribute: the
      * property stores a pointer to it. */
     class DisplayAttributeInfo *displayAttribute_ = nullptr;

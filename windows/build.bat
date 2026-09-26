@@ -57,7 +57,7 @@ rem --------------------------------------------------------------- TSF shell
 rem The text service is a second front end on the same engine. It shares
 rem router.cpp, engine_api.cpp and candidate_window.cpp with the portable shell;
 rem only the plumbing around them differs.
-set TSFSRC=tsf\dllmain.cpp tsf\class_factory.cpp tsf\text_service.cpp tsf\register.cpp
+set TSFSRC=tsf\dllmain.cpp tsf\class_factory.cpp tsf\text_service.cpp tsf\register.cpp tsf\lang_bar.cpp
 rem No msctf.lib: newer Windows SDKs do not ship it, and it is not needed —
 rem every TSF call here goes through a COM vtable, and the GUIDs come from
 rem uuid.lib. Only CoCreateInstance (ole32) is a real import.
@@ -69,7 +69,7 @@ rem cosmetic: Windows keeps a loaded DLL locked for the lifetime of every proces
 rem that mapped it, so a stable name means an upgrade cannot replace the file
 rem while any application is running. Registering a new name sidesteps it, and
 rem the old file is removed on the next reboot.
-set TSFDLL=pingzhu-tsf-0.6.2.dll
+set TSFDLL=pingzhu-tsf-0.7.0.dll
 
 echo [build] %TSFDLL%
 cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\data_dir.cpp src\log.cpp src\config.cpp ^

@@ -14,6 +14,7 @@
 #include <windows.h>
 #include <msctf.h>
 #include <objbase.h>
+#include <cstring>
 
 #include <cstdio>
 
@@ -51,7 +52,7 @@ int main(int argc, char **argv) {
     /* Default to the versioned build. The text service DLL carries a version in
      * its name (Windows locks a loaded DLL), so a fixed default silently tests
      * a stale file and reports on code that is not the code being developed. */
-    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.6.2.dll";
+    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.7.0.dll";
 
     HMODULE module = LoadLibraryA(path);
     if (!module) {
@@ -64,6 +65,39 @@ int main(int argc, char **argv) {
         reinterpret_cast<DllGetClassObjectFn>(GetProcAddress(module, "DllGetClassObject"));
     auto canUnloadNow =
         reinterpret_cast<DllCanUnloadNowFn>(GetProcAddress(module, "DllCanUnloadNow"));
+    /* Several sections below go through CoCreateInstance, which reads the
+     * registry — so they exercise whatever DLL is *registered*, not the one
+     * named on the command line. When those differ the test silently reports on
+     * old code, which has already caused two confusing failures here. Say it out
+     * loud instead. */
+    {
+        HKEY key = nullptr;
+        std::string registered;
+        if (RegOpenKeyExW(
+                HKEY_LOCAL_MACHINE,
+                L"SOFTWARE\\Classes\\CLSID\\{C2A55EB0-4391-4204-ABCF-4631BEA80A8F}\\InprocServer32",
+                0, KEY_READ | KEY_WOW64_64KEY, &key) == ERROR_SUCCESS) {
+            wchar_t value[MAX_PATH] = {0};
+            DWORD size = sizeof(value);
+            if (RegQueryValueExW(key, nullptr, nullptr, nullptr,
+                                 reinterpret_cast<BYTE *>(value), &size) == ERROR_SUCCESS) {
+                char utf8[MAX_PATH * 2] = {0};
+                WideCharToMultiByte(CP_UTF8, 0, value, -1, utf8, sizeof(utf8), nullptr, nullptr);
+                registered = utf8;
+            }
+            RegCloseKey(key);
+        }
+        const char *slash = strrchr(registered.c_str(), '\\');
+        const std::string registeredName = slash ? slash + 1 : registered;
+        const bool matches = registeredName == path;
+        std::printf("  registered DLL: %s\n", registeredName.empty() ? "(none)" : registeredName.c_str());
+        std::printf("  testing DLL:    %s\n", path);
+        if (!matches) {
+            std::printf("  NOTE: the registry-based sections below test the REGISTERED dll.\n"
+                        "        Re-run regtool install to point it at this build.\n\n");
+        }
+    }
+
     check("DllGetClassObject is exported", getClassObject != nullptr);
     check("DllCanUnloadNow is exported", canUnloadNow != nullptr);
     if (!getClassObject || !canUnloadNow) return 1;
@@ -243,6 +277,63 @@ int main(int argc, char **argv) {
             threadMgr->Deactivate();
             threadMgr->Release();
         }
+    }
+
+    /* -------------------------------------------------- language bar button
+     * Verified through the service's own log rather than by reaching into the
+     * object: what matters is that AddItem was accepted by the language bar, and
+     * that is exactly what the service records. A button that fails to register
+     * is invisible — no error, just no button — so it has to be asserted.
+     */
+    std::printf("\nlanguage bar button\n");
+    {
+        wchar_t exePath[MAX_PATH] = {0};
+        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+        std::wstring dir(exePath);
+        dir = dir.substr(0, dir.find_last_of(L"\\/"));
+
+        ITfThreadMgr *threadMgr = nullptr;
+        ITfTextInputProcessorEx *service = nullptr;
+        TfClientId clientId = TF_CLIENTID_NULL;
+        if (SUCCEEDED(CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER,
+                                       IID_ITfThreadMgr,
+                                       reinterpret_cast<void **>(&threadMgr))) &&
+            threadMgr && SUCCEEDED(threadMgr->Activate(&clientId)) &&
+            SUCCEEDED(CoCreateInstance(CLSID_PingZhuTextService, nullptr, CLSCTX_INPROC_SERVER,
+                                       IID_ITfTextInputProcessorEx,
+                                       reinterpret_cast<void **>(&service))) &&
+            service) {
+            service->ActivateEx(threadMgr, clientId, 0);
+            service->Deactivate();
+            service->Release();
+            threadMgr->Deactivate();
+            threadMgr->Release();
+        }
+
+        FILE *f = _wfopen((dir + L"\\pingzhu-tsf.log").c_str(), L"rb");
+        std::string logText;
+        if (f) {
+            char buf[4096];
+            size_t n;
+            while ((n = fread(buf, 1, sizeof(buf), f)) > 0) logText.append(buf, n);
+            fclose(f);
+        }
+        /* Only the attempt can be asserted here. A console process has no
+         * language bar of its own, so AddItem legitimately refuses — asserting
+         * success would fail for the right reason in the wrong place. Whether
+         * the button actually appears is checked in a real application.
+         *
+         * What IS asserted: the attempt was made, and the log reports the
+         * outcome rather than claiming success either way. */
+        const bool attempted = logText.find("language bar button added") != std::string::npos ||
+                               logText.find("language bar button NOT added") != std::string::npos;
+        check("the button registration was attempted", attempted);
+        check("the item manager was reachable",
+              logText.find("language bar item manager unavailable") == std::string::npos);
+        std::printf("  note: %s\n",
+                    logText.find("language bar button added") != std::string::npos
+                        ? "AddItem was accepted (a language bar exists here)"
+                        : "AddItem was refused — expected in a console process");
     }
 
     /* ------------------------------------------------- settings are re-read

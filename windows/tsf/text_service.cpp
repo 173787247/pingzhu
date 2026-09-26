@@ -146,6 +146,11 @@ std::wstring moduleDir() {
 TextService::TextService() { objectCreated(); }
 
 TextService::~TextService() {
+    if (langBar_) {
+        langBar_->remove();
+        langBar_->Release();
+        langBar_ = nullptr;
+    }
     if (candidates_.visible()) candidates_.hide();
     candidates_.destroy();
     engine_.destroy();
@@ -216,6 +221,33 @@ STDMETHODIMP TextService::ActivateEx(ITfThreadMgr *threadMgr, TfClientId clientI
     EnsureEngineLoaded();
     /* After the engine exists, and on every activation: see ApplySettings. */
     ApplySettings();
+
+    /* The language bar button is created once per object and left in place; it
+     * is the user's handle on the input method, so it must not flicker away
+     * every time focus moves. */
+    if (engineReady_ && !langBar_) {
+        langBar_ = new (std::nothrow) LangBarButton(
+            [this]() { return engine_.outputScript(); },
+            [this](const std::string &script) {
+                if (!engine_.setOutputScript(script.c_str())) return;
+                /* Written back so the choice survives a restart and stays in
+                 * step with the portable shell, which reads the same file. */
+                saveOutputScript(moduleDir(), script);
+                log("output script = " + engine_.outputScript() + " (from the language bar)");
+            });
+        if (langBar_) {
+            /* Logged by outcome, not by attempt. The first version printed
+             * "language bar button added" unconditionally, so the log claimed
+             * success while AddItem was refusing — and a test that checked for
+             * that line passed. A log line that is always true carries no
+             * information and hides the failure it was written to expose. */
+            if (langBar_->add()) {
+                log("language bar button added");
+            } else {
+                log("language bar button NOT added");
+            }
+        }
+    }
     return S_OK;
 }
 
@@ -234,6 +266,11 @@ STDMETHODIMP TextService::Deactivate() {
         }
     }
     HideCandidates();
+    if (langBar_) {
+        langBar_->remove();
+        langBar_->Release();
+        langBar_ = nullptr;
+    }
     if (engineReady_) {
         engine_.saveUserDictionaryFile(toUtf8(dataDir_ + L"\\pingzhu-userdict.txt"));
     }
