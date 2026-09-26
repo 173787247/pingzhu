@@ -29,6 +29,14 @@ DLL="$CARGO_TARGET_DIR/x86_64-pc-windows-msvc/release/pingzhu_core.dll"
 file "$DLL" | sed 's/^/      /'
 
 # ------------------------------------------------------------- stage for MSVC
+# Windows keeps a loaded DLL locked, so a running instance would make the copy
+# below fail with a bare "Permission denied". Stop it first and say so.
+if tasklist.exe /FI "IMAGENAME eq pingzhu-ime.exe" 2>/dev/null | grep -qi pingzhu-ime; then
+  log "stopping the running pingzhu-ime.exe (its DLL is locked)"
+  taskkill.exe /IM pingzhu-ime.exe /F >/dev/null 2>&1 || true
+  sleep 1
+fi
+
 log "staging into $STAGE"
 rm -rf "$STAGE/src" "$STAGE/tests" "$STAGE/build"
 mkdir -p "$STAGE/src" "$STAGE/tests" "$STAGE/build" "$STAGE/data"

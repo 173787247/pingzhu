@@ -21,3 +21,4 @@ core-rs/target/
 demo/engine/
 
 # Windows build staging lives outside the repo; nothing here to ignore
+dist/

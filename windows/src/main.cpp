@@ -63,11 +63,13 @@ std::string toUtf8(const std::wstring &wide) {
     return out;
 }
 
-/* The language model lives in `data/` next to the executable when packaged, and
- * two levels up when running from the repository's build directory. */
+/* The language model sits next to the executable in a packaged build (flat, so
+ * the self-extracting installer can carry it), in `data/` in a repository build,
+ * and two levels up when running straight out of windows/build. */
 std::string resolveDataDir() {
     std::wstring exeDir = executableDir();
     const std::wstring candidates[] = {
+        exeDir,
         exeDir + L"\\data",
         exeDir + L"\\..\\..\\data",
         exeDir + L"\\..\\data",
