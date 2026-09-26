@@ -40,13 +40,20 @@ Decision route(const KeyEvent &key, const EngineState &state, bool chineseMode) 
                                              : Decision{Action::Commit, 0};
 
         case KeyKind::Digit: {
-            if (!state.composing) return {Action::Pass, 0};
-            // 1..9 then 0 for the tenth, matching the candidate window labels.
-            if (state.candidateWindowOpen && state.hasCandidates) {
+            /* All ten digits are bopomofo keys — 1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ
+             * 0ㄢ — and several of them are *initials*, so they are the first key
+             * of a word. 倒 is ㄉㄠˇ = 2l3: requiring a composition to already be
+             * running before a digit may compose made every word starting with
+             * ㄅ, ㄉ, ㄓ, ㄚ, ㄞ or ㄢ untypeable, and the stray digit landed in
+             * the user's text instead.
+             *
+             * Only an open candidate window makes digits select, because that is
+             * the one moment the user is choosing rather than composing. */
+            if (state.composing && state.candidateWindowOpen && state.hasCandidates) {
                 int n = (key.ch == '0') ? 10 : (key.ch - '0');
                 return {Action::SelectCandidate, n};
             }
-            return {Action::Compose, 0};  // digits *are* bopomofo keys
+            return {Action::Compose, 0};
         }
 
         case KeyKind::ArrowDown:

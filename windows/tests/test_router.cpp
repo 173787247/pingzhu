@@ -65,7 +65,11 @@ int main() {
     check("backspace goes to the app", route(key(KeyKind::Backspace), idle, true), Action::Pass);
     check("enter goes to the app", route(key(KeyKind::Enter), idle, true), Action::Pass);
     check("escape goes to the app", route(key(KeyKind::Escape), idle, true), Action::Pass);
-    check("digits go to the app", route(key(KeyKind::Digit, '3'), idle, true), Action::Pass);
+    // Was asserted as Pass, which was the bug written down as an expectation:
+    // the digits are bopomofo keys and several are initials, so the first key of
+    // a word is often a digit key.
+    check("a digit key starts a composition", route(key(KeyKind::Digit, '3'), idle, true),
+          Action::Compose);
     check("ctrl combos belong to the app",
           route([] { KeyEvent e = key(KeyKind::Letter, 'c'); e.ctrl = true; return e; }(), composing,
                 true),
@@ -102,6 +106,24 @@ int main() {
           route(key(KeyKind::Space), selecting, true), Action::NextPage);
     check("up closes the list", route(key(KeyKind::ArrowUp), selecting, true),
           Action::CloseCandidates);
+
+    /* The case the unit expectations above missed entirely: an actual word,
+     * key by key, starting from an empty buffer. Every a priori "digit means X"
+     * rule passed while 倒 — and every word beginning with ㄅㄉㄓㄚㄞㄢ — was
+     * impossible to type. */
+    std::printf("\ntyping a whole word: 倒 (ㄉㄠˇ = 2l3)\n");
+    {
+        struct { char ch; KeyKind kind; } keys[] = {
+            {'2', KeyKind::Digit}, {'l', KeyKind::Letter}, {'3', KeyKind::Digit}};
+        EngineState state = idle;
+        for (auto &entry : keys) {
+            Decision decision = route(key(entry.kind, entry.ch), state, true);
+            char label[64];
+            std::snprintf(label, sizeof(label), "  '%c' is composed, not passed", entry.ch);
+            check(label, decision, Action::Compose);
+            state.composing = true;  // from the second key onwards we are composing
+        }
+    }
 
     std::printf("\nlayout key set\n");
     struct { char ch; bool expected; } layoutCases[] = {

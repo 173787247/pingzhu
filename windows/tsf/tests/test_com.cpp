@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     /* Default to the versioned build. The text service DLL carries a version in
      * its name (Windows locks a loaded DLL), so a fixed default silently tests
      * a stale file and reports on code that is not the code being developed. */
-    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.6.0.dll";
+    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.6.1.dll";
 
     HMODULE module = LoadLibraryA(path);
     if (!module) {
