@@ -437,6 +437,10 @@ bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
 
     switch (decision.action) {
         case Action::Compose:
+            /* Once per composition, not per keystroke: the button cannot be
+             * clicked while the user is mid-word, and a stat() on every key
+             * would be paying for nothing. */
+            if (!engine_.isComposing()) ApplySettingsIfChanged();
             engine_.feedKey(key.ch);
             UpdateComposition(context, widen(engine_.composing()));
             ShowCandidates();
@@ -723,6 +727,34 @@ void TextService::ApplySettings() {
     } else {
         log("output script not accepted: " + config.output);
     }
+    /* Record the stamp here too, so the per-composition check below does not
+     * redo this work on the very next keystroke. */
+    WIN32_FILE_ATTRIBUTE_DATA attributes;
+    if (GetFileAttributesExW((moduleDirectory + L"\\pingzhu.ini").c_str(),
+                             GetFileExInfoStandard, &attributes)) {
+        ULARGE_INTEGER stamp;
+        stamp.LowPart = attributes.ftLastWriteTime.dwLowDateTime;
+        stamp.HighPart = attributes.ftLastWriteTime.dwHighDateTime;
+        settingsStamp_ = stamp.QuadPart;
+    }
+}
+
+void TextService::ApplySettingsIfChanged() {
+    if (!engineReady_) return;
+    WIN32_FILE_ATTRIBUTE_DATA attributes;
+    const std::wstring path = moduleDir() + L"\\pingzhu.ini";
+    if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &attributes)) return;
+    ULARGE_INTEGER stamp;
+    stamp.LowPart = attributes.ftLastWriteTime.dwLowDateTime;
+    stamp.HighPart = attributes.ftLastWriteTime.dwHighDateTime;
+    if (stamp.QuadPart == settingsStamp_) return;
+
+    const std::string before = engine_.outputScript();
+    ApplySettings();
+    if (engine_.outputScript() != before) {
+        log("output script = " + engine_.outputScript() + " (settings file changed)");
+    }
+    settingsStamp_ = stamp.QuadPart;
 }
 
 void TextService::EnsureEngineLoaded() {

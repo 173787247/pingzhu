@@ -92,6 +92,11 @@ private:
     void SetDisplayAttribute(TfEditCookie ec, ITfContext *context);
     void EnsureEngineLoaded();
     void ApplySettings();
+    /* Cheap liveness check for the settings file. The floating 繁／簡 button
+     * lives in another process, so without this a click on it would not reach
+     * the application being typed into until the input method was switched
+     * away and back — which reads as "the button does nothing". */
+    void ApplySettingsIfChanged();
     void ShowCandidates();
     void HideCandidates();
 
@@ -117,6 +122,8 @@ private:
     bool sawFirstKey_ = false;
     bool reportedTestKey_ = false;
     bool reportedNotReady_ = false;
+    /* Last write time of pingzhu.ini that we have already acted on. */
+    unsigned long long settingsStamp_ = 0;
     std::wstring dataDir_;
 };
 

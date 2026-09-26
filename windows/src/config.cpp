@@ -74,6 +74,17 @@ Config loadConfig(const std::wstring &moduleDir) {
      * in place rather than reaching the engine, which would reject it anyway and
      * leave the user with no idea why their edit did nothing. */
     if (output == "traditional" || output == "simplified") config.output = output;
+    const std::string x = configValue(text, "status_x");
+    const std::string y = configValue(text, "status_y");
+    if (!x.empty() && !y.empty()) {
+        try {
+            config.statusX = std::stoi(x);
+            config.statusY = std::stoi(y);
+        } catch (...) {
+            /* A hand-edited file with a typo must not stop the input method; the
+             * button simply falls back to its default corner. */
+        }
+    }
     return config;
 }
 
@@ -121,6 +132,50 @@ bool saveOutputScript(const std::wstring &moduleDir, const std::string &script) 
     FILE *file = _wfopen(path.c_str(), L"wb");
     if (!file) return false;
     fwrite(out.data(), 1, out.size(), file);
+    fclose(file);
+    return true;
+}
+
+bool saveStatusPosition(const std::wstring &moduleDir, int x, int y) {
+    const std::wstring path = configPath(moduleDir);
+    std::string text = readFile(path);
+
+    auto replaceKey = [](const std::string &input, const std::string &key,
+                         const std::string &value) {
+        std::string out;
+        bool replaced = false;
+        size_t pos = 0;
+        while (pos <= input.size()) {
+            size_t end = input.find('\n', pos);
+            if (end == std::string::npos) end = input.size();
+            const std::string line = input.substr(pos, end - pos);
+            const std::string trimmed = trim(line);
+            if (!replaced && !trimmed.empty() && trimmed[0] != '#' && trimmed[0] != ';') {
+                const size_t equals = trimmed.find('=');
+                if (equals != std::string::npos && trim(trimmed.substr(0, equals)) == key) {
+                    out += key + " = " + value + "\r\n";
+                    replaced = true;
+                    pos = end + 1;
+                    continue;
+                }
+            }
+            if (end < input.size()) {
+                out += line + "\r\n";
+            } else if (!line.empty()) {
+                out += line;
+            }
+            pos = end + 1;
+        }
+        if (!replaced) out += key + " = " + value + "\r\n";
+        return out;
+    };
+
+    text = replaceKey(text, "status_x", std::to_string(x));
+    text = replaceKey(text, "status_y", std::to_string(y));
+
+    FILE *file = _wfopen(path.c_str(), L"wb");
+    if (!file) return false;
+    fwrite(text.data(), 1, text.size(), file);
     fclose(file);
     return true;
 }

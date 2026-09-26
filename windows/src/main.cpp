@@ -19,11 +19,13 @@
 #include <windows.h>
 #include <shellapi.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "candidate_window.h"
 #include "config.h"
+#include "status_window.h"
 #include "data_dir.h"
 #include "engine_api.h"
 #include "inject.h"
@@ -40,6 +42,7 @@ constexpr int kMenuToggle = 100;
 constexpr int kMenuExit = 101;
 constexpr int kMenuTraditional = 110;
 constexpr int kMenuSimplified = 111;
+constexpr int kMenuShowStatus = 120;
 
 HWND g_window = nullptr;
 HHOOK g_hook = nullptr;
@@ -50,6 +53,11 @@ pingzhu::Engine g_engine;
 pingzhu::CandidateWindow g_candidates;
 
 pingzhu::Config g_config;
+/* The floating 繁／簡 button. Owned here rather than by the text service: the
+ * text service runs inside every application, and one button per process would
+ * put a row of them on screen. This process is the only one. */
+std::unique_ptr<pingzhu::StatusWindow> g_status;
+bool g_indicatorOnly = false;
 
 std::wstring executableDir() {
     wchar_t path[MAX_PATH] = {0};
@@ -97,6 +105,16 @@ void refreshCandidateWindow() {
     int count = g_engine.candidateCount();
     for (int i = 0; i < count; ++i) view.candidates.push_back(g_engine.candidateAt(i));
     g_candidates.show(view);
+}
+
+/* Applies a script choice from anywhere — tray menu, hotkey, floating button —
+ * and writes it back so every other reader agrees. */
+void applyOutputScript(const char *script) {
+    if (!g_engine.setOutputScript(script)) return;
+    g_config.output = script;
+    pingzhu::saveOutputScript(executableDir(), script);
+    refreshCandidateWindow();
+    if (g_status) g_status->refresh();
 }
 
 void commitAndInject(const std::string &text) {
@@ -156,15 +174,9 @@ void performAction(pingzhu::Action action, int arg, char ch) {
             g_engine.reset();
             refreshCandidateWindow();
             break;
-        case Action::ToggleScript: {
-            const char *next = g_config.output == "simplified" ? "traditional" : "simplified";
-            if (g_engine.setOutputScript(next)) {
-                g_config.output = next;
-                pingzhu::saveOutputScript(executableDir(), next);
-                refreshCandidateWindow();
-            }
+        case Action::ToggleScript:
+            applyOutputScript(g_config.output == "simplified" ? "traditional" : "simplified");
             break;
-        }
         case Action::Pass:
         default:
             break;
@@ -268,6 +280,7 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                                                                    : kMenuTraditional,
                                    MF_BYCOMMAND);
                 AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(output), L"輸出字形");
+                AppendMenuW(menu, MF_STRING, kMenuShowStatus, L"顯示狀態按鈕");
                 AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
                 AppendMenuW(menu, MF_STRING, kMenuExit, L"結束");
                 SetForegroundWindow(hwnd);
@@ -279,13 +292,13 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_COMMAND:
             if (LOWORD(wParam) == kMenuToggle) setChineseMode(!g_chineseMode);
             if (LOWORD(wParam) == kMenuTraditional || LOWORD(wParam) == kMenuSimplified) {
-                const char *script =
-                    (LOWORD(wParam) == kMenuSimplified) ? "simplified" : "traditional";
-                if (g_engine.setOutputScript(script)) {
-                    g_config.output = script;
-                    pingzhu::saveOutputScript(executableDir(), script);
-                    refreshCandidateWindow();
-                }
+                applyOutputScript(LOWORD(wParam) == kMenuSimplified ? "simplified" : "traditional");
+            }
+            if (LOWORD(wParam) == kMenuShowStatus && g_status) {
+                /* Right-clicking the button hides it, so this is how it comes
+                 * back without hunting for the config file. */
+                g_status->setPosition(g_status->rect().left, g_status->rect().top);
+                ShowWindow(FindWindowW(L"PingZhuStatusWindow", nullptr), SW_SHOWNOACTIVATE);
             }
             if (LOWORD(wParam) == kMenuExit) PostQuitMessage(0);
             return 0;
@@ -303,6 +316,12 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 }  // namespace
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
+    /* `--indicator` runs only the floating button: no keyboard hook, so it can
+     * sit alongside the TSF text service, which is the version most people will
+     * actually type with. Two input paths at once would fight over every key. */
+    for (int i = 1; i < __argc; ++i) {
+        if (__wargv[i] && wcscmp(__wargv[i], L"--indicator") == 0) g_indicatorOnly = true;
+    }
     /* One IME per session; a second copy would fight over the hook. */
     HANDLE mutex = CreateMutexW(nullptr, TRUE, L"PingZhuIME.SingleInstance");
     if (mutex && GetLastError() == ERROR_ALREADY_EXISTS) {
@@ -350,7 +369,30 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     Shell_NotifyIconW(NIM_ADD, &nid);
 
     RegisterHotKey(g_window, kHotkeyId, MOD_CONTROL | MOD_ALT, 'Z');
-    g_hook = SetWindowsHookExW(WH_KEYBOARD_LL, keyboardHook, instance, 0);
+    if (!g_indicatorOnly) {
+        g_hook = SetWindowsHookExW(WH_KEYBOARD_LL, keyboardHook, instance, 0);
+    }
+
+    /* The floating button is created in both modes: in normal mode it is the
+     * visible state indicator the language bar failed to provide, and in
+     * indicator mode it is the whole point. */
+    if (g_engine.valid()) {
+        g_status = std::make_unique<pingzhu::StatusWindow>(
+            []() { return g_config.output; },
+            [](const std::string &script) {
+                applyOutputScript(script.c_str());
+                pingzhu::saveStatusPosition(executableDir(),
+                                            g_status ? g_status->rect().left : 0,
+                                            g_status ? g_status->rect().top : 0);
+            });
+        if (g_status->create(instance)) {
+            if (g_config.statusX != INT_MIN && g_config.statusY != INT_MIN) {
+                g_status->setPosition(g_config.statusX, g_config.statusY);
+            }
+        } else {
+            g_status.reset();
+        }
+    }
 
     if (!g_engine.valid()) {
         std::wstring message = L"引擎載入失敗，將只顯示提示。\n\n" +
@@ -359,19 +401,28 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     } else {
         g_engine.loadUserDictionaryFile(userDictPath());
         if (!g_engine.setOutputScript(g_config.output.c_str())) {
-            /* Older core without the entry point, or an unknown value: say so in
-             * the balloon rather than letting the setting silently do nothing. */
             g_config.output = g_engine.outputScript();
         }
-        std::wstring message =
-            L"平注 PingZhu 已在系統匣執行。\n\n"
-            L"　Ctrl+Alt+Z　切換中文／英文\n"
-            L"　托盤左鍵　　同上\n"
-            L"　托盤右鍵　　選單\n\n"
-            L"打 su3cl3 會出現「你好」。空白鍵開啟候選、再按空白下一頁，\n"
-            L"開啟後 1-9,0 選字。";
-        // A non-blocking hint: a modal box at startup would steal focus from
-        // whatever the user was doing.
+        /* The balloon describes what this mode can actually do. In indicator
+         * mode there is no keyboard hook, so advertising Ctrl+Alt+Z would be
+         * telling the user about a key that does nothing. */
+        std::wstring message;
+        if (g_indicatorOnly) {
+            message =
+                L"平注 PingZhu 狀態按鈕已在執行。\n\n"
+                L"　左鍵點按鈕　　切換繁體／簡體\n"
+                L"　拖曳按鈕　　　移到順手的位置\n"
+                L"　右鍵點按鈕　　隱藏（托盤選單可叫回）\n"
+                L"　Ctrl+Alt+S　　切換繁體／簡體（打字時）";
+        } else {
+            message =
+                L"平注 PingZhu 已在系統匣執行。\n\n"
+                L"　Ctrl+Alt+Z　切換中文／英文\n"
+                L"　Ctrl+Alt+S　切換繁體／簡體\n"
+                L"　托盤左鍵　　切換中英\n"
+                L"　托盤右鍵　　選單\n\n"
+                L"打 su3cl3 再按空白，會出現「你好」。";
+        }
         NOTIFYICONDATAW balloon = nid;
         balloon.uFlags = NIF_INFO;
         balloon.dwInfoFlags = NIIF_INFO;

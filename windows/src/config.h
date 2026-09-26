@@ -13,6 +13,7 @@
 #ifndef PINGZHU_CONFIG_H
 #define PINGZHU_CONFIG_H
 
+#include <climits>
 #include <string>
 
 namespace pingzhu {
@@ -20,6 +21,11 @@ namespace pingzhu {
 struct Config {
     /* "traditional" or "simplified" */
     std::string output = "traditional";
+
+    /* Where the floating 繁／簡 button was left. INT_MIN means "never moved",
+     * which is different from a position that happens to be off-screen. */
+    int statusX = INT_MIN;
+    int statusY = INT_MIN;
 
     /* Resolved from the same directory search the data files use. */
     std::wstring path;
@@ -37,6 +43,9 @@ void writeDefaultConfigIfMissing(const std::wstring &moduleDir);
 /* Persist just the output script, preserving nothing else — the file is
  * rewritten from the current values, with the comments kept. */
 bool saveOutputScript(const std::wstring &moduleDir, const std::string &script);
+
+/* Remember where the floating button was dragged to. */
+bool saveStatusPosition(const std::wstring &moduleDir, int x, int y);
 
 /* Trimmed value for `key`, or "" when absent. Exposed for tests. */
 std::string configValue(const std::string &text, const std::string &key);
