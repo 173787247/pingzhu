@@ -85,6 +85,13 @@ HRESULT registerProfiles() {
                                  CLSID_PingZhuTextService);
     categories->RegisterCategory(CLSID_PingZhuTextService, GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER,
                                  CLSID_PingZhuTextService);
+    /* Without this the language bar refuses every item with E_FAIL. It is not a
+     * hint or an optimisation: `ITfLangBarItemMgr::AddItem` checks that the
+     * service is registered as UI-element-enabled, and a service that forgot to
+     * say so is treated as one that has no UI to offer — the call fails with an
+     * error that explains nothing, and the button simply never appears. */
+    categories->RegisterCategory(CLSID_PingZhuTextService, GUID_TFCAT_TIPCAP_UIELEMENTENABLED,
+                                 CLSID_PingZhuTextService);
     categories->Release();
     return S_OK;
 }
@@ -97,6 +104,9 @@ HRESULT unregisterProfiles() {
                                        CLSID_PingZhuTextService);
         categories->UnregisterCategory(CLSID_PingZhuTextService,
                                        GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER,
+                                       CLSID_PingZhuTextService);
+        categories->UnregisterCategory(CLSID_PingZhuTextService,
+                                       GUID_TFCAT_TIPCAP_UIELEMENTENABLED,
                                        CLSID_PingZhuTextService);
         categories->Release();
     }

@@ -90,6 +90,7 @@ void refreshCandidateWindow() {
     view.sentence = g_engine.sentence();
     view.selectionMode = g_engine.candidateWindowOpen();
     view.faithful = g_engine.outputIsFaithful();
+    view.simplified = g_config.output == "simplified";
     view.pageIndex = g_engine.pageIndex();
     view.pageCount = g_engine.pageCount();
     view.cursor = 0;

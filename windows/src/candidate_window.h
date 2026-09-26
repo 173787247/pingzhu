@@ -26,6 +26,10 @@ struct CandidateView {
     int cursor = 0;        /* which syllable the window is anchored to */
     bool selectionMode = false;
     bool faithful = true;  /* false => the output is a guess, show it differently */
+    /* Shown in the status line. "What is displayed is what will be output" is
+     * the whole point of a script indicator: a mode you cannot see is a mode you
+     * forget you are in. */
+    bool simplified = false;
     /* When the caller knows where the caret is — a TSF text service does, via
      * ITfContextView::GetTextExt — it says so here instead of letting the window
      * guess from the foreground thread. */

@@ -209,10 +209,19 @@ void CandidateWindow::paint(HDC target) {
     std::wstring preview = L"→ " + widen(view_.sentence);
     TextOutW(dc, kPadX, y2 + 26, preview.c_str(), static_cast<int>(preview.size()));
 
+    /* The script comes first in the status line, and in colour: it changes what
+     * every character on screen will become, so it is the most important thing
+     * the window has to say. */
+    const wchar_t *script = view_.simplified ? L"簡體" : L"繁體";
     std::wstring hint = view_.selectionMode ? L"選字模式（1-9,0 選字，空白換頁）"
                                             : L"打字模式（空白送出，↓ 開啟選字）";
+    SIZE sScript = {0};
+    GetTextExtentPoint32W(dc, script, static_cast<int>(wcslen(script)), &sScript);
     SIZE sHint = {0};
     GetTextExtentPoint32W(dc, hint.c_str(), static_cast<int>(hint.size()), &sHint);
+    const int right = std::max<int>(kPadX, static_cast<int>(w - sHint.cx - sScript.cx - 14) - kPadX);
+    SetTextColor(dc, view_.simplified ? RGB(120, 200, 255) : RGB(255, 190, 120));
+    TextOutW(dc, right, y2 + 26, script, static_cast<int>(wcslen(script)));
     SetTextColor(dc, RGB(120, 128, 145));
     TextOutW(dc, std::max<int>(kPadX, static_cast<int>(w - sHint.cx) - kPadX), y2 + 26, hint.c_str(),
              static_cast<int>(hint.size()));

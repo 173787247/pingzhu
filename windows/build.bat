@@ -69,7 +69,7 @@ rem cosmetic: Windows keeps a loaded DLL locked for the lifetime of every proces
 rem that mapped it, so a stable name means an upgrade cannot replace the file
 rem while any application is running. Registering a new name sidesteps it, and
 rem the old file is removed on the next reboot.
-set TSFDLL=pingzhu-tsf-0.7.1.dll
+set TSFDLL=pingzhu-tsf-0.7.3.dll
 
 echo [build] %TSFDLL%
 cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\data_dir.cpp src\log.cpp src\config.cpp ^
