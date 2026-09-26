@@ -14,6 +14,7 @@
 
 use std::collections::HashSet;
 
+use crate::converter::{Converter, OutputScript};
 use crate::dictionary::{Dictionary, Entry};
 use crate::grid::{CandidateOrder, GridOptions, GridPath, ReadingGrid};
 use crate::keyboard::Layout;
@@ -56,6 +57,11 @@ pub struct EngineOptions {
     pub promotion_epsilon: f64,
     pub candidate_order: CandidateOrder,
     pub learn_from_commit: bool,
+    /// Traditional -> Simplified table. Injected rather than loaded here so the
+    /// engine keeps knowing nothing about the filesystem.
+    pub converter: Converter,
+    /// Which script leaves the engine. Input is always Traditional.
+    pub output_script: OutputScript,
 }
 
 impl Default for EngineOptions {
@@ -67,6 +73,8 @@ impl Default for EngineOptions {
             promotion_epsilon: 0.001,
             candidate_order: CandidateOrder::default(),
             learn_from_commit: false,
+            converter: Converter::identity(),
+            output_script: OutputScript::Traditional,
         }
     }
 }
@@ -86,10 +94,16 @@ pub struct InputEngine {
     candidate_offset: usize,
     candidates_open: bool,
     segmentation: Option<Segmentation>,
+    converter: Converter,
+    output_script: OutputScript,
 }
 
 impl InputEngine {
-    pub fn new(dict: Dictionary, inventory: HashSet<String>, options: EngineOptions) -> Self {
+    pub fn new(dict: Dictionary, inventory: HashSet<String>, mut options: EngineOptions) -> Self {
+        // Taken out of the options before they are moved into the struct: the
+        // engine keeps its own copy so set_converter() can replace it later.
+        let converter = std::mem::take(&mut options.converter);
+        let output_script = options.output_script;
         let mut engine = InputEngine {
             dict,
             inventory,
@@ -104,6 +118,8 @@ impl InputEngine {
             candidate_offset: 0,
             candidates_open: false,
             segmentation: None,
+            converter,
+            output_script,
         };
         engine.decode();
         engine
@@ -199,7 +215,28 @@ impl InputEngine {
     }
 
     pub fn best_sentence(&self) -> String {
-        self.path.as_ref().map(|p| p.words.join("")).unwrap_or_default()
+        let text = self.path.as_ref().map(|p| p.words.join("")).unwrap_or_default();
+        self.out(&text)
+    }
+
+    /// Which script the engine emits. The input side is unaffected either way,
+    /// because readings and the language model are Traditional no matter what
+    /// the user wants to read.
+    pub fn set_output_script(&mut self, script: OutputScript) {
+        self.output_script = script;
+    }
+
+    pub fn output_script(&self) -> OutputScript {
+        self.output_script
+    }
+
+    pub fn set_converter(&mut self, converter: Converter) {
+        self.converter = converter;
+    }
+
+    /// The single place output crosses from Traditional to the user's script.
+    fn out(&self, text: &str) -> String {
+        self.converter.apply(text, self.output_script)
     }
 
     pub fn best_score(&self) -> f64 {
@@ -244,7 +281,14 @@ impl InputEngine {
         let page_index = self.candidate_offset / CANDIDATE_PAGE_SIZE;
         let end = (self.candidate_offset + CANDIDATE_PAGE_SIZE).min(total);
         CandidatePage {
-            entries: self.all_candidates[self.candidate_offset.min(total)..end].to_vec(),
+            entries: self.all_candidates[self.candidate_offset.min(total)..end]
+                .iter()
+                .map(|entry| {
+                    let mut converted = entry.clone();
+                    converted.word = self.out(&entry.word);
+                    converted
+                })
+                .collect(),
             cursor: self.cursor_index,
             offset: self.candidate_offset,
             page_index,
@@ -375,6 +419,13 @@ impl InputEngine {
             self.grid_options(),
         );
         grid.candidates_for_span(syllable_index, limit)
+            .into_iter()
+            .map(|entry| {
+                let mut converted = entry;
+                converted.word = self.out(&converted.word);
+                converted
+            })
+            .collect()
     }
 
     /// Pick candidate `index` for the span starting at `syllable_index`, decode
@@ -415,11 +466,14 @@ impl InputEngine {
             grid.best_path().words.join("")
         };
 
+        // The user dictionary keeps the Traditional word even when the user
+        // reads Simplified: the key is the Traditional word, and storing the
+        // converted form would teach a word the model can never match against.
         if let Some(ud) = self.user_dict.as_mut() {
             ud.record(&entry.word, &entry.reading);
         }
         self.reset();
-        format!("{head}{}{tail}", entry.word)
+        self.out(&format!("{head}{}{tail}", entry.word))
     }
 
     // ------------------------------------------------------------- decoding

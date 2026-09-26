@@ -42,7 +42,7 @@ set COMMON=/nologo /std:c++17 /EHsc /W4 /O2 /MD /utf-8 /DNOMINMAX /DWIN32_LEAN_A
 set LIBS=user32.lib shell32.lib gdi32.lib
 
 echo [build] pingzhu-ime.exe
-cl %COMMON% src\main.cpp src\router.cpp src\engine_api.cpp src\candidate_window.cpp src\inject.cpp src\data_dir.cpp /Fe:pingzhu-ime.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:WINDOWS
+cl %COMMON% src\main.cpp src\router.cpp src\engine_api.cpp src\candidate_window.cpp src\inject.cpp src\data_dir.cpp src\config.cpp /Fe:pingzhu-ime.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:WINDOWS
 if errorlevel 1 exit /b 1
 
 echo [build] pingzhu-router-test.exe
@@ -69,10 +69,10 @@ rem cosmetic: Windows keeps a loaded DLL locked for the lifetime of every proces
 rem that mapped it, so a stable name means an upgrade cannot replace the file
 rem while any application is running. Registering a new name sidesteps it, and
 rem the old file is removed on the next reboot.
-set TSFDLL=pingzhu-tsf-0.5.2.dll
+set TSFDLL=pingzhu-tsf-0.6.0.dll
 
 echo [build] %TSFDLL%
-cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\data_dir.cpp src\log.cpp ^
+cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\data_dir.cpp src\log.cpp src\config.cpp ^
    /Fo:build\tsf\ /LD /Fe:%TSFDLL% ^
    /link %TSFLIBS% /DEF:tsf\pingzhu-tsf.def /SUBSYSTEM:WINDOWS
 if errorlevel 1 exit /b 1

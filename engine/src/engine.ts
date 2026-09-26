@@ -23,6 +23,7 @@ import {
   ReadingGrid, type CandidateOrder, type Entry, type GridPath, type ReadingGridOptions,
 } from "./grid.ts";
 import type { UserDictionary } from "./userdict.ts";
+import { Converter, type OutputScript } from "./converter.ts";
 
 export interface EngineOptions {
   layout?: string | KeyboardLayout;
@@ -36,6 +37,14 @@ export interface EngineOptions {
   promotionEpsilon?: number;
   /** candidate window ordering; see ReadingGridOptions.candidateOrder */
   candidateOrder?: CandidateOrder;
+  /**
+   * Traditional -> Simplified table. Injected rather than loaded here so the
+   * engine keeps knowing nothing about the filesystem — the browser demo has no
+   * files to read, and it still gets the feature.
+   */
+  converter?: Converter;
+  /** Which script leaves the engine. Input is always Traditional. */
+  outputScript?: OutputScript;
   /**
    * Whether committing the auto-selected sentence counts as teaching.
    *
@@ -97,6 +106,10 @@ export class InputEngine {
   private readonly promote: boolean | undefined;
   private readonly promotionEpsilon?: number;
   private readonly candidateOrder?: CandidateOrder;
+  /* Not readonly: setOutputScript() and setConverter() change them at runtime,
+   * which is how a shell exposes the 繁/簡 switch without rebuilding. */
+  private converter: Converter;
+  private outputScript: OutputScript;
 
   private keys: string[] = [];
   private syllables: string[] = [];
@@ -119,7 +132,31 @@ export class InputEngine {
     this.promote = options.promoteWordsOverDecomposition;
     this.promotionEpsilon = options.promotionEpsilon;
     this.candidateOrder = options.candidateOrder;
+    this.converter = options.converter ?? Converter.identity;
+    this.outputScript = options.outputScript ?? "traditional";
     this.decode();
+  }
+
+  /**
+   * Which script the engine emits. Set at construction or later; the input side
+   * is unaffected either way, because readings and the language model are
+   * Traditional no matter what the user wants to read.
+   */
+  setOutputScript(script: OutputScript): void {
+    this.outputScript = script;
+  }
+
+  getOutputScript(): OutputScript {
+    return this.outputScript;
+  }
+
+  setConverter(converter: Converter): void {
+    this.converter = converter;
+  }
+
+  /** The single place output crosses from Traditional to the user's script. */
+  private out(text: string): string {
+    return this.converter.apply(text, this.outputScript);
   }
 
   // ---------------------------------------------------------------- input
@@ -163,9 +200,9 @@ export class InputEngine {
     return this.keys.join("");
   }
 
-  /** The auto-selected sentence for the whole buffer. */
+  /** The auto-selected sentence for the whole buffer, in the output script. */
   get bestSentence(): string {
-    return this.path ? this.path.words.join("") : "";
+    return this.path ? this.out(this.path.words.join("")) : "";
   }
 
   get bestScore(): number {
@@ -218,10 +255,9 @@ export class InputEngine {
     const pageCount = Math.max(1, Math.ceil(total / CANDIDATE_PAGE_SIZE));
     const pageIndex = Math.floor(this.candidateOffset / CANDIDATE_PAGE_SIZE);
     return {
-      entries: this.allCandidates.slice(
-        this.candidateOffset,
-        this.candidateOffset + CANDIDATE_PAGE_SIZE,
-      ),
+      entries: this.allCandidates
+        .slice(this.candidateOffset, this.candidateOffset + CANDIDATE_PAGE_SIZE)
+        .map((entry) => ({ ...entry, word: this.out(entry.word) })),
       cursor: this.cursorIndex,
       offset: this.candidateOffset,
       pageIndex,
@@ -365,7 +401,9 @@ export class InputEngine {
     const grid = this.currentGrid && syllableIndex === this.cursorIndex
       ? this.currentGrid
       : new ReadingGrid(this.syllables, this.dict, this.gridOptions);
-    return grid.candidatesForSpan(syllableIndex, limit);
+    return grid
+      .candidatesForSpan(syllableIndex, limit)
+      .map((entry) => ({ ...entry, word: this.out(entry.word) }));
   }
 
   /**
@@ -395,9 +433,12 @@ export class InputEngine {
       ? new ReadingGrid(after, this.dict, this.gridOptions).bestPath().words.join("")
       : "";
 
+    /* The user dictionary keeps the Traditional word even when the user reads
+     * Simplified: the key is the Traditional word, and storing the converted
+     * form would teach a word the model can never match against. */
     this.userDict?.record(entry.word, entry.reading);
     this.reset();
-    return head + entry.word + tail;
+    return this.out(head + entry.word + tail);
   }
 
   // ------------------------------------------------------------- decoding

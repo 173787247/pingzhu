@@ -16,7 +16,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-VERSION="${1:-0.5.2}"
+VERSION="${1:-0.6.0}"
 STAGE="${PINGZHU_STAGE:-/mnt/c/Users/rchua/pingzhu-build}"
 DIST="$ROOT/dist"
 PKG="$DIST/pingzhu-$VERSION-win-x64"
@@ -34,14 +34,20 @@ rm -rf "$PKG"
 mkdir -p "$PKG"
 cp "$STAGE/pingzhu-ime.exe"    "$PKG/"
 cp "$STAGE/pingzhu_core.dll"   "$PKG/"
-# The text service DLL carries a version in its file name, so the package must
-# take whatever the build produced rather than a fixed name.
-cp "$STAGE"/pingzhu-tsf-*.dll "$PKG/"
+# The text service DLL carries a version in its file name. The staging directory
+# accumulates one per build (Windows will not let an old one be deleted while a
+# process still maps it), so take only the newest — shipping a stale copy would
+# let regtool register the wrong one.
+TSF_DLL="$(ls -t "$STAGE"/pingzhu-tsf-*.dll 2>/dev/null | head -1)"
+[ -n "$TSF_DLL" ] || { log "no pingzhu-tsf-*.dll in $STAGE"; exit 1; }
+cp "$TSF_DLL" "$PKG/"
 cp "$STAGE/pingzhu-regtool.exe" "$PKG/"
 cp "$STAGE/pingzhu-tsf-test.exe" "$PKG/" 2>/dev/null || true
 cp "$STAGE/pingzhu-router-test.exe" "$PKG/" 2>/dev/null || true
 cp "$STAGE/pingzhu-engine-test.exe" "$PKG/" 2>/dev/null || true
 cp "$ROOT/data/bopomofo-lm.tsv" "$PKG/"
+# The 繁/簡 table sits beside the language model; the engine finds it there.
+cp "$ROOT/data/ts-conversion.tsv" "$PKG/"
 
 # Scripts: CRLF so Notepad and cmd.exe are both happy; the .ps1 files carry a
 # UTF-8 BOM because Windows PowerShell 5.1 otherwise reads them as ANSI and the
@@ -54,6 +60,7 @@ text = open(src, encoding="utf-8-sig").read().replace("\r\n", "\n").replace("\n"
 open(dst, "w", encoding="utf-8-sig", newline="").write(text)
 PY
 done
+cp "$HERE/installer/pingzhu.ini" "$PKG/" 2>/dev/null || true
 for f in install.cmd uninstall.cmd install-languagebar.cmd uninstall-languagebar.cmd; do
   sed 's/\r$//; s/$/\r/' "$HERE/installer/$f" > "$PKG/$f"
 done

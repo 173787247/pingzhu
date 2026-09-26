@@ -55,7 +55,9 @@ bool Engine::load(const std::wstring &dllPath, const std::string &dataDir, const
               bind(module, "engine_prev_candidate_page", prevPage_) &&
               bind(module, "engine_move_candidate_cursor", moveCursor_) &&
               bind(module, "engine_select_candidate", selectCandidate_) &&
-              bind(module, "engine_commit", commit_);
+              bind(module, "engine_commit", commit_) &&
+              bind(module, "engine_set_output_script", setOutputScript_) &&
+              bind(module, "engine_output_script", outputScript_);
     if (!ok) {
         error_ = "pingzhu_core.dll is missing one or more ABI entry points";
         destroy();
@@ -113,6 +115,15 @@ bool Engine::loadUserDictionaryFile(const std::string &path) {
 bool Engine::saveUserDictionaryFile(const std::string &path) {
     if (!handle_ || !saveUserDict_) return false;
     return saveUserDict_(handle_, path.c_str());
+}
+
+bool Engine::setOutputScript(const char *script) {
+    if (!handle_ || !setOutputScript_) return false;
+    return setOutputScript_(handle_, script);
+}
+
+std::string Engine::outputScript() const {
+    return (handle_ && outputScript_) ? copyOut(outputScript_(handle_)) : "traditional";
 }
 
 bool Engine::feedKey(char ch) {

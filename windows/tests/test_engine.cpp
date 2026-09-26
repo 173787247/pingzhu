@@ -93,6 +93,46 @@ int main(int argc, char **argv) {
     expect("after teaching", engine.sentence(), "畜牲");
     engine.reset();
 
+    /* ------------------------------------------------- output script (繁/簡)
+     * The engine works in Traditional throughout; this only changes what leaves
+     * it. Checked through the C ABI because that is the surface the shells use,
+     * and a missing entry point there would be silent.
+     */
+    engine.reset();
+    expect("default output script", engine.outputScript(), "traditional");
+
+    for (const char *k = "ji394su3"; *k; ++k) engine.feedKey(*k);
+    expect("traditional sentence", engine.sentence(), "我愛你");
+    engine.reset();
+
+    if (!engine.setOutputScript("simplified")) {
+        std::printf("  FAIL setOutputScript(\"simplified\") was refused\n");
+        failures++;
+    } else {
+        std::printf("  ok   setOutputScript(\"simplified\")\n");
+    }
+    expect("script round-trips", engine.outputScript(), "simplified");
+
+    for (const char *k = "ji394su3"; *k; ++k) engine.feedKey(*k);
+    expect("simplified sentence", engine.sentence(), "我爱你");
+    expect("simplified commit", engine.commit(), "我爱你");
+
+    /* 乾坤 must survive: OpenCC carries 124 phrase entries whose whole purpose is
+     * to stop a character rule from firing inside them. Dropping those entries is
+     * a silent corruption, so it is checked rather than assumed. */
+    for (const char *k = "j0420"; *k; ++k) engine.feedKey(*k);
+    expect("simplified place name", engine.sentence(), "万丹");
+    engine.reset();
+
+    if (engine.setOutputScript("klingon")) {
+        std::printf("  FAIL an unknown script name was accepted\n");
+        failures++;
+    } else {
+        std::printf("  ok   unknown script name is refused\n");
+    }
+    expect("script unchanged after refusal", engine.outputScript(), "simplified");
+
+    engine.setOutputScript("traditional");
     engine.destroy();
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nall engine checks passed\n", failures);
     return failures ? 1 : 0;

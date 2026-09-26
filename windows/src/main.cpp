@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "candidate_window.h"
+#include "config.h"
 #include "data_dir.h"
 #include "engine_api.h"
 #include "inject.h"
@@ -37,6 +38,8 @@ constexpr UINT_PTR kTrayId = 1;
 constexpr int kHotkeyId = 1;
 constexpr int kMenuToggle = 100;
 constexpr int kMenuExit = 101;
+constexpr int kMenuTraditional = 110;
+constexpr int kMenuSimplified = 111;
 
 HWND g_window = nullptr;
 HHOOK g_hook = nullptr;
@@ -45,6 +48,8 @@ HICON g_iconOn = nullptr;
 HICON g_iconOff = nullptr;
 pingzhu::Engine g_engine;
 pingzhu::CandidateWindow g_candidates;
+
+pingzhu::Config g_config;
 
 std::wstring executableDir() {
     wchar_t path[MAX_PATH] = {0};
@@ -245,6 +250,15 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 AppendMenuW(menu, MF_STRING, kMenuToggle,
                             g_chineseMode ? L"切換為英文" : L"切換為中文");
                 AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+                HMENU output = CreatePopupMenu();
+                AppendMenuW(output, MF_STRING, kMenuTraditional, L"繁體輸出");
+                AppendMenuW(output, MF_STRING, kMenuSimplified, L"簡體輸出");
+                CheckMenuRadioItem(output, kMenuTraditional, kMenuSimplified,
+                                   g_config.output == "simplified" ? kMenuSimplified
+                                                                   : kMenuTraditional,
+                                   MF_BYCOMMAND);
+                AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(output), L"輸出字形");
+                AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
                 AppendMenuW(menu, MF_STRING, kMenuExit, L"結束");
                 SetForegroundWindow(hwnd);
                 TrackPopupMenu(menu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, nullptr);
@@ -254,6 +268,15 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         case WM_COMMAND:
             if (LOWORD(wParam) == kMenuToggle) setChineseMode(!g_chineseMode);
+            if (LOWORD(wParam) == kMenuTraditional || LOWORD(wParam) == kMenuSimplified) {
+                const char *script =
+                    (LOWORD(wParam) == kMenuSimplified) ? "simplified" : "traditional";
+                if (g_engine.setOutputScript(script)) {
+                    g_config.output = script;
+                    pingzhu::saveOutputScript(executableDir(), script);
+                    refreshCandidateWindow();
+                }
+            }
             if (LOWORD(wParam) == kMenuExit) PostQuitMessage(0);
             return 0;
 
@@ -279,6 +302,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     }
 
     std::wstring exeDir = executableDir();
+    /* Settings first: the file is created with commented defaults when missing,
+     * so the 繁/簡 switch is discoverable rather than a secret. */
+    pingzhu::writeDefaultConfigIfMissing(exeDir);
+    g_config = pingzhu::loadConfig(exeDir);
     std::string error;
     if (!g_engine.load(exeDir + L"\\pingzhu_core.dll", resolveDataDir(), "standard", nullptr)) {
         error = g_engine.lastError();
@@ -321,6 +348,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
         MessageBoxW(nullptr, message.c_str(), kAppName, MB_OK | MB_ICONERROR);
     } else {
         g_engine.loadUserDictionaryFile(userDictPath());
+        if (!g_engine.setOutputScript(g_config.output.c_str())) {
+            /* Older core without the entry point, or an unknown value: say so in
+             * the balloon rather than letting the setting silently do nothing. */
+            g_config.output = g_engine.outputScript();
+        }
         std::wstring message =
             L"平注 PingZhu 已在系統匣執行。\n\n"
             L"　Ctrl+Alt+Z　切換中文／英文\n"

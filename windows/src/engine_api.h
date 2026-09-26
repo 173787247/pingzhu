@@ -41,6 +41,10 @@ public:
     bool loadUserDictionaryFile(const std::string &path);
     bool saveUserDictionaryFile(const std::string &path);
 
+    /* "traditional" or "simplified". Returns false for an unknown name. */
+    bool setOutputScript(const char *script);
+    std::string outputScript() const;
+
     bool feedKey(char ch);
     bool backspace();
     void reset();
@@ -101,6 +105,8 @@ private:
     bool (*moveCursor_)(EngineHandle *, int32_t) = nullptr;
     const char *(*selectCandidate_)(EngineHandle *, std::size_t) = nullptr;
     const char *(*commit_)(EngineHandle *) = nullptr;
+    bool (*setOutputScript_)(EngineHandle *, const char *) = nullptr;
+    const char *(*outputScript_)(EngineHandle *) = nullptr;
 };
 
 }  // namespace pingzhu

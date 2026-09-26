@@ -61,3 +61,12 @@ purposes.
 "RIME", "libchewing", "新酷音", "McBopomofo", "小麥注音" and other project names
 are the property of their respective owners and are referenced here for
 identification only.
+
+--------------------------------------------------------------------------------
+繁體轉簡體對照表
+  data/ts-conversion.tsv 衍生自 Open Chinese Convert (OpenCC)
+    https://github.com/BYVoid/OpenCC
+    Copyright (c) 2010-2024 Carbo Kuo and contributors
+    Licensed under the Apache License, Version 2.0
+    http://www.apache.org/licenses/LICENSE-2.0
+  由 data/build-ts.mjs 從 TSCharacters.txt 與 TSPhrases.txt 產生。

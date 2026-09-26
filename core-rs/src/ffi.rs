@@ -20,6 +20,7 @@ use std::cell::RefCell;
 use std::ffi::{c_char, CStr, CString};
 use std::path::Path;
 
+use crate::converter::{Converter, OutputScript};
 use crate::dictionary::{build_syllable_inventory, Dictionary};
 use crate::engine::{EngineOptions, InputEngine};
 use crate::grid::CandidateOrder;
@@ -81,7 +82,21 @@ pub unsafe extern "C" fn engine_create(
     let Ok(dict) = Dictionary::load(&lm) else { return std::ptr::null_mut() };
     let Ok(inventory) = build_syllable_inventory(&lm) else { return std::ptr::null_mut() };
 
-    let engine = InputEngine::new(dict, inventory, EngineOptions { layout, candidate_order: order, ..Default::default() })
+    /* The Traditional -> Simplified table lives next to the language model. It
+     * is optional: without it the engine still works and simply cannot convert,
+     * which is the right failure mode for a missing data file. */
+    let conversion = Path::new(&dir).join("ts-conversion.tsv");
+    let converter = match std::fs::read_to_string(&conversion) {
+        Ok(text) => Converter::from_text(&text),
+        Err(_) => Converter::identity(),
+    };
+
+    let engine = InputEngine::new(dict, inventory, EngineOptions {
+            layout,
+            candidate_order: order,
+            converter,
+            ..Default::default()
+        })
         // Always attach an empty user dictionary. Without this, a fresh install
         // has nowhere to record a correction: `select_candidate` would teach
         // nothing, `engine_save_user_dictionary` would fail, and the user would
@@ -89,6 +104,43 @@ pub unsafe extern "C" fn engine_create(
         // have a dictionary file, which a new user by definition does not.
         .with_user_dictionary(UserDictionary::new(Default::default()));
     Box::into_raw(Box::new(EngineHandle { engine }))
+}
+
+/// Select the output script: `"traditional"` or `"simplified"`.
+///
+/// Input, the language model and the user dictionary are Traditional regardless;
+/// this only decides which script leaves the engine. Returns false for an
+/// unknown name rather than silently keeping the old value, so a shell that
+/// misspells it finds out.
+///
+/// # Safety
+/// `handle` must come from `engine_create` and not have been destroyed;
+/// `script` must be a NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn engine_set_output_script(
+    handle: *mut EngineHandle,
+    script: *const c_char,
+) -> bool {
+    let Some(handle) = (unsafe { handle.as_mut() }) else { return false };
+    let Some(name) = (unsafe { cstr(script) }) else { return false };
+    let Some(script) = OutputScript::from_id(&name) else { return false };
+    handle.engine.set_output_script(script);
+    true
+}
+
+/// The current output script, as a static string owned by the library.
+///
+/// # Safety
+/// `handle` must come from `engine_create` and not have been destroyed.
+#[no_mangle]
+pub unsafe extern "C" fn engine_output_script(handle: *mut EngineHandle) -> *const c_char {
+    let Some(handle) = (unsafe { handle.as_ref() }) else { return std::ptr::null() };
+    let id = handle.engine.output_script().id();
+    // Static, NUL-terminated, lives for the program's lifetime.
+    match id {
+        "simplified" => c"simplified".as_ptr(),
+        _ => c"traditional".as_ptr(),
+    }
 }
 
 /// # Safety

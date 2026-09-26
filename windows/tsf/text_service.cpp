@@ -3,6 +3,7 @@
 #include <functional>
 #include <new>
 
+#include "../src/config.h"
 #include "../src/data_dir.h"
 #include "../src/log.h"
 #include "../src/router.h"
@@ -680,6 +681,17 @@ void TextService::EnsureEngineLoaded() {
         return;
     }
     engine_.loadUserDictionaryFile(toUtf8(dataDir_ + L"\\pingzhu-userdict.txt"));
+
+    /* Settings live beside the DLL. A text service has no window and no tray
+     * icon, so a small text file is the only honest place for a switch. */
+    const std::wstring moduleDirectory = moduleDir();
+    writeDefaultConfigIfMissing(moduleDirectory);
+    const Config config = loadConfig(moduleDirectory);
+    if (!engine_.setOutputScript(config.output.c_str())) {
+        log("output script not accepted: " + config.output);
+    }
+    log("output script = " + engine_.outputScript());
+
     engineReady_ = true;
     log("engine ready");
 }

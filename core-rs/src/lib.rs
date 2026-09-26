@@ -24,6 +24,7 @@
 //! assert_eq!(engine.best_sentence(), "你好");
 //! ```
 
+pub mod converter;
 pub mod dictionary;
 pub mod engine;
 pub mod ffi;

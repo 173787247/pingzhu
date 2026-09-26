@@ -66,9 +66,16 @@ New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 # Flat layout: the executable, the core DLL and the language model all sit in one
 # directory, which keeps the self-extracting installer simple and means the
 # install directory can be moved anywhere afterwards.
-foreach ($file in @($ExeName, 'pingzhu_core.dll', 'bopomofo-lm.tsv', 'README.txt', 'uninstall.ps1')) {
+foreach ($file in @($ExeName, 'pingzhu_core.dll', 'bopomofo-lm.tsv', 'ts-conversion.tsv',
+                     'README.txt', 'uninstall.ps1')) {
     $p = Join-Path $SourceDir $file
     if (Test-Path $p) { Copy-Item $p $InstallDir -Force }
+}
+# The settings file is only placed when there is not one already: it holds the
+# user's 繁/簡 choice, and reinstalling must not silently reset it.
+$configSource = Join-Path $SourceDir 'pingzhu.ini'
+if ((Test-Path $configSource) -and -not (Test-Path (Join-Path $InstallDir 'pingzhu.ini'))) {
+    Copy-Item $configSource $InstallDir -Force
 }
 Write-Step '程式與語言模型已複製'
 
