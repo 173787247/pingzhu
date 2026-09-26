@@ -258,10 +258,37 @@ int main(int argc, char **argv) {
      */
     std::printf("\nsettings are re-read on every activation\n");
     {
-        wchar_t exePath[MAX_PATH] = {0};
-        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-        std::wstring dir(exePath);
-        dir = dir.substr(0, dir.find_last_of(L"\\/"));
+        /* The settings file is resolved from the *registered DLL's* directory,
+         * not this executable's. They are the same in the build tree and
+         * different everywhere else, so writing next to the test binary silently
+         * exercises a file no service ever reads — which is exactly how this
+         * passed in one layout and failed in another. */
+        std::wstring dir;
+        {
+            HKEY key = nullptr;
+            if (RegOpenKeyExW(
+                    HKEY_LOCAL_MACHINE,
+                    L"SOFTWARE\\Classes\\CLSID\\{C2A55EB0-4391-4204-ABCF-4631BEA80A8F}\\InprocServer32",
+                    0, KEY_READ | KEY_WOW64_64KEY, &key) == ERROR_SUCCESS) {
+                wchar_t dllPath[MAX_PATH] = {0};
+                DWORD size = sizeof(dllPath);
+                DWORD type = 0;
+                if (RegQueryValueExW(key, nullptr, nullptr, &type,
+                                     reinterpret_cast<BYTE *>(dllPath), &size) == ERROR_SUCCESS &&
+                    type == REG_SZ) {
+                    dir = dllPath;
+                    dir = dir.substr(0, dir.find_last_of(L"\\/"));
+                }
+                RegCloseKey(key);
+            }
+        }
+        if (dir.empty()) {
+            wchar_t exePath[MAX_PATH] = {0};
+            GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+            dir = exePath;
+            dir = dir.substr(0, dir.find_last_of(L"\\/"));
+        }
+        std::printf("  (settings file directory: %ls)\n", dir.c_str());
         std::wstring iniPath = dir + L"\\pingzhu.ini";
 
         auto readFile = [](const std::wstring &path) {
