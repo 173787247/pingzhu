@@ -211,6 +211,7 @@ $ node engine/bench.mjs 5000
 | [docs/02-architecture.md](docs/02-architecture.md) | 架構決策：為何寬鬆授權核心、為何四平台原生殼、為何不用 Flutter |
 | [docs/03-platform-matrix.md](docs/03-platform-matrix.md) | 四平台輸入法框架能力、簽章與上架限制、HarmonyOS 可行性 |
 | [docs/04-data-and-licensing.md](docs/04-data-and-licensing.md) | 每一個可用元件的授權、資料來源合規、地雷清單 |
+| [docs/08-self-built-data.md](docs/08-self-built-data.md) | **資料層可以自建**：Unihan 讀音／簡繁、詞頻公式、無監督新詞發現 |
 | [docs/05-roadmap.md](docs/05-roadmap.md) | MVP → v1 的路線、工作量估算、風險與退路 |
 | [docs/06-engine-design.md](docs/06-engine-design.md) | 引擎內部：切分演算法、讀字格、資料格式、評測方法 |
 | [docs/07-research-tooling.md](docs/07-research-tooling.md) | 本倉庫的調研工具鏈（可重現取證） |
