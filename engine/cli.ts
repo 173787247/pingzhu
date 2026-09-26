@@ -10,7 +10,7 @@
  * Interactive keys, following 自然輸入法:
  *   letters/digits   type bopomofo
  *   1 2 3 … 9 0      pick the 1st … 10th candidate on the page
- *   space            next page of ten
+ *   space            accept the composition (page the window when it is open)
  *   ← →              move the candidate window along the buffer
  *   Backspace        undo one keystroke
  *   Enter            commit the line
@@ -66,7 +66,7 @@ function render(engine) {
     `  → 中文    ${engine.bestSentence || "(尚無)"}   (score ${engine.bestScore.toFixed(2)})`,
     `  斷詞      ${segmentation}`,
     `  候選      ${cands || "-"}`,
-    `            ${label}　${engine.candidateWindowOpen ? "★ 選字模式（1-9,0 選字）" : "打字模式（數字是注音鍵；↓ 或空白開啟選字）"}　游標在第 ${engine.candidateCursor + 1} 音節`,
+    `            ${label}　${engine.candidateWindowOpen ? "★ 選字模式（1-9,0 選字，空白換頁）" : "打字模式（空白送出；數字是注音鍵；↓ 開啟選字）"}　游標在第 ${engine.candidateCursor + 1} 音節`,
   ].join("\n");
 }
 
@@ -96,7 +96,7 @@ function runInteractive(layout, order) {
     console.log(`PingZhu 注音引擎 — ${LAYOUTS[layout].label}　候選排序：${orderLabel(order)}`);
     console.log(`已輸入: ${committed.join("")}\n`);
     console.log(render(engine));
-    console.log("\n空白/↓=開啟選字（再按空白下一頁）　開啟後 1-9,0=選字　←→=移動游標　Backspace=退一格　Enter=送出　Esc=離開");
+    console.log("\n空白=送出　↓=開啟選字（開啟後 1-9,0=選字，空白=下一頁）　←→=移動游標　Backspace=退一格　Enter=送出　Esc=離開");
   };
 
   stdin.on("data", (chunk) => {
@@ -117,8 +117,14 @@ function runInteractive(layout, order) {
       } else if (ch === "\u007f" || ch === "\b") {
         engine.backspace();
       } else if (ch === " ") {
-        // space opens the candidate window, then pages through it
-        engine.nextCandidatePage();
+        // Space accepts the composition; while the candidate window is open the
+        // digits are selecting, so space pages instead.
+        if (engine.candidateWindowOpen) {
+          engine.nextCandidatePage();
+        } else {
+          const out = engine.commit();
+          if (out) committed.push(out);
+        }
       } else if (ch === "\u001b[B") {
         engine.openCandidateWindow();
       } else if (/[0-9]/.test(ch) && engine.candidateWindowOpen) {

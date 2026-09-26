@@ -16,7 +16,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-VERSION="${1:-0.5.1}"
+VERSION="${1:-0.5.2}"
 STAGE="${PINGZHU_STAGE:-/mnt/c/Users/rchua/pingzhu-build}"
 DIST="$ROOT/dist"
 PKG="$DIST/pingzhu-$VERSION-win-x64"

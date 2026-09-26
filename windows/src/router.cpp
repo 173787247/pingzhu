@@ -26,9 +26,18 @@ Decision route(const KeyEvent &key, const EngineState &state, bool chineseMode) 
 
     switch (key.kind) {
         case KeyKind::Space:
-            // Space opens the candidate window and then pages through it, which
-            // is how 自然輸入法 behaves. Outside a composition it is a space.
-            return state.composing ? Decision{Action::NextPage, 0} : Decision{Action::Pass, 0};
+            /* Space accepts what is being composed: type ㄋㄧˇ, press space, 你
+             * comes out. That is the flow every Taiwanese IME has and what
+             * people's fingers expect — making space page the candidate window
+             * instead means the most-pressed key in the input method does the
+             * one thing nobody asked for.
+             *
+             * While the window is open the digits are selecting, so space has
+             * nothing to accept and pages instead. Outside a composition it is
+             * an ordinary space. */
+            if (!state.composing) return {Action::Pass, 0};
+            return state.candidateWindowOpen ? Decision{Action::NextPage, 0}
+                                             : Decision{Action::Commit, 0};
 
         case KeyKind::Digit: {
             if (!state.composing) return {Action::Pass, 0};

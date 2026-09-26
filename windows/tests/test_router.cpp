@@ -76,8 +76,8 @@ int main() {
           route(key(KeyKind::Digit, '3'), composing, true), Action::Compose);
     check("1 composes (it is the ㄅ key)",
           route(key(KeyKind::Digit, '1'), composing, true), Action::Compose);
-    check("space pages the candidate window",
-          route(key(KeyKind::Space), composing, true), Action::NextPage);
+    check("space accepts the composition",
+          route(key(KeyKind::Space), composing, true), Action::Commit);
     check("down opens the candidates",
           route(key(KeyKind::ArrowDown), composing, true), Action::OpenCandidates);
     check("enter commits", route(key(KeyKind::Enter), composing, true), Action::Commit);
@@ -98,7 +98,8 @@ int main() {
           Action::SelectCandidate, 9);
     check("0 selects the tenth", route(key(KeyKind::Digit, '0'), selecting, true),
           Action::SelectCandidate, 10);
-    check("space still pages", route(key(KeyKind::Space), selecting, true), Action::NextPage);
+    check("space pages while selecting",
+          route(key(KeyKind::Space), selecting, true), Action::NextPage);
     check("up closes the list", route(key(KeyKind::ArrowUp), selecting, true),
           Action::CloseCandidates);
 

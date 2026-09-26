@@ -50,11 +50,26 @@ cp "$HERE"/tests/*.cpp "$STAGE/tests/"
 cp "$HERE"/tsf/*.h "$HERE"/tsf/*.cpp "$HERE"/tsf/*.def "$STAGE/tsf/"
 mkdir -p "$STAGE/tsf/tests" && cp "$HERE"/tsf/tests/*.cpp "$STAGE/tsf/tests/"
 # Move any locked predecessor aside, then place the new build.
-for existing in "$STAGE"/pingzhu_core*.dll "$STAGE"/pingzhu-tsf*.dll; do
+#
+# The suffix has to be unique per run: a fixed one collides with the previous
+# run's leftover, and moving *onto* a locked file fails with the same
+# "Permission denied" this is meant to avoid. Old copies cannot be deleted while
+# the processes holding them are alive, so they are swept on the next build that
+# can.
+# Only the engine DLL is moved aside. The text service DLL needs no such
+# handling: its name carries a version, so a new build is a new file and the
+# registered one is never disturbed. Renaming the *registered* file would break
+# the input method outright — Windows would report ERROR_MOD_NOT_FOUND the next
+# time anything tried to create the text service.
+stamp="$(date +%s)"
+for existing in "$STAGE"/pingzhu_core*.dll; do
   [ -e "$existing" ] || continue
-  mv -f "$existing" "$existing.previous" 2>/dev/null || true
+  case "$existing" in
+    *.previous.*|*.previous) continue ;;
+  esac
+  mv -f "$existing" "$existing.previous.$stamp" 2>/dev/null || true
 done
-rm -f "$STAGE"/pingzhu-tsf-*.dll.previous 2>/dev/null || true
+rm -f "$STAGE"/*.previous.* 2>/dev/null || true
 cp "$DLL" "$STAGE/"
 cp "$ROOT/data/bopomofo-lm.tsv" "$STAGE/data/"
 # MSVC's batch parser wants CRLF.

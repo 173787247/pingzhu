@@ -209,7 +209,8 @@ void CandidateWindow::paint(HDC target) {
     std::wstring preview = L"→ " + widen(view_.sentence);
     TextOutW(dc, kPadX, y2 + 26, preview.c_str(), static_cast<int>(preview.size()));
 
-    std::wstring hint = view_.selectionMode ? L"選字模式（1-9,0 選字）" : L"打字模式（↓ 或空白開啟選字）";
+    std::wstring hint = view_.selectionMode ? L"選字模式（1-9,0 選字，空白換頁）"
+                                            : L"打字模式（空白送出，↓ 開啟選字）";
     SIZE sHint = {0};
     GetTextExtentPoint32W(dc, hint.c_str(), static_cast<int>(hint.size()), &sHint);
     SetTextColor(dc, RGB(120, 128, 145));
