@@ -214,6 +214,8 @@ STDMETHODIMP TextService::ActivateEx(ITfThreadMgr *threadMgr, TfClientId clientI
     }
 
     EnsureEngineLoaded();
+    /* After the engine exists, and on every activation: see ApplySettings. */
+    ApplySettings();
     return S_OK;
 }
 
@@ -649,6 +651,29 @@ void TextService::HideCandidates() { candidates_.hide(); }
 
 /* ------------------------------------------------------------ engine load */
 
+/*
+ * Settings are re-read on every activation, not once when the engine loads.
+ *
+ * A text service has no window and no tray icon, so `pingzhu.ini` is the only
+ * place for a switch. Reading it once and caching the result means the user
+ * edits the file, switches input methods, and sees no change — with nothing
+ * anywhere to explain why. TSF does not promise a fresh object per activation,
+ * so the read has to happen where the activation does.
+ */
+void TextService::ApplySettings() {
+    if (!engineReady_) return;
+    const std::wstring moduleDirectory = moduleDir();
+    writeDefaultConfigIfMissing(moduleDirectory);
+    const Config config = loadConfig(moduleDirectory);
+    if (config.output == engine_.outputScript()) return;
+
+    if (engine_.setOutputScript(config.output.c_str())) {
+        log("output script = " + engine_.outputScript());
+    } else {
+        log("output script not accepted: " + config.output);
+    }
+}
+
 void TextService::EnsureEngineLoaded() {
     if (engineTried_) return;
     engineTried_ = true;
@@ -681,16 +706,6 @@ void TextService::EnsureEngineLoaded() {
         return;
     }
     engine_.loadUserDictionaryFile(toUtf8(dataDir_ + L"\\pingzhu-userdict.txt"));
-
-    /* Settings live beside the DLL. A text service has no window and no tray
-     * icon, so a small text file is the only honest place for a switch. */
-    const std::wstring moduleDirectory = moduleDir();
-    writeDefaultConfigIfMissing(moduleDirectory);
-    const Config config = loadConfig(moduleDirectory);
-    if (!engine_.setOutputScript(config.output.c_str())) {
-        log("output script not accepted: " + config.output);
-    }
-    log("output script = " + engine_.outputScript());
 
     engineReady_ = true;
     log("engine ready");

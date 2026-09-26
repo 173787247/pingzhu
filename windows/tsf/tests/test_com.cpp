@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     /* Default to the versioned build. The text service DLL carries a version in
      * its name (Windows locks a loaded DLL), so a fixed default silently tests
      * a stale file and reports on code that is not the code being developed. */
-    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.6.1.dll";
+    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.6.2.dll";
 
     HMODULE module = LoadLibraryA(path);
     if (!module) {
@@ -242,6 +242,96 @@ int main(int argc, char **argv) {
             }
             threadMgr->Deactivate();
             threadMgr->Release();
+        }
+    }
+
+    /* ------------------------------------------------- settings are re-read
+     * The failure this guards against is invisible from the outside: the user
+     * edits pingzhu.ini, switches input methods, and nothing changes — with no
+     * error anywhere. Settings used to be read once, when the engine loaded,
+     * so that is exactly what happened.
+     *
+     * The check is done through the log, because that is where the service
+     * records the script it actually applied. The user's own settings file is
+     * saved and restored: a test that leaves someone's configuration altered is
+     * worse than no test.
+     */
+    std::printf("\nsettings are re-read on every activation\n");
+    {
+        wchar_t exePath[MAX_PATH] = {0};
+        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+        std::wstring dir(exePath);
+        dir = dir.substr(0, dir.find_last_of(L"\\/"));
+        std::wstring iniPath = dir + L"\\pingzhu.ini";
+
+        auto readFile = [](const std::wstring &path) {
+            FILE *f = _wfopen(path.c_str(), L"rb");
+            if (!f) return std::string();
+            std::string out;
+            char buf[2048];
+            size_t n;
+            while ((n = fread(buf, 1, sizeof(buf), f)) > 0) out.append(buf, n);
+            fclose(f);
+            return out;
+        };
+        auto writeFile = [](const std::wstring &path, const std::string &text) {
+            FILE *f = _wfopen(path.c_str(), L"wb");
+            if (!f) return false;
+            fwrite(text.data(), 1, text.size(), f);
+            fclose(f);
+            return true;
+        };
+
+        const std::string original = readFile(iniPath);
+        if (original.empty()) {
+            std::printf("  skip  no pingzhu.ini to exercise\n");
+        } else {
+            const bool hadTraditional = original.find("output = traditional") != std::string::npos;
+            const std::string first = hadTraditional
+                ? "output = traditional\r\n"
+                : "output = simplified\r\n";
+            const std::string second = hadTraditional
+                ? "output = simplified\r\n"
+                : "output = traditional\r\n";
+
+            ITfThreadMgr *threadMgr = nullptr;
+            ITfTextInputProcessorEx *service = nullptr;
+            TfClientId clientId = TF_CLIENTID_NULL;
+            if (SUCCEEDED(CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER,
+                                           IID_ITfThreadMgr,
+                                           reinterpret_cast<void **>(&threadMgr))) &&
+                threadMgr && SUCCEEDED(threadMgr->Activate(&clientId)) &&
+                SUCCEEDED(CoCreateInstance(CLSID_PingZhuTextService, nullptr, CLSCTX_INPROC_SERVER,
+                                           IID_ITfTextInputProcessorEx,
+                                           reinterpret_cast<void **>(&service))) &&
+                service) {
+                writeFile(iniPath, first);
+                service->ActivateEx(threadMgr, clientId, 0);
+                service->Deactivate();
+
+                /* Same object, different settings file: a second activation on
+                 * the same instance is what TSF does, and it is where the old
+                 * code stopped re-reading. */
+                writeFile(iniPath, second);
+                service->ActivateEx(threadMgr, clientId, 0);
+                service->Deactivate();
+
+                service->Release();
+                threadMgr->Deactivate();
+                threadMgr->Release();
+            }
+            writeFile(iniPath, original);
+
+            const std::string iniAfter = readFile(iniPath);
+            check("the settings file is left as it was", iniAfter == original);
+
+            /* Both scripts must appear in the log from this run. */
+            std::string logText = readFile(dir + L"\\pingzhu-tsf.log");
+            const bool sawSimplified = logText.rfind("output script = simplified") != std::string::npos;
+            const bool sawTraditional =
+                logText.rfind("output script = traditional") != std::string::npos;
+            check("a change to the file is picked up on the next activation",
+                  sawSimplified && sawTraditional);
         }
     }
 

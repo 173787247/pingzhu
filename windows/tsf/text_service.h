@@ -90,6 +90,7 @@ private:
     HRESULT FocusedContext(ITfContext **out);
     void SetDisplayAttribute(TfEditCookie ec, ITfContext *context);
     void EnsureEngineLoaded();
+    void ApplySettings();
     void ShowCandidates();
     void HideCandidates();
 
