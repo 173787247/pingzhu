@@ -57,6 +57,16 @@ command -v npm >/dev/null || fail "npm not found"
 log "checking who you are"
 if [ "$DRY_RUN" = "1" ]; then
   log "  (dry run: skipping the credential check)"
+elif [ "$REGISTRY" = "https://npm.pkg.github.com" ]; then
+  # GitHub Packages authenticates with a GitHub token, so the npm credential is
+  # irrelevant here — and checking for it made the GitHub path unreachable.
+  if [ -z "$(gh auth token 2>/dev/null || true)" ]; then
+    fail "not logged in to GitHub — run: gh auth login"
+  fi
+  if ! gh auth status 2>&1 | grep -q "write:packages"; then
+    fail "the GitHub token lacks write:packages — run: gh auth refresh -h github.com -s write:packages"
+  fi
+  log "  $(gh api user --jq .login 2>/dev/null) (GitHub, write:packages present)"
 elif ! npm whoami --registry "$REGISTRY" >/dev/null 2>&1; then
   cat >&2 <<'EOF'
 [npm] not logged in to registry.npmjs.org.
@@ -132,10 +142,21 @@ fi
 
 log "verifying"
 sleep 5
-if npm view pingzhu-engine version --registry "$REGISTRY" >/dev/null 2>&1; then
-  log "  pingzhu-engine@$(npm view pingzhu-engine version --registry "$REGISTRY") is live"
+if [ "$REGISTRY" = "https://npm.pkg.github.com" ]; then
+  # Not `npm view`: GitHub Packages needs the token in the environment, and the
+  # package is scoped, so the unscoped name in the old check would never match.
+  if gh api "users/$(gh api user --jq .login)/packages?package_type=npm" \
+      --jq ".[] | select(.name==\"pingzhu-engine\") | .name" 2>/dev/null | grep -q pingzhu-engine; then
+    log "  @$(gh api user --jq .login)/pingzhu-engine@$(node -p "require('./package.json').version") is live"
+  else
+    fail "published, but GitHub does not list it yet — check the package page in a minute"
+  fi
 else
-  fail "published, but the registry does not list it yet — check again in a minute"
+  if npm view "$(node -p "require('./package.json').name")" version --registry "$REGISTRY" >/dev/null 2>&1; then
+    log "  $(node -p "require('./package.json').name")@$(npm view "$(node -p "require('./package.json').name")" version --registry "$REGISTRY") is live"
+  else
+    fail "published, but the registry does not list it yet — check again in a minute"
+  fi
 fi
 
 cat <<'EOF'
