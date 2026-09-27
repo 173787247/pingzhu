@@ -33,6 +33,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 |---|---|
 | **Windows 10/11** | **[⬇ 安装包 pingzhu-0.7.6-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-setup.exe)**　·　[可携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-win-x64.zip) |
 | **Android 8+** | **[⬇ pingzhu-0.8.0-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.8.0-android.apk)** |
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)） |
 
 **Windows**：装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z`
 切换中英、`Ctrl+Alt+S` 切换繁简（或用右下角的浮动按钮），打 `su3cl3` 会出现「你好」。

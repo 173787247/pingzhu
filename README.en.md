@@ -16,6 +16,7 @@ natural input: it describes what the thing does, and it is not a trademark anyon
 |---|---|
 | **Windows 10/11** | **[⬇ pingzhu-0.7.6-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-setup.exe)**　·　[portable ZIP](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-win-x64.zip) |
 | **Android 8+** | **[⬇ pingzhu-0.8.0-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.8.0-android.apk)** |
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)** ([needs verifying on a Mac first](macos/TESTING.md)) |
 
 **Windows** installs to `%LOCALAPPDATA%\Programs\PingZhu` with no administrator rights.
 `Ctrl+Alt+Z` switches Chinese/English, `Ctrl+Alt+S` switches Traditional/Simplified (or use
