@@ -226,15 +226,22 @@ node engine/bench-learn.mjs 5000 --recall   # 候選可達性
 
 引擎可以独立使用，零执行期依赖：
 
-```bash
-npm install @173787247/pingzhu-engine
-```
-
-（装不起来的话——GitHub Packages 要求认证——改用 release 上的 tarball，一行、零设定：）
+**方式一：从 release 上的 tarball 装**（零帐号、零设定，**推荐**）
 
 ```bash
 npm install https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-engine-0.8.0.tgz
 ```
+
+**方式二：从 GitHub Packages 装**（要先配 GitHub token ✗）
+
+```bash
+npm install @173787247/pingzhu-engine
+```
+
+> GitHub Packages **连安装公开套件都要求认证**——这不是猜测，是在这个套件上实测的：
+> `npm error 401 Unauthorized - authentication token not provided`
+>
+> 要用的话先配一次：`echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc`
 
 ```js
 import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";

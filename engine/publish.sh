@@ -163,9 +163,12 @@ cat <<'EOF'
 
 [npm] done. Anyone can now:
 
-      npm install pingzhu-engine
+      npm install @173787247/pingzhu-engine
 
-      import { InputEngine, LAYOUTS } from "pingzhu-engine";
-      import { loadDictionary } from "pingzhu-engine/node";
+      (needs a GitHub token first — see the package README; the tarball on the
+       release page needs nothing)
+
+      import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
+      import { loadDictionary } from "@173787247/pingzhu-engine/node";
 
 EOF
