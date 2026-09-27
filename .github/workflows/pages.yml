@@ -1,0 +1,76 @@
+name: Pages
+
+# The browser demo, deployed.
+#
+# It is the only way to try the engine without installing anything, and it is
+# the same code the test suite runs against — tools/build-demo.mjs strips the
+# TypeScript syntax with Node's own parser rather than bundling a separate
+# build, so the demo cannot drift from the engine.
+#
+# That claim is checked here rather than asserted: the workflow rebuilds the
+# demo and fails if the result differs from what is committed. A demo running an
+# older engine than the tests would be the most confusing kind of wrong.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demo/**'
+      - 'engine/src/**'
+      - 'tools/build-demo.mjs'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: The committed demo matches the engine it claims to run
+        run: |
+          set -e
+          cp -r demo /tmp/demo-committed
+          node tools/build-demo.mjs
+          if ! diff -r /tmp/demo-committed/engine demo/engine > /tmp/demo.diff 2>&1; then
+            echo "::error::demo/engine is not what tools/build-demo.mjs produces"
+            head -30 /tmp/demo.diff
+            exit 1
+          fi
+          echo "demo/engine is current"
+
+      - name: The engine's own tests pass
+        run: |
+          cd engine
+          npm install --no-audit --no-fund 2>&1 | tail -2
+          node --test 2>&1 | tail -5
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

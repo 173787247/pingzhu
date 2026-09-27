@@ -214,7 +214,7 @@ a comment.
 ```
 
 **The TypeScript engine is the specification.** The Rust core is held to it by 1,529
-differential cases and is what every platform shell embeds. One decoder, four platforms —
+differential cases and is what every platform shell embeds. One decoder, five platforms —
 if a word decodes differently on the phone than on the desktop, that is a bug with a name,
 not a port that drifted.
 
@@ -269,6 +269,7 @@ Scheduling, effort and risk: [docs/05-roadmap.md](docs/05-roadmap.md).
 | [docs/07](docs/07-research-tooling.md) | The research toolchain in this repository (reproducible evidence) |
 | [docs/08](docs/08-self-built-data.md) | **The data layer can be built from scratch**: Unihan readings, frequency formula, unsupervised new-word discovery |
 | [docs/09](docs/09-zhuyin-vs-pinyin.md) | **Zhuyin vs Pinyin, measured**: method, two scopes, self-validation, five explicit limitations |
+| [demo/](demo/index.html) | **Browser demo**: nothing to install, open it and type Bopomofo (same engine the tests run against) |
 | [core-rs/](core-rs/README.md) | **Rust core + C ABI**: how a shell connects, how it is verified |
 | [windows/](windows/README.md) | **Windows input method**: usage, build, limitations |
 | [android/](android/README.md) | **Android input method**: build, design trade-offs, known limitations |

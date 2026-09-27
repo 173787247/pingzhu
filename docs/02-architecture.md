@@ -6,14 +6,14 @@
 
 **否决：以 RIME schema 出货。** 这是台湾社群最常见的做法，成本也最低：写一份
 `bopomofo.schema.yaml`，Windows 用小狼毫、macOS 用鼠须管、Android 用同文、Linux 用 fcitx5-rime，
-一到两周就能「四平台都有」。
+一到两周就能「五个平台都有」。
 
 否决理由：
 
 1. **它到不了 HarmonyOS。** 本专案的四个目标平台里，鸿蒙没有 RIME 前端，而且鸿蒙的输入法
    只能透过官方 IME Kit 以 `InputMethodExtensionAbility` 实作——那是一段必须自己写的
    ArkTS 程式码。既然无论如何都要写一个原生外壳，外壳背后的引擎就没有理由外包。
-2. **授权会传染。** librime 本身是 BSD-3-Clause（宽松），但**官方四个平台前端全部是 GPL-3.0**
+2. **授权会传染。** librime 本身是 BSD-3-Clause（宽松），但**官方五个平台前端全部是 GPL-3.0**
    （weasel、squirrel、trime、ibus-rime）。用它们出货等于整个产品必须 GPL-3.0。
    本专案希望核心能被宽松授权地嵌入，因此不能站在那条链上。
 3. **RIME 的注音不是原生注音。** `rime-bopomofo` 的 `translator.dictionary` 指向
@@ -27,7 +27,7 @@
 
 ## 决策 2：核心必须有 C ABI，且不碰任何平台 API
 
-四个平台的输入法框架要求的介面高度一致：
+五个平台的输入法框架要求的介面高度一致：
 
 ```
 按鍵 → [引擎] → 組字中的注音 ＋ 最佳句子 ＋ 候選清單 → 平台負責顯示與送字
