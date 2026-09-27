@@ -164,31 +164,6 @@ jobs:
           JS
           "$NODE" /tmp/check.mjs
 
-      # What the SDK actually exports, asked of the SDK itself.
-      #
-      # The first build failed with "Cannot find module
-      # '@ohos.inputMethod.InputMethodExtensionAbility'" — the article-style
-      # imports that most examples still use do not exist in an API 12 SDK,
-      # which moved to Kit-style imports (@kit.IMEKit). Rather than guess a
-      # second time, print what is there.
-      - name: Ask the SDK what the IME API is called
-        if: always()
-        shell: bash
-        run: |
-          echo "--- IME type declarations in the SDK ---"
-          SDK=$(ls -d /opt/ohos-sdk/* 2>/dev/null | head -1)
-          echo "sdk root: ${SDK:-none}"
-          find /opt -name '*.d.ts' 2>/dev/null | xargs grep -l -i "InputMethodExtensionAbility" 2>/dev/null | head -5 || true
-          echo "--- kit modules mentioning inputMethod ---"
-          find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -3 || true
-          find /opt -path '*kits*' -name '*.d.ts' 2>/dev/null | head -20 || true
-          echo "--- what IMEKit exports ---"
-          KIT=$(find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -1)
-          if [ -n "$KIT" ]; then grep -E "^export" "$KIT" | head -30; else echo "(not found)"; fi
-          echo "--- what PerformanceAnalysisKit exports (hilog) ---"
-          PAA=$(find /opt -name '@kit.PerformanceAnalysisKit.d.ts' 2>/dev/null | head -1)
-          if [ -n "$PAA" ]; then grep -E "^export" "$PAA" | head -20; else echo "(not found)"; fi
-
       - name: Install dependencies
         run: |
           cd harmonyos
@@ -216,6 +191,48 @@ jobs:
           tail -60 /tmp/build.log
           echo "hvigorw assembleHap exit: $STATUS"
           exit $STATUS
+
+      # What the SDK actually exports, asked of the SDK itself.
+      #
+      # The build failed with "Cannot find module
+      # '@ohos.inputMethod.InputMethodExtensionAbility'" — the imports most
+      # examples still use do not exist in an API 12 SDK, which moved to
+      # Kit-style imports. Rather than guess a second time, print what is there.
+      #
+      # `set +e` and `|| true` everywhere: the first version of this step died
+      # inside its own `set -e` at the first `find ... | xargs grep` that matched
+      # nothing — a diagnostic that fails on the condition it exists to diagnose.
+      - name: Ask the SDK what the IME API is called
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          echo "--- where the SDK is ---"
+          ls -d /opt/* 2>/dev/null
+          echo
+          echo "--- any declaration mentioning InputMethodExtensionAbility ---"
+          find /opt -name '*.d.ts' 2>/dev/null | head -3000 | \
+            xargs grep -l "InputMethodExtensionAbility" 2>/dev/null | head -8
+          echo "(end)"
+          echo
+          echo "--- @kit.IMEKit ---"
+          KIT=$(find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -1)
+          echo "path: ${KIT:-(not found)}"
+          if [ -n "$KIT" ]; then
+            echo "exports:"
+            grep -E "^export" "$KIT" 2>/dev/null | head -25
+          fi
+          echo
+          echo "--- @kit.PerformanceAnalysisKit (hilog) ---"
+          PAA=$(find /opt -name '@kit.PerformanceAnalysisKit.d.ts' 2>/dev/null | head -1)
+          echo "path: ${PAA:-(not found)}"
+          if [ -n "$PAA" ]; then grep -E "^export" "$PAA" 2>/dev/null | head -15; fi
+          echo
+          echo "--- what the kits directory contains ---"
+          find /opt -type d -name 'kits' 2>/dev/null | head -3
+          find /opt -name '@kit.*.d.ts' 2>/dev/null | head -25
+          echo "(end)"
+          exit 0
 
       - name: Report what was produced
         if: always()
