@@ -37,8 +37,8 @@ cp "$NOTES" "$CONVERTED_NOTES"
 node tools/to-simplified.mjs "$CONVERTED_NOTES" >/dev/null
 
 CONVERTED_TITLE="$(node --experimental-strip-types -e '
-import { Converter } from "./engine/src/converter.ts";
-const c = Converter.fromFile("data/ts-conversion.tsv");
+import { loadConverter } from "./engine/src/node-data.ts";
+const c = loadConverter("data/ts-conversion.tsv");
 process.stdout.write(c.toSimplified(process.argv[1]));
 ' "$TITLE")"
 
