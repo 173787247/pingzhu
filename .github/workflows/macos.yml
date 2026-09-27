@@ -43,7 +43,7 @@ jobs:
             core-rs/target
           key: macos-cargo-${{ hashFiles('core-rs/**/*.rs', 'core-rs/Cargo.toml') }}
 
-      - name: Build the app bundle and run the routing vectors
+      - name: Build the bundle, exercise the engine, run the routing vectors
         run: bash macos/build.sh
 
       - name: Check the bundle is what the system expects

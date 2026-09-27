@@ -100,13 +100,24 @@ log "  $(du -h "$MACOS/PingZhu" | cut -f1) binary"
 
 # ------------------------------------------------------------------ tests
 
+log "exercising the engine through the C ABI"
+swiftc \
+  -target "$(uname -m)-apple-macos12.0" \
+  -import-objc-header "$HERE/Sources/PingZhu-Bridging-Header.h" \
+  -I "$ROOT/core-rs/include" \
+  -L "$CORE_DIR" -lpingzhu_core_universal \
+  -o "$ROOT/dist/PingZhuEngineTest" \
+  "$HERE/Sources/Engine.swift" \
+  "$HERE/Tests/Engine/main.swift"
+"$ROOT/dist/PingZhuEngineTest" "$RESOURCES/data" | sed 's/^/  /'
+
 log "running the routing vectors"
 VECTORS="$ROOT/tools/routing-vectors.tsv"
 swiftc \
   -target "$(uname -m)-apple-macos12.0" \
   -o "$ROOT/dist/PingZhuSelfTest" \
   "$HERE/Sources/Router.swift" \
-  "$HERE/Tests/main.swift"
+  "$HERE/Tests/Router/main.swift"
 "$ROOT/dist/PingZhuSelfTest" "$VECTORS"
 
 log "done: $APP"
