@@ -46,7 +46,7 @@ detail is in [macos/README.md](macos/README.md).
 | Windows 10/11 | Portable (tray + global hook + injection) | ✅ C ABI | ✅ usable (no admin rights) |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI (JNI) | ✅ **usable** ([android/](android/README.md)) |
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **builds, bundles and runs on real hardware** · **the system does not accept it yet** ([macos/](macos/README.md)) |
-| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ⏳ NAPI to do | ⚠️ **HAPs build in CI** ([harmonyos/](harmonyos/README.md)) · **engine not wired up yet** |
+| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI (NAPI, statically linked) | ⚠️ **built in CI; engine and keyboard UI inside the HAP (2.6 MB)** · **never typed on a device** |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | optional |
 
 **All four shells embed the same Rust core.** The same keys give the same words on Windows
