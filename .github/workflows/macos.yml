@@ -1,0 +1,86 @@
+name: macOS
+
+# The macOS shell is built here because it has to be.
+#
+# Nobody developing this project needs a Mac to work on the engine, the Windows
+# shells or the Android shell — but Swift against InputMethodKit does, and the
+# alternative is code that has never been compiled. A macOS runner is free for
+# public repositories, so "it builds" can be a fact rather than an intention.
+#
+# It cannot test typing: that needs a person and a Mac. It can and does test the
+# routing rules, which are the part this project has already got wrong once.
+
+on:
+  push:
+    branches: [main]
+    paths: ['macos/**', 'core-rs/**', 'tools/routing-vectors.tsv', '.github/workflows/macos.yml']
+  pull_request:
+    paths: ['macos/**', 'core-rs/**', 'tools/routing-vectors.tsv']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show the toolchain
+        run: |
+          swift --version
+          uname -m
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            core-rs/target
+          key: macos-cargo-${{ hashFiles('core-rs/**/*.rs', 'core-rs/Cargo.toml') }}
+
+      - name: Build the app bundle and run the routing vectors
+        run: bash macos/build.sh
+
+      - name: Check the bundle is what the system expects
+        run: |
+          set -e
+          APP=dist/PingZhu.app
+          test -x "$APP/Contents/MacOS/PingZhu"
+          test -f "$APP/Contents/Info.plist"
+          test -f "$APP/Contents/Resources/data/bopomofo-lm.tsv"
+
+          # An input method with the wrong package type installs into
+          # ~/Library/Input Methods and then never appears in the list.
+          plutil -extract CFBundlePackageType raw "$APP/Contents/Info.plist" | grep -qx APPL
+
+          # The connection name has to match main.swift exactly, or the server
+          # starts and the system never finds it. Nothing reports this at
+          # run time — the input method simply does nothing.
+          NAME=$(plutil -extract InputMethodConnectionName raw "$APP/Contents/Info.plist")
+          grep -q "\"$NAME\"" macos/Sources/main.swift
+
+          CLASS=$(plutil -extract InputMethodServerControllerClass raw "$APP/Contents/Info.plist")
+          grep -q "@objc($CLASS)" macos/Sources/PingZhuInputController.swift
+
+          # The declared input mode must be in the list, or the input method
+          # shows up with nothing to select.
+          plutil -extract tsInputModeListKey raw "$APP/Contents/Info.plist" >/dev/null
+
+          echo "bundle checks passed"
+
+      - name: Report the binary architectures
+        run: |
+          lipo -info core-rs/target/libpingzhu_core_universal.a
+          file dist/PingZhu.app/Contents/MacOS/PingZhu
+
+      - name: Upload the app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: PingZhu.app
+          path: dist/PingZhu.app
+          if-no-files-found: error

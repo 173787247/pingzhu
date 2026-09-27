@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh_TW</string>
+
+    <key>CFBundleExecutable</key>
+    <string>PingZhu</string>
+
+    <key>CFBundleIdentifier</key>
+    <string>tw.pingzhu.ime</string>
+
+    <key>CFBundleName</key>
+    <string>PingZhu</string>
+
+    <key>CFBundleDisplayName</key>
+    <string>平注</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>0.9.0</string>
+
+    <key>CFBundleVersion</key>
+    <string>0.9.0</string>
+
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <!--
+      An input method has no windows of its own until the user types, so it must
+      not appear in the Dock or the application switcher.
+    -->
+    <key>LSBackgroundOnly</key>
+    <true/>
+
+    <key>NSHumanReadableCopyright</key>
+    <string>MIT License — https://github.com/173787247/pingzhu</string>
+
+    <!--
+      IMK finds the server through these two. The connection name is a Mach port
+      name and must match the string in Sources/main.swift exactly; a mismatch
+      produces an input method that installs, appears in the list, and then does
+      nothing at all.
+    -->
+    <key>InputMethodConnectionName</key>
+    <string>tw.pingzhu.ime_Connection</string>
+
+    <key>InputMethodServerControllerClass</key>
+    <string>PingZhuInputController</string>
+
+    <key>tsInputModeListKey</key>
+    <dict>
+        <key>tw.pingzhu.ime.Bopomofo</key>
+        <dict>
+            <key>TISInputSourceID</key>
+            <string>tw.pingzhu.ime.Bopomofo</string>
+
+            <key>TISIntendedLanguage</key>
+            <string>zh-Hant</string>
+
+            <key>tsInputModeCharacterRepertoireKey</key>
+            <array>
+                <string>zh-Hant</string>
+            </array>
+
+            <key>tsInputModeDefaultStateKey</key>
+            <true/>
+
+            <key>tsInputModeIsVisibleKey</key>
+            <true/>
+
+            <key>tsInputModeMenuIconFileKey</key>
+            <string>menu-icon.pdf</string>
+
+            <key>tsInputModePaletteIconFileKey</key>
+            <string>menu-icon.pdf</string>
+
+            <key>tsInputModePrimaryInScriptKey</key>
+            <true/>
+
+            <key>tsInputModeScriptKey</key>
+            <string>smRoman</string>
+        </dict>
+    </dict>
+</dict>
+</plist>
