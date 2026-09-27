@@ -101,6 +101,25 @@ if FileManager.default.isExecutableFile(atPath: lsregister) {
     report("registered with LaunchServices", "lsregister not found at the expected path")
 }
 
+// Launch it once.
+//
+// An input method is a bundled application, and a bundle that has never been
+// launched has only been *copied* — LaunchServices has read its Info.plist but
+// the system has not necessarily enumerated it as an input source. `-f` above
+// registers the path; opening it is what a person does by double-clicking, and
+// it is the step most likely to be missing here.
+//
+// It exits immediately (LSUIElement, no windows), so this is not a long wait.
+let openProcess = Process()
+openProcess.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+openProcess.arguments = [destination.path]
+openProcess.standardOutput = FileHandle.nullDevice
+openProcess.standardError = FileHandle.nullDevice
+try? openProcess.run()
+openProcess.waitUntilExit()
+report("launched once", "exit \(openProcess.terminationStatus)")
+Thread.sleep(forTimeInterval: 2)
+
 // And restart the agents that own the input source list, if they are running.
 // They come back on their own.
 for agent in ["TextInputMenuAgent", "TextInputSwitcher"] {
