@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Converter } from "../engine/src/converter.ts";
+import { loadConverter } from "../engine/src/node-data.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const table = join(here, "..", "data", "ts-conversion.tsv");
@@ -35,7 +35,7 @@ if (invokedDirectly && files.length === 0) {
   process.exit(2);
 }
 
-const converter = Converter.fromFile(table);
+const converter = loadConverter(table);
 if (converter.size === 0) {
   console.error(`conversion table is empty: ${table}`);
   process.exit(1);

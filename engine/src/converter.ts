@@ -14,8 +14,6 @@
  * over the file order, so phrase entries beat single characters exactly as
  * OpenCC intends.
  */
-import { readFileSync } from "node:fs";
-
 export type OutputScript = "traditional" | "simplified";
 
 export function isOutputScript(value: string): value is OutputScript {
@@ -65,10 +63,6 @@ export class Converter {
       entries.push([key, value]);
     }
     return new Converter(entries);
-  }
-
-  static fromFile(path: string): Converter {
-    return Converter.fromText(readFileSync(path, "utf8"));
   }
 
   /** An empty converter passes text through unchanged. */

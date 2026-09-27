@@ -16,9 +16,6 @@ export {
   type GridPath, type GridNode, type ReadingGridOptions, type CandidateOrder,
 } from "./grid.ts";
 export {
-  loadDictionary, loadSyllableInventory, loadUserDictionary, saveUserDictionary,
-} from "./node-data.ts";
-export {
   UserDictionary, EPOCH_DAY_MS,
   type UserEntry, type UserDictionaryOptions,
 } from "./userdict.ts";

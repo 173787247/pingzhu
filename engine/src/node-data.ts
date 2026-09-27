@@ -13,9 +13,23 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { Dictionary, buildSyllableInventoryFromText, type DictionaryOptions } from "./dictionary.ts";
+import { Converter } from "./converter.ts";
 import { UserDictionary, type UserDictionaryOptions } from "./userdict.ts";
 
 /** Load the compiled language model from disk. */
+/**
+ * Reads the Traditional/Southern-Min conversion table.
+ *
+ * Lives here rather than as `Converter.fromFile` because a static method on the
+ * class drags `node:fs` into every importer of `converter.ts` — including a
+ * browser, where the class itself is perfectly usable. One convenience method
+ * was quietly disqualifying the module from half the platforms it was written
+ * for.
+ */
+export function loadConverter(path: string | URL): Converter {
+  return Converter.fromText(readFileSync(path, "utf8"));
+}
+
 export function loadDictionary(path: string | URL, options: DictionaryOptions = {}): Dictionary {
   return Dictionary.fromText(readFileSync(path, "utf8"), String(path), options);
 }

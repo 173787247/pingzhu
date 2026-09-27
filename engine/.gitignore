@@ -1,0 +1,7 @@
+# Build output: the package is compiled to JS for npm consumers, who cannot be
+# expected to run Node's type stripping.
+dist/
+# Copied from ../data by build-data.mjs. One copy in the repository is enough.
+data/
+node_modules/
+*.tgz

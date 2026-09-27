@@ -1,16 +1,58 @@
 {
   "name": "pingzhu-engine",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Cross-platform Bopomofo (Zhuyin) input method engine — reference core",
+  "version": "0.8.0",
+  "description": "Bopomofo (注音) input method engine — reading grid, Viterbi decoder, candidate ordering, Traditional/Simplified output",
   "license": "MIT",
-  "engines": {
-    "node": ">=22.6"
+  "type": "module",
+
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    },
+    "./data/*": "./data/*"
   },
+  "files": [
+    "dist",
+    "data",
+    "README.md"
+  ],
+
+  "keywords": [
+    "bopomofo",
+    "zhuyin",
+    "注音",
+    "input-method",
+    "ime",
+    "chinese",
+    "traditional-chinese"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/173787247/pingzhu.git",
+    "directory": "engine"
+  },
+  "homepage": "https://github.com/173787247/pingzhu",
+
+  "engines": {
+    "node": ">=18"
+  },
+
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && node build-data.mjs",
+    "prepublishOnly": "npm run build",
     "demo": "node cli.ts",
     "test": "node --test test/",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.build.json"
+  },
+
+  "devDependencies": {
+    "typescript": "^5.7.2"
   }
 }

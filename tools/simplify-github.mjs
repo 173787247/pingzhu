@@ -22,11 +22,11 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Converter } from "../engine/src/converter.ts";
+import { loadConverter } from "../engine/src/node-data.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const apply = !process.argv.includes("--check");
-const converter = Converter.fromFile(join(repo, "data", "ts-conversion.tsv"));
+const converter = loadConverter(join(repo, "data", "ts-conversion.tsv"));
 
 const gh = (...args) =>
   execFileSync("gh", args, { cwd: repo, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });

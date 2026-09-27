@@ -85,7 +85,7 @@ class SetupActivity : Activity() {
         this.text = text
         textSize = 14f
         setTextColor(0xFF4A5058.toInt())
-        setLineSpacing(dp(4f), 1f)
+        setLineSpacing(dp(4f).toFloat(), 1f)
     }
 
     private fun button(label: String, onClick: () -> Unit) = Button(this).apply {

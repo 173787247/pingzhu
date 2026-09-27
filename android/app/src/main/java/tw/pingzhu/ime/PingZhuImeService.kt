@@ -125,6 +125,11 @@ class PingZhuImeService : InputMethodService() {
 
     private fun buildKeyboard() {
         val board = keyboard ?: return
+        if (englishMode) {
+            board.setKeys(QWERTY_ROWS)
+            board.simplified = false
+            return
+        }
         val rows = Engine.keyboardRows().map { row ->
             row.mapNotNull { (key, label) ->
                 if (label.isEmpty()) null else KeyboardView.Key(key, label)
@@ -171,6 +176,14 @@ class PingZhuImeService : InputMethodService() {
     }
 
     private fun handleKey(ch: Char) {
+        // Nothing here belongs to the input method when the English board is up,
+        // so every key goes straight through. The alternative — leaving the
+        // Bopomofo decoder live behind a Latin keyboard — means a phone number
+        // field quietly fills with Chinese.
+        if (englishMode) {
+            sendKeyToApplication(ch)
+            return
+        }
         val engine = this.engine ?: return
         val composing = engine.isComposing()
         val windowOpen = engine.windowOpen()
@@ -257,11 +270,11 @@ class PingZhuImeService : InputMethodService() {
         // application — the standard Android behaviour, and the reason the user
         // can see where the text will land.
         val connection = currentInputConnection ?: return
-        when {
-            composing.isEmpty() -> connection.setComposingText("", 0)
-            windowOpen -> connection.setComposingText(sentence, 1)
-            else -> connection.setComposingText(sentence, 1)
-        }
+        // The letters stay in the field, underlined by the application, whether
+        // or not the candidate list is open: the point of showing them is that
+        // the user can see where the text will land. Only the candidate page
+        // depends on the list being open.
+        connection.setComposingText(if (composing.isEmpty()) "" else sentence, 1)
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
@@ -302,5 +315,23 @@ class PingZhuImeService : InputMethodService() {
 
     companion object {
         const val KEY_SCRIPT = "output_script"
+
+        /**
+         * The Latin board, for numeric and password fields.
+         *
+         * A Bopomofo board over a phone-number field is something the user has to
+         * fight, and Android has no way to ask for "the system keyboard" — so an
+         * input method that handles other people's fields has to bring its own.
+         */
+        private val QWERTY_ROWS: List<List<KeyboardView.Key>> = listOf(
+            "1234567890".map { KeyboardView.Key(it, it.toString()) },
+            "qwertyuiop".map { KeyboardView.Key(it, it.toString()) },
+            "asdfghjkl".map { KeyboardView.Key(it, it.toString()) },
+            "zxcvbnm".map { KeyboardView.Key(it, it.toString()) } + listOf(
+                KeyboardView.Key(' ', "空白", weight = 3f, function = KeyboardView.Key.Function.Space),
+                KeyboardView.Key('\b', "⌫", function = KeyboardView.Key.Function.Backspace),
+                KeyboardView.Key('\n', "↵", function = KeyboardView.Key.Function.Enter),
+            ),
+        )
     }
 }
