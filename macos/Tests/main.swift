@@ -57,7 +57,7 @@ for (index, line) in contents.split(separator: "\n", omittingEmptySubsequences: 
     let state = Router.State(
         composing: fields[1] == "1",
         windowOpen: fields[2] == "1",
-        hasCandidates: fields[3] == "1",
+        hasCandidates: fields[3] == "1"
     )
     let expected = fields[4]
 
