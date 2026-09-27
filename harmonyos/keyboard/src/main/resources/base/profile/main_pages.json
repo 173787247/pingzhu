@@ -1,3 +1,5 @@
 {
-  "src": []
+  "src": [
+    "InputMethodExtensionAbility/pages/Index"
+  ]
 }
