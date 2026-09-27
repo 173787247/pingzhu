@@ -65,7 +65,7 @@ jobs:
           # is a directory fcitx5 does not search — which took four attempts to
           # find, all of them reporting "the file exists".
           ls -la /usr/lib/*/fcitx5/libpingzhu.so
-          ls -la /usr/share/fcitx5/addon/pingzhu-addon.conf
+          ls -la /usr/share/fcitx5/addon/pingzhu.conf
           ls -la /usr/share/fcitx5/inputmethod/pingzhu.conf
           ls -la /usr/share/pingzhu/bopomofo-lm.tsv
 
