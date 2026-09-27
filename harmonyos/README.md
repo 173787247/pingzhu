@@ -93,9 +93,10 @@ find /opt -name '@kit.IMEKit.d.ts' | head -1 | xargs grep -E "^export"
 |---|---|
 | **Rust 核心接上（NAPI）** | ✅ **完成**——`libpingzhu.so` 在 HAP 里 |
 | **键盘 UI（大千式布局）** | ✅ **完成**——键面从引擎来 |
-| 候选列 | ⚠️ 画得出来、点了没反应（还没接上编辑器） |
-| 把字送进编辑器 | ❌ **最大的缺口**——`InputMethodEngine` 的 `insertText` 还没接 |
-| 在真机或模拟器上打字 | ❌ 需要鸿蒙装置 |
+| 候选列 | ✅ 画得出来 |
+| **把字送进编辑器** | ✅ **完成**——`InputClient.insertTextSync` |
+| **语言模型** | ✅ **在 HAP 里**（6.4 MB 的 `bopomofo-lm.tsv`） |
+| **在真机或模拟器上打字** | ❌ **唯一剩下的**——需要鸿蒙装置 |
 | 签章与上架（AGC） | ❌ 治理问题，不是 API 问题（见 [docs/03](../docs/03-platform-matrix.md)） |
 
 ## 引擎怎么进去的
@@ -187,6 +188,39 @@ const raw: string = pingzhu.keyboardRows('standard');
 现在有测试了 ✓：`every_exported_function_has_no_mangle` 读 `ffi.rs` 自己 ✓，
 对每个 `extern "C"` 往上找属性 ✓，**碰到非属性、非 doc 的行就停** ✓。
 **而且验证过它会红** ✓。Rust 测试 27 → 29 ✓
+
+## 连到编辑器
+
+**API 是问 SDK 得到的，不是猜的** ✓ ——因为参照的 mingkey 做的是翻译 ✓，
+没有编辑器连线可以抄 ✓：
+
+```typescript
+insertText(text: string): Promise<boolean>;
+insertTextSync(text: string): void;
+insertTextSync(text: string): void;
+deleteBackwardSync(length: number): void;
+
+on('inputStart', (kbController: KeyboardController, inputClient: InputClient) => void)
+on('inputStop', () => void)
+```
+
+```bash
+find /opt -name '@ohos.inputMethodEngine.d.ts' | xargs grep -A2 "interface InputClient"
+```
+
+### 三个刻意的决定
+
+**`inputStart` 是唯一拿得到 client 的时刻** ✓ ——`inputStop` 之后留着它 ✗，
+等于往一个已经不存在的东西写字 ✓
+
+**引擎在 `inputStart` 时才载入模型** ✓ ——模型要从 HAP 解到 `filesDir` ✓
+（原生端读不到 HAP ✓），而且只解一次 ✓
+
+**commit 没有编辑器时回传文字、但仍然警告** ✓ ——
+**空的回传值代表「没有东西可送」，不是「送失败了」** ✓ ——两者不该长得一样 ✓
+
+模型档由 CI 复制进 `rawfile/` ✓，**不签进 repo** ✓ ——
+那是其他三个平台在用的同一批 `.tsv` ✓，repo 里再放一份就是第二个版本 ✓
 
 ## 启用的方式
 
