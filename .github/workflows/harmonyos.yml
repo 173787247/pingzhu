@@ -2,8 +2,8 @@ name: HarmonyOS
 
 # HarmonyOS has no runner of its own at GitHub, and the SDK is not something you
 # can apt-get. What makes this possible is a container image with the whole
-# toolchain already in it (ohpm, hvigorw, the ArkTS compiler), which runs on an
-# ordinary ubuntu runner.
+# toolchain already in it (ohpm, hvigorw, the ArkTS compiler, the NDK), which
+# runs on an ordinary ubuntu runner.
 #
 # Two things to be honest about:
 #
@@ -14,14 +14,20 @@ name: HarmonyOS
 #      is an official route, this comment should be replaced along with the image.
 #
 #   2. Building is not running. A HAP that compiles proves the ArkTS is
-#      well-formed and the module declares what the framework expects. It does
-#      not prove the keyboard types. That needs a HarmonyOS device or emulator,
-#      and neither is available here.
+#      well-formed, the module declares what the framework expects, and the
+#      engine links. It does not prove the keyboard types. That needs a HarmonyOS
+#      device or emulator, and neither is available here.
+#
+# What this container turned out to be, learned one failure at a time: no
+# python3, node not on PATH, no curl, no wget. It has the HarmonyOS toolchain and
+# almost nothing else. Hence the shape below — the Rust half runs where ordinary
+# tooling exists, and the .a travels between the two jobs as an artifact.
 on:
   push:
     branches: [main]
     paths:
       - 'harmonyos/**'
+      - 'core-rs/**'
       - '.github/workflows/harmonyos.yml'
   workflow_dispatch:
 
@@ -31,17 +37,9 @@ permissions:
 jobs:
   # The engine first, on a plain runner.
   #
-  # This container turned out to hold the HarmonyOS toolchain and very little
-  # else: no python3, node not on PATH, no curl, no wget. Installing Rust inside
-  # it means downloading rustup with something it does not have, and the
-  # dtolnay/rust-toolchain action needs curl too.
-  #
-  # So the Rust half happens where the tooling exists, and the HAP half happens
-  # where the SDK exists. The .a travels between them as an artifact.
-  #
-  # This is also the honest split: cross-compiling the core has nothing to do
-  # with HarmonyOS's build system, and running it on a normal runner means a
-  # failure here is about the Rust code, not about a container.
+  # Cross-compiling the core has nothing to do with HarmonyOS's build system, and
+  # running it here rather than in the container means a failure in this job is
+  # about the Rust code — not about an image that is missing curl.
   engine:
     runs-on: ubuntu-latest
     steps:
@@ -55,17 +53,17 @@ jobs:
         shell: bash
         run: |
           set -e
-          # The NDK is what makes the cross-compile possible: rustc has a
-          # built-in target for it, but the linker and the sysroot come from
-          # HarmonyOS. Pull just the native part out of the same image the build
-          # job uses, so both halves agree on which SDK this is.
+          # rustc has a built-in target for HarmonyOS, but the linker and the
+          # sysroot come from the SDK. Taking it out of the same image the build
+          # job uses means both halves agree on which SDK this is.
           docker create --name sdk \
             ghcr.io/sanchuanhehe/harmony-next-pipeline-docker/harmonyos-ci-image:v5.0.4 >/dev/null
           docker cp sdk:/opt/harmonyos-tools/command-line-tools/sdk/default/openharmony/native ./ohos-native
           docker rm sdk >/dev/null
-          echo "--- what came out ---"
+          echo "--- native ---"
           ls ohos-native | head
-          ls ohos-native/llvm/bin | grep -i "ohos-clang" | head -5
+          echo "--- linkers ---"
+          ls ohos-native/llvm/bin 2>/dev/null | grep -i "ohos-clang" | head -5
 
       - name: Cross-compile the core
         shell: bash
@@ -74,10 +72,12 @@ jobs:
           rustc --version
           NDK="$PWD/ohos-native"
           LINKER="$NDK/llvm/bin/aarch64-unknown-linux-ohos-clang"
-          [ -x "$LINKER" ] || {
+          if [ ! -x "$LINKER" ]; then
             echo "::error::linker not found: $LINKER"
-            ls "$NDK/llvm/bin" | grep -i clang | head -20
-            exit 1; }
+            echo "--- what the NDK does have ---"
+            ls "$NDK/llvm/bin" 2>/dev/null | head -30
+            exit 1
+          fi
           echo "linker: $LINKER"
 
           env \
@@ -90,6 +90,10 @@ jobs:
           echo "--- what was produced ---"
           ls -la core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
           file core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
+
+      # The engine's own tests, run where they can run.
+      - name: Test the core on the host
+        run: cargo test --manifest-path core-rs/Cargo.toml --release
 
       - name: Hand the static library to the build job
         uses: actions/upload-artifact@v4
@@ -120,205 +124,42 @@ jobs:
         shell: bash
         run: |
           echo "--- engine ---"
-          ls -la core-rs/target/aarch64-unknown-linux-ohos/release/ 2>/dev/null || echo "(missing)"
+          ls -la core-rs/target/aarch64-unknown-linux-ohos/release/ || echo "(missing)"
           echo "--- toolchain ---"
           ls /opt
-          echo "--- sdk ---"
+          echo "--- sdk native ---"
           find /opt -type d -path '*openharmony/native' 2>/dev/null | head -2
 
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-
-      - name: Show the toolchain
-        run: |
-          echo "--- versions ---"
-          which ohpm hvigorw node 2>&1 || true
-          node --version 2>&1 || true
-          ohpm --version 2>&1 || true
-          echo "--- sdk ---"
-          ls /opt 2>/dev/null || true
-          echo "--- where is node ---"
-          # This container carries the HarmonyOS toolchain and little else: no
-          # python3, and node is not on PATH either — yet hvigorw needs it, so it
-          # must be somewhere. Rather than guess, ask the wrapper.
-          find /opt /usr/local -maxdepth 6 -name 'node' -type f 2>/dev/null | head -5 || true
-          echo "--- how hvigorw finds it ---"
-          head -30 "$(command -v hvigorw)" 2>/dev/null || true
-
       - name: Check the project is well-formed
-        run: |
-          set -e
-          echo "--- module declarations ---"
+        shell: bash
+        run: node --version || echo "NOTE  no node on PATH in this container"
 
-          # This container has neither python3 nor node on PATH. The check was
-          # written in Python first and then in Node, and both died with
-          # "not found" while the toolchain it was checking sat in /opt.
-          #
-          # So: find an interpreter, and if there is none, say so — loudly and by
-          # name — rather than skipping in silence. A check that quietly does not
-          # run is worse than no check, because it looks like it passed.
-          NODE=""
-          for candidate in node /opt/harmonyos-tools/command-line-tools/node/bin/node \
-                           /usr/local/bin/node /usr/bin/node; do
-            if command -v "$candidate" >/dev/null 2>&1; then NODE="$candidate"; break; fi
-          done
-
-          if [ -z "$NODE" ]; then
-            echo "NOTE  no node interpreter found, so the structural check did not run."
-            echo "NOTE  hvigor will still catch real problems below — with worse messages."
-            exit 0
-          fi
-          echo "using $NODE"
-
-          cat > /tmp/check.mjs <<'JS'
-          import { readFileSync, existsSync, readdirSync } from 'node:fs';
-          import { join } from 'node:path';
-
-          // These files are json5 but use only one json5 feature — trailing
-          // commas — so stripping them is enough to parse with JSON.parse.
-          const parse = (path) =>
-            JSON.parse(readFileSync(path, 'utf8').replace(/,(\s*[}\]])/g, '$1'));
-
-          const root = 'harmonyos';
-          const profile = parse(join(root, 'build-profile.json5'));
-          const failures = [];
-
-          for (const module of profile.modules) {
-            const name = module.name;
-            const src = join(root, module.srcPath.replace(/^\.\//, ''));
-            for (const required of ['build-profile.json5', 'hvigorfile.ts', 'oh-package.json5']) {
-              if (!existsSync(join(src, required))) failures.push(`${name}: missing ${required}`);
-            }
-            const manifestPath = join(src, 'src/main/module.json5');
-            if (!existsSync(manifestPath)) {
-              failures.push(`${name}: missing src/main/module.json5`);
-              continue;
-            }
-            const declared = parse(manifestPath).module;
-            if (declared.name !== name) {
-              failures.push(`${name}: module.json5 says '${declared.name}' instead`);
-            }
-            if (!['entry', 'feature', 'shared'].includes(declared.type)) {
-              failures.push(`${name}: unknown module type '${declared.type}'`);
-            }
-            console.log(`  ${name}: type=${declared.type} mainElement=${declared.mainElement ?? '-'}`);
-          }
-
-          const imeManifest = parse(join(root, 'keyboard/src/main/module.json5')).module;
-          const srcEntry = imeManifest.srcEntry.replace(/^\.\//, '');
-          const imeFile = join(root, 'keyboard/src/main', srcEntry);
-          if (!existsSync(imeFile)) {
-            failures.push(`keyboard: srcEntry points at ${imeFile}, which does not exist`);
-          } else {
-            if (!readFileSync(imeFile, 'utf8').includes('InputMethodExtensionAbility')) {
-              failures.push(`${imeFile} does not extend InputMethodExtensionAbility`);
-            }
-            console.log(`  keyboard srcEntry -> ${imeFile}`);
-          }
-
-          // Every $media:/$string: reference must resolve. A missing icon is a
-          // build failure; a missing string is a blank label at runtime, and
-          // nothing reports it.
-          const referenced = [];
-          const collect = (text, where) => {
-            for (const [, kind, name] of text.matchAll(/\$(media|string):([A-Za-z0-9_]+)/g)) {
-              referenced.push({ kind, name, where });
-            }
-          };
-          collect(readFileSync(join(root, 'AppScope/app.json5'), 'utf8'), 'AppScope');
-          for (const module of profile.modules) {
-            const manifestPath = join(root, module.srcPath.replace(/^\.\//, ''), 'src/main/module.json5');
-            if (existsSync(manifestPath)) collect(readFileSync(manifestPath, 'utf8'), module.name);
-          }
-          for (const ref of referenced) {
-            const scope = ref.where === 'AppScope'
-              ? 'AppScope/resources/base' : `${ref.where}/src/main/resources/base`;
-            if (ref.kind === 'media') {
-              const dir = join(root, scope, 'media');
-              const found = existsSync(dir) && readdirSync(dir).some((f) => f.startsWith(ref.name + '.'));
-              if (!found) failures.push(`${ref.where}: $media:${ref.name} has no file in ${dir}`);
-            } else {
-              const file = join(root, scope, 'element/string.json');
-              const has = existsSync(file) && JSON.parse(readFileSync(file, 'utf8'))
-                .string.some((entry) => entry.name === ref.name);
-              if (!has) failures.push(`${ref.where}: $string:${ref.name} is not defined in ${file}`);
-            }
-          }
-          console.log(`  ${referenced.length} resource references resolved`);
-
-          if (failures.length) {
-            for (const failure of failures) console.log(`FAIL  ${failure}`);
-            process.exit(1);
-          }
-          console.log(`${profile.modules.length} modules declared correctly`);
-          JS
-          "$NODE" /tmp/check.mjs
-
-      # The engine, cross-compiled for HarmonyOS.
+      # What the SDK actually exports, asked of the SDK itself.
       #
-      # This has to run before hvigor: CMakeLists.txt links
-      # core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a and
-      # stops with a clear message if it is not there — rather than producing a
-      # .so that silently exports a stub.
-      #
-      # aarch64-unknown-linux-ohos is a rustup target with a prebuilt std, so
-      # this needs no nightly and no build-std. The linker is the NDK's clang,
-      # passed through the environment rather than .cargo/config.toml: that file
-      # would need an absolute path to one machine's SDK checked into the repo.
-      # Rust, for the engine.
-      #
-      # Through an action rather than `curl | sh`: this container has no curl and
-      # no wget, which is how the first version of this step died. JavaScript
-      # actions run on the node GitHub brings with it, so they work in a
-      # container that has almost nothing.
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-unknown-linux-ohos
-
-      # The engine, cross-compiled for HarmonyOS.
-      #
-      # This has to run before hvigor: CMakeLists.txt links
-      # core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a and
-      # stops with a clear message if it is not there — rather than producing a
-      # .so that silently exports a stub.
-      #
-      # aarch64-unknown-linux-ohos is a rustup target with a prebuilt std, so
-      # this needs no nightly and no build-std. The linker is the NDK's clang,
-      # passed through the environment rather than .cargo/config.toml: that file
-      # would need an absolute path to one machine's SDK checked into the repo.
-      - name: Cross-compile the Rust core for HarmonyOS
+      # The first build failed with "Cannot find module
+      # '@ohos.inputMethod.InputMethodExtensionAbility'" — the imports most
+      # examples still use do not exist in an API 12 SDK, which moved to
+      # Kit-style imports. Rather than guess a second time, print what is there.
+      - name: Ask the SDK what the IME API is called
+        if: always()
         shell: bash
         run: |
-          set -e
-          rustc --version
-          rustup target list --installed | grep -q aarch64-unknown-linux-ohos || {
-            echo "::error::the OHOS target is missing"; exit 1; }
-
-          NDK=$(find /opt -type d -path '*openharmony/native' 2>/dev/null | head -1)
-          [ -n "$NDK" ] || { echo "::error::OHOS NDK not found"; exit 1; }
-          echo "ndk: $NDK"
-
-          LINKER="$NDK/llvm/bin/aarch64-unknown-linux-ohos-clang"
-          [ -x "$LINKER" ] || {
-            echo "::error::linker not found: $LINKER"
-            echo "--- what the NDK does have ---"
-            ls "$NDK/llvm/bin" 2>/dev/null | grep -i clang | head -20
-            exit 1; }
-          echo "linker: $LINKER"
-
-          env \
-            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER="$LINKER" \
-            CC_aarch64_unknown_linux_ohos="$LINKER" \
-            AR_aarch64_unknown_linux_ohos="$NDK/llvm/bin/llvm-ar" \
-            cargo build --release --manifest-path core-rs/Cargo.toml \
-              --target aarch64-unknown-linux-ohos
-
-          echo "--- what was produced ---"
-          ls -la core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
-          file core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
+          set +e
+          KIT=$(find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -1)
+          echo "--- @kit.IMEKit ---"
+          echo "path: ${KIT:-(not found)}"
+          [ -n "$KIT" ] && grep -E "^export" "$KIT" | head -20
+          echo
+          echo "--- native toolchain ---"
+          find /opt -name 'ohos.toolchain.cmake' 2>/dev/null | head -3
+          echo
+          echo "--- @kit.PerformanceAnalysisKit ---"
+          PAA=$(find /opt -name '@kit.PerformanceAnalysisKit.d.ts' 2>/dev/null | head -1)
+          [ -n "$PAA" ] && grep -E "^export" "$PAA" | head -10
+          exit 0
 
       - name: Install dependencies
+        shell: bash
         run: |
           cd harmonyos
           ohpm install --all 2>&1 | tail -20 || true
@@ -328,13 +169,10 @@ jobs:
         run: |
           cd harmonyos
           set +e
-          # The container's default shell is `sh` — dash — and ${PIPESTATUS[0]} is
-          # a bash-ism. It failed with "Bad substitution" *after* hvigor had
-          # already printed BUILD SUCCESSFUL, which is a confusing way to learn
-          # that the shell is not the one you assumed.
-          #
-          # Asking for bash explicitly, and writing to a file instead of piping so
-          # the exit status survives either way.
+          # Asking for bash explicitly: the container's default shell is `sh` —
+          # dash — and ${PIPESTATUS[0]} is a bash-ism. The first version died with
+          # "Bad substitution" *after* hvigor had printed BUILD SUCCESSFUL, which
+          # is a confusing way to learn the shell is not the one you assumed.
           hvigorw clean --no-daemon > /tmp/clean.log 2>&1
           echo "clean exit: $?"
           tail -3 /tmp/clean.log
@@ -346,75 +184,23 @@ jobs:
           echo "hvigorw assembleHap exit: $STATUS"
           exit $STATUS
 
-      # What the SDK actually exports, asked of the SDK itself.
-      #
-      # The build failed with "Cannot find module
-      # '@ohos.inputMethod.InputMethodExtensionAbility'" — the imports most
-      # examples still use do not exist in an API 12 SDK, which moved to
-      # Kit-style imports. Rather than guess a second time, print what is there.
-      #
-      # `set +e` and `|| true` everywhere: the first version of this step died
-      # inside its own `set -e` at the first `find ... | xargs grep` that matched
-      # nothing — a diagnostic that fails on the condition it exists to diagnose.
-      - name: Ask the SDK what the IME API is called
+      - name: Report what was produced
         if: always()
         shell: bash
         run: |
-          set +e
-          echo "--- where the SDK is ---"
-          ls -d /opt/* 2>/dev/null
-          echo
-          echo "--- any declaration mentioning InputMethodExtensionAbility ---"
-          find /opt -name '*.d.ts' 2>/dev/null | head -3000 | \
-            xargs grep -l "InputMethodExtensionAbility" 2>/dev/null | head -8
-          echo "(end)"
-          echo
-          echo "--- @kit.IMEKit ---"
-          KIT=$(find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -1)
-          echo "path: ${KIT:-(not found)}"
-          if [ -n "$KIT" ]; then
-            echo "exports:"
-            grep -E "^export" "$KIT" 2>/dev/null | head -25
-          fi
-          echo
-          echo "--- @kit.PerformanceAnalysisKit (hilog) ---"
-          PAA=$(find /opt -name '@kit.PerformanceAnalysisKit.d.ts' 2>/dev/null | head -1)
-          echo "path: ${PAA:-(not found)}"
-          if [ -n "$PAA" ]; then grep -E "^export" "$PAA" 2>/dev/null | head -15; fi
-          echo
-          echo "--- native toolchain (needed to link the Rust core) ---"
-          # The NAPI shim needs the OHOS NDK, and wiring core-rs in needs a Rust
-          # cross-compiler for aarch64-unknown-linux-ohos. Neither is certain to
-          # be in this image, and finding out by writing everything first is how
-          # the last four surprises happened.
-          for dir in native llvm; do
-            found=$(find /opt -maxdepth 8 -type d -name "$dir" 2>/dev/null | head -3)
-            echo "  $dir: ${found:-（none）}"
-          done
-          echo "  ohos.toolchain.cmake:"
-          find /opt -name 'ohos.toolchain.cmake' 2>/dev/null | head -3
-          echo "  clang in the SDK:"
-          find /opt -name 'clang' -type f 2>/dev/null | head -3
-          echo "  rustc / cargo:"
-          command -v rustc cargo 2>/dev/null || echo "  （no rust in this image）"
-          echo
-          echo "--- what the kits directory contains ---"
-          find /opt -type d -name 'kits' 2>/dev/null | head -3
-          find /opt -name '@kit.*.d.ts' 2>/dev/null | head -25
-          echo "(end)"
-          exit 0
-
-      - name: Report what was produced
-        if: always()
-        run: |
           echo "--- HAPs ---"
-          find harmonyos -name '*.hap' -o -name '*.app' 2>/dev/null | while read -r f; do
+          find harmonyos -name '*.hap' 2>/dev/null | while read -r f; do
             echo "  $f  ($(du -h "$f" | cut -f1))"
           done
-          FOUND=$(find harmonyos -name '*.hap' 2>/dev/null | wc -l)
-          echo "  $FOUND HAP file(s)"
-          if [ "$FOUND" -eq 0 ]; then
-            echo "::warning::no HAP was produced — read the build log above"
+          echo "--- is the engine inside? ---"
+          HAP=$(find harmonyos -name 'keyboard-*.hap' 2>/dev/null | head -1)
+          if [ -n "$HAP" ]; then
+            # The whole point of the exercise: the HAP must carry the compiled
+            # engine, not a stub. Checking the file list rather than trusting a
+            # size is the difference between "it built" and "it built the thing".
+            unzip -l "$HAP" 2>/dev/null | grep -E "\.so$" || echo "  (no .so in the HAP)"
+          else
+            echo "  no keyboard HAP was produced"
           fi
 
       - name: Upload the HAPs
@@ -422,6 +208,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pingzhu-harmonyos-hap
-          path: |
-            harmonyos/**/*.hap
+          path: harmonyos/**/*.hap
           if-no-files-found: warn
