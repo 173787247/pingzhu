@@ -84,10 +84,27 @@ class KeyboardView(context: Context, attrs: AttributeSet? = null) : View(context
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val rowHeight = (width / 10.5f).coerceAtLeast(dp(38f))
-        setMeasuredDimension(width, (rowHeight * rows.size).toInt())
+        /*
+         * Never zero, even with no keys.
+         *
+         * The input view is measured once before the engine has finished loading,
+         * and at that moment there are no rows to size against. A height of zero
+         * is not a neutral answer: the window adopts it, and the framework then
+         * measures everything afterwards against AT_MOST 0 — so the keyboard that
+         * arrives a second later has nowhere to be drawn. Reserving the full
+         * five rows up front means the space is already correct when the keys
+         * arrive, and nothing has to be resized.
+         */
+        val rows = maxOf(this.rows.size, EXPECTED_ROWS)
+        setMeasuredDimension(width, (rowHeight * rows).toInt())
     }
 
     private fun dp(value: Float) = value * resources.displayMetrics.density
+
+    private companion object {
+        /** Four Bopomofo rows and the function row. */
+        const val EXPECTED_ROWS = 5
+    }
 
     override fun onDraw(canvas: Canvas) {
         if (rows.isEmpty()) return

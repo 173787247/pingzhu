@@ -71,7 +71,49 @@ unsafe fn to_jstring(env: *mut JNIEnv, value: &str) -> jstring {
 
 /// Runs `body`, turning a panic into `default` rather than unwinding into the JVM.
 fn guarded<T>(default: T, body: impl FnOnce() -> T) -> T {
-    catch_unwind(AssertUnwindSafe(body)).unwrap_or(default)
+    match catch_unwind(AssertUnwindSafe(body)) {
+        Ok(value) => value,
+        Err(payload) => {
+            // The message is kept, not discarded. The first version of this
+            // returned the default silently, so a panic in the keyboard builder
+            // arrived on the Java side as an empty string and the keyboard drew
+            // nothing — with no exception, no log line, and no clue. Catching a
+            // panic is right; hiding it is what made it hard to find.
+            LAST_PANIC.with(|cell| *cell.borrow_mut() = panic_message(&payload));
+            default
+        }
+    }
+}
+
+thread_local! {
+    static LAST_PANIC: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
+}
+
+fn panic_message(payload: &Box<dyn std::any::Any + Send>) -> String {
+    if let Some(text) = payload.downcast_ref::<&str>() {
+        (*text).to_string()
+    } else if let Some(text) = payload.downcast_ref::<String>() {
+        text.clone()
+    } else {
+        "panic with a non-string payload".to_string()
+    }
+}
+
+/// Runs `body`, and on a panic returns a string that *says* it panicked.
+///
+/// Used by the entry points that hand text back to Java: a silent empty string
+/// is indistinguishable from a legitimate empty result, so the shell would draw
+/// nothing and never know why.
+fn guarded_string(body: impl FnOnce() -> String) -> String {
+    let value = guarded(String::new(), body);
+    LAST_PANIC.with(|cell| {
+        let message = cell.borrow().clone();
+        if message.is_empty() {
+            value
+        } else {
+            format!("\u{1}PANIC IN NATIVE CODE: {message}")
+        }
+    })
 }
 
 /// # Safety
@@ -197,7 +239,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeComposing(
     _class: jclass,
     handle: jlong,
 ) -> jstring {
-    let text = guarded(String::new(), || {
+    let text = guarded_string(|| {
         unsafe { engine(handle) }.map(|e| e.composing()).unwrap_or_default()
     });
     unsafe { to_jstring(env, &text) }
@@ -211,7 +253,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeBestSentence(
     _class: jclass,
     handle: jlong,
 ) -> jstring {
-    let text = guarded(String::new(), || {
+    let text = guarded_string(|| {
         unsafe { engine(handle) }.map(|e| e.best_sentence()).unwrap_or_default()
     });
     unsafe { to_jstring(env, &text) }
@@ -246,7 +288,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeCandidates(
     _class: jclass,
     handle: jlong,
 ) -> jstring {
-    let text = guarded(String::new(), || {
+    let text = guarded_string(|| {
         let Some(e) = (unsafe { engine(handle) }) else { return String::new() };
         e.candidate_page()
             .entries
@@ -309,7 +351,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeSelect(
     handle: jlong,
     one_based: jint,
 ) -> jstring {
-    let text = guarded(String::new(), || {
+    let text = guarded_string(|| {
         let Some(e) = (unsafe { engine(handle) }) else { return String::new() };
         if one_based < 1 { return String::new() }
         // select_candidate is one-based and returns an empty string when the
@@ -327,7 +369,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeCommit(
     _class: jclass,
     handle: jlong,
 ) -> jstring {
-    let text = guarded(String::new(), || {
+    let text = guarded_string(|| {
         unsafe { engine(handle) }.map(|e| e.commit()).unwrap_or_default()
     });
     unsafe { to_jstring(env, &text) }
@@ -343,7 +385,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeOutputScript(
     _class: jclass,
     handle: jlong,
 ) -> jstring {
-    let text = guarded("traditional".to_string(), || {
+    let text = guarded_string(|| {
         unsafe { engine(handle) }
             .map(|e| e.output_script().id().to_string())
             .unwrap_or_else(|| "traditional".to_string())
@@ -433,7 +475,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeKeyboardLabels(
     _class: jclass,
     _handle: jlong,
 ) -> jstring {
-    let text = guarded(String::new(), || {
+    let text = guarded_string(|| {
         // "key\tlabel" pairs, rows separated by newlines: enough for the shell
         // to draw the keyboard without keeping a second copy of the layout.
         Layout::Standard

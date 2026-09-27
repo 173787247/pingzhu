@@ -48,7 +48,7 @@
     "build": "tsc -p tsconfig.build.json && node build-data.mjs",
     "prepublishOnly": "npm run build",
     "demo": "node cli.ts",
-    "test": "node --test test/",
+    "test": "node --test",
     "typecheck": "tsc --noEmit -p tsconfig.build.json"
   },
 

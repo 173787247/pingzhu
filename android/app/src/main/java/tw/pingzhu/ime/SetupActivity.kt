@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -33,6 +34,23 @@ class SetupActivity : Activity() {
         }
         column.addView(title(getString(R.string.app_name)))
         column.addView(body(getString(R.string.setup_intro)))
+
+        // A field to try it in. Without one, "enable the input method" is an
+        // instruction with nothing to try it on — the user has to leave the app,
+        // find somewhere to type, and come back if it did not work.
+        column.addView(title(getString(R.string.setup_try)))
+        column.addView(
+            EditText(this).apply {
+                hint = getString(R.string.setup_try_hint)
+                setSingleLine(false)
+                minLines = 2
+                setTextSize(18f)
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(6f) }
+            },
+        )
 
         column.addView(
             button(getString(R.string.setup_enable)) {

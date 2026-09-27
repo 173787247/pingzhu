@@ -2,6 +2,7 @@ package tw.pingzhu.ime
 
 import android.content.Context
 import android.inputmethodservice.InputMethodService
+import android.util.Log
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
@@ -42,9 +43,30 @@ class PingZhuImeService : InputMethodService() {
     }
 
     private fun loadEngine() {
-        val dataDir = ensureData()
-        val created = dataDir?.let { Engine.create(it.absolutePath) }
+        // Wrapped, because an exception thrown inside an Executor task is
+        // swallowed: the thread dies, the callback never runs, and the keyboard
+        // simply never appears — with nothing in logcat and nothing on screen.
+        // That is the exact failure mode this project keeps having to dig out of
+        // its Windows shell, and it is cheaper to prevent than to find.
+        val created = try {
+            val dataDir = ensureData()
+            if (dataDir == null) {
+                Log.e(TAG, "the language model is missing from the APK — this is a build error")
+                null
+            } else {
+                Engine.create(dataDir.absolutePath).also {
+                    if (it == null) Log.e(TAG, "the engine refused ${dataDir.absolutePath}")
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "the engine failed to start", t)
+            null
+        }
         main.post { onEngineReady(created) }
+    }
+
+    private fun report(message: String) {
+        Log.i(TAG, message)
     }
 
     private fun onEngineReady(created: Engine?) {
@@ -57,6 +79,9 @@ class PingZhuImeService : InputMethodService() {
         created.loadUserDictionary(userDictionary().absolutePath)
         created.setOutputScript(prefs().getString(KEY_SCRIPT, "traditional") ?: "traditional")
         buildKeyboard()
+        report("engine ready: ${keyboardRows.sumOf { it.size }} keys, " +
+            "${created.outputScript()} output; native layout payload = " +
+            "${Engine.rawKeyboardLabels().length} chars")
         refresh()
     }
 
@@ -98,7 +123,33 @@ class PingZhuImeService : InputMethodService() {
     // ------------------------------------------------------------------- views
 
     override fun onCreateInputView(): View {
-        val root = FrameLayout(this)
+        /*
+         * A container that sizes itself to its content, ignoring the height
+         * limit it is handed.
+         *
+         * The input view is probed with `AT_MOST 0` before the window has a
+         * height. A container that honours the limit reports zero, the window
+         * adopts zero, and the next probe is also zero — the keyboard is measured
+         * correctly the whole time and never gets a pixel to draw in. The limit
+         * is the thing being computed, so it cannot also be the answer.
+         */
+        val root = object : FrameLayout(this) {
+            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                val child = getChildAt(0)
+                if (child == null) {
+                    super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+                    return
+                }
+                val width = MeasureSpec.getSize(widthMeasureSpec)
+                child.measure(
+                    MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                    // UNSPECIFIED: ask the child how tall it wants to be. It is
+                    // the only thing that knows how many rows a keyboard has.
+                    MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+                )
+                setMeasuredDimension(width, child.measuredHeight)
+            }
+        }
         val board = KeyboardView(this)
         board.onKey = { key -> onKeyPressed(key) }
         keyboard = board
@@ -110,6 +161,18 @@ class PingZhuImeService : InputMethodService() {
             ),
         )
         if (engine != null) buildKeyboard()
+        // Logged after layout so the parent's decision is visible: a keyboard
+        // that measures correctly inside a parent that measured to nothing looks
+        // exactly like a keyboard that never drew.
+        root.post {
+            report(
+                "input view: root=${root.width}x${root.height}" +
+                    " shown=${root.isShown} vis=${root.visibility}" +
+                    " | keyboard=${board.width}x${board.height}" +
+                    " shown=${board.isShown} vis=${board.visibility}" +
+                    " | windowShown=${isInputViewShown}",
+            )
+        }
         return root
     }
 
@@ -161,6 +224,9 @@ class PingZhuImeService : InputMethodService() {
         keyboardRows.add(bottom)
         board.setKeys(keyboardRows)
         board.simplified = engine?.outputScript() == "simplified"
+        if (rows.isEmpty()) {
+            report("the engine produced no keyboard rows")
+        }
     }
 
     // ------------------------------------------------------------------- input
@@ -314,6 +380,8 @@ class PingZhuImeService : InputMethodService() {
     }
 
     companion object {
+        private const val TAG = "PingZhu"
+
         const val KEY_SCRIPT = "output_script"
 
         /**

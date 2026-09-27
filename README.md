@@ -5,7 +5,7 @@
 Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 [![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases)
-[![engine tests](https://img.shields.io/badge/engine%20tests-65%2F65-brightgreen)](#现况)
+[![engine tests](https://img.shields.io/badge/engine%20tests-66%2F66-brightgreen)](#现况)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
 
@@ -188,7 +188,7 @@ node engine/cli.ts su3cl3 ji394su3 w96j0
 node engine/cli.ts --layout eten ne3     # 倚天鍵盤
 
 # 測試與評測
-cd engine && node --test "test/*.test.ts"   # 65 項
+cd engine && node --test                      # 66 項
 node engine/bench.mjs 5000                  # 解碼品質
 node engine/bench.mjs 5000 --compare        # promotion 開啟前後的逐例對比
 node engine/bench-learn.mjs 5000            # 學習前後對比
