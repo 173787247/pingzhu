@@ -8,27 +8,46 @@ project(pingzhu)
 set(CMAKE_CXX_STANDARD 17)
 set(NATIVERENDER_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Where the repository root is — found, not counted.
+#
+# The first version wrote out ../ six times and was off by one, which produced a
+# message about a missing file rather than about a wrong path, and cost a CI run
+# to notice. Walking up until core-rs appears cannot be off by one.
+set(PINGZHU_REPO_ROOT "")
+set(_probe ${NATIVERENDER_ROOT_PATH})
+foreach(_step RANGE 1 8)
+  get_filename_component(_probe ${_probe} DIRECTORY)
+  if(EXISTS ${_probe}/core-rs/Cargo.toml)
+    set(PINGZHU_REPO_ROOT ${_probe})
+    break()
+  endif()
+endforeach()
+
+if(PINGZHU_REPO_ROOT STREQUAL "")
+  message(FATAL_ERROR
+    "Could not find core-rs/Cargo.toml by walking up from ${NATIVERENDER_ROOT_PATH}.\n"
+    "This file expects to live inside the pingzhu repository.")
+endif()
+
+message(STATUS "pingzhu repository root: ${PINGZHU_REPO_ROOT}")
+
 include_directories(${NATIVERENDER_ROOT_PATH})
 include_directories(${NATIVERENDER_ROOT_PATH}/include)
-include_directories(${NATIVERENDER_ROOT_PATH}/../../../../../../core-rs/include)
+include_directories(${PINGZHU_REPO_ROOT}/core-rs/include)
 
-# The Rust core, already cross-compiled by the workflow step that runs before
-# this one. A relative path, not an absolute one: an absolute path to one
-# machine's checkout works exactly until somebody else clones the repository.
-#
-# If the file is missing, CMake fails here with a clear message rather than
-# producing a shared library that silently exports a stub.
-set(PINGZHU_CORE_DIR ${NATIVERENDER_ROOT_PATH}/../../../../../../core-rs/target/aarch64-unknown-linux-ohos/release)
-set(PINGZHU_CORE_LIB ${PINGZHU_CORE_DIR}/libpingzhu_core.a)
+# The Rust core, already cross-compiled by the workflow job that runs before
+# this one. If it is missing, stop with a message that says how to produce it —
+# rather than linking a shared library that silently exports a stub.
+set(PINGZHU_CORE_LIB
+  ${PINGZHU_REPO_ROOT}/core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a)
 
 if(NOT EXISTS ${PINGZHU_CORE_LIB})
   message(FATAL_ERROR
-    "libpingzhu_core.a is not at ${PINGZHU_CORE_LIB}.\n"
-    "The Rust core has to be cross-compiled for aarch64-unknown-linux-ohos first:\n"
+    "libpingzhu_core.a is not at ${PINGZHU_CORE_LIB}\n"
+    "Cross-compile it first:\n"
     "  rustup target add aarch64-unknown-linux-ohos\n"
     "  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER=<ndk>/llvm/bin/aarch64-unknown-linux-ohos-clang \\\n"
-    "    cargo build --release --manifest-path core-rs/Cargo.toml --target aarch64-unknown-linux-ohos\n"
-    "Rather than link a stub, this stops.")
+    "    cargo build --release --manifest-path core-rs/Cargo.toml --target aarch64-unknown-linux-ohos")
 endif()
 
 add_library(pingzhu_core STATIC IMPORTED)
@@ -36,7 +55,7 @@ set_target_properties(pingzhu_core PROPERTIES IMPORTED_LOCATION ${PINGZHU_CORE_L
 
 add_library(pingzhu SHARED napi_init.cpp)
 
-# libace_napi.z.so is the NAPI runtime the ArkTS side talks to; it ships with
-# the system image. The Rust core is statically linked, so the .so in the HAP
-# carries the engine with it.
+# libace_napi.z.so is the NAPI runtime the ArkTS side talks to; it ships with the
+# system image. The Rust core is linked statically, so the .so inside the HAP
+# carries the engine with it — which is also why the HAP went from 8K to 1.3M.
 target_link_libraries(pingzhu PUBLIC libace_napi.z.so pingzhu_core)
