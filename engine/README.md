@@ -7,18 +7,18 @@ Traditional → Simplified output.
 Zero runtime dependencies. Pure TypeScript sources, compiled to ESM for consumers.
 
 ```bash
-npm install pingzhu-engine
+npm install @173787247/pingzhu-engine
 ```
 
 ```js
-import { InputEngine, LAYOUTS } from "pingzhu-engine";
-import { loadDictionary, loadSyllableInventory, loadConverter } from "pingzhu-engine/node";
+import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
+import { loadDictionary, loadSyllableInventory, loadConverter } from "@173787247/pingzhu-engine/node";
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 
 const require = createRequire(import.meta.url);
 // The language model ships inside this package.
-const data = dirname(require.resolve("pingzhu-engine/data/bopomofo-lm.tsv"));
+const data = dirname(require.resolve("@173787247/pingzhu-engine/data/bopomofo-lm.tsv"));
 
 const engine = new InputEngine(
   loadDictionary(`${data}/bopomofo-lm.tsv`),
@@ -36,8 +36,8 @@ engine.commit();          // 你好
 
 | Import | Node builtins | Use |
 |---|---|---|
-| `pingzhu-engine` | none | browsers, bundlers, anywhere |
-| `pingzhu-engine/node` | `node:fs`, `node:path` | loading a model from disk |
+| `@173787247/pingzhu-engine` | none | browsers, bundlers, anywhere |
+| `@173787247/pingzhu-engine/node` | `node:fs`, `node:path` | loading a model from disk |
 
 The split is enforced by a test, not by a comment: the decoding modules import
 no Node builtins, so a browser bundle of `pingzhu-engine` resolves cleanly. The

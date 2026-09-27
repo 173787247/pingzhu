@@ -139,6 +139,30 @@ are behind `pingzhu-engine/node`. The split is enforced by a test, not by a comm
 
 ---
 
+## As a library
+
+The engine stands alone, with zero runtime dependencies:
+
+```bash
+npm install @173787247/pingzhu-engine
+```
+
+(If that fails — GitHub Packages requires authentication — use the tarball attached
+to the release instead: one line, no setup.)
+
+```bash
+npm install https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-engine-0.8.0.tgz
+```
+
+```js
+import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
+import { loadDictionary, loadSyllableInventory, loadConverter } from "@173787247/pingzhu-engine/node";
+```
+
+The main entry imports **no Node builtins**, so browsers and bundlers can use it;
+the filesystem helpers live under `/node`. That split is enforced by a test, not by
+a comment.
+
 ## Architecture
 
 ```
