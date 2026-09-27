@@ -37,12 +37,24 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # Pinned to the version that generated the committed demo.
+          #
+          # The demo is produced by Node's own TypeScript-stripping parser, not
+          # by a bundler, and its output can change between Node releases. The
+          # first run of this workflow used 22 while the committed files were
+          # generated with 24 — and the check below correctly reported a
+          # mismatch that was really a toolchain difference.
+          node-version: '24'
 
       - name: The committed demo matches the engine it claims to run
         run: |
           set -e
-          cp -r demo /tmp/demo-committed
+          # `cp -r demo /tmp/x` copies demo *to* /tmp/x when x does not exist and
+          # *into* it when it does — which is how the first version of this step
+          # produced "No such file or directory" for a directory it had just
+          # created. Copying the contents removes the ambiguity.
+          mkdir -p /tmp/demo-committed
+          cp -r demo/. /tmp/demo-committed/
           node tools/build-demo.mjs
           if ! diff -r /tmp/demo-committed/engine demo/engine > /tmp/demo.diff 2>&1; then
             echo "::error::demo/engine is not what tools/build-demo.mjs produces"
