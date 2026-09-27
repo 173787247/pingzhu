@@ -127,11 +127,38 @@ ok    w96j0: 台灣
 
 ---
 
+## 在 WSL2 里能测到哪一步
+
+**能测引擎，测不了打字。**
+
+WSLg 提供了真的 X11 和 Wayland ✓ ——`DISPLAY=:0` ✓、`X0` socket ✓ ——
+所以 addon 能在里面跑起来 ✓：
+
+```
+Loaded addon pingzhu
+Found 1 input method(s) in addon pingzhu
+DefaultIM=pingzhu（沒有 not valid）
+PingZhu: engine ready, ABI 1, data /usr/share/pingzhu   ← Rust 核心讀到了 6.2MB 模型
+```
+
+**但「在 GUI 里真的打字」在 WSLg 底下测不了** ✗：
+
+| 障碍 | 为什么 |
+|---|---|
+| **Wayland 被拒** | `zwp_input_method_v1: permission to bind input_method denied` ——WSLg 不允许输入法协定 |
+| **xterm 的 XIM 连不上** | 系统只有 `C.utf8` 一个 locale，而 xterm 的 XIM 跟著 locale 走 |
+| **GTK 视窗不映射** | mousepad 跑起来了，但它的视窗没出现在 WSLg 的合成器里 |
+
+**所以 `fcitx5 --disable=wayland` 是必须的** ✓ ——X11 是通的 ✓
+
+**要真的验证打字，需要一台有桌面环境的 Linux** ✓ ——
+而 `tests/engine_smoke` 在那里会跑同样的三个词 ✓
+
 ## 还没有做的
 
 | | |
 |---|---|
-| **在真的桌面环境里打字** | ❌ 这里没有 X/Wayland，只验证到引擎与 addon 载入 |
+| **在真的桌面环境里打字** | ❌ **WSLg 底下测不了**（见上一节）——引擎与 addon 载入已验证 |
 | 图示 | ❌ `Icon=pingzhu` 指向一个还没做的图示 |
 | 使用者词库的读写 | ❌ C ABI 有，addon 还没接 |
 | 繁简切换的快速键 | ❌ |
