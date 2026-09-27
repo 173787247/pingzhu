@@ -29,11 +29,102 @@ permissions:
   contents: read
 
 jobs:
+  # The engine first, on a plain runner.
+  #
+  # This container turned out to hold the HarmonyOS toolchain and very little
+  # else: no python3, node not on PATH, no curl, no wget. Installing Rust inside
+  # it means downloading rustup with something it does not have, and the
+  # dtolnay/rust-toolchain action needs curl too.
+  #
+  # So the Rust half happens where the tooling exists, and the HAP half happens
+  # where the SDK exists. The .a travels between them as an artifact.
+  #
+  # This is also the honest split: cross-compiling the core has nothing to do
+  # with HarmonyOS's build system, and running it on a normal runner means a
+  # failure here is about the Rust code, not about a container.
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-ohos
+
+      - name: Get the OHOS NDK
+        shell: bash
+        run: |
+          set -e
+          # The NDK is what makes the cross-compile possible: rustc has a
+          # built-in target for it, but the linker and the sysroot come from
+          # HarmonyOS. Pull just the native part out of the same image the build
+          # job uses, so both halves agree on which SDK this is.
+          docker create --name sdk \
+            ghcr.io/sanchuanhehe/harmony-next-pipeline-docker/harmonyos-ci-image:v5.0.4 >/dev/null
+          docker cp sdk:/opt/harmonyos-tools/command-line-tools/sdk/default/openharmony/native ./ohos-native
+          docker rm sdk >/dev/null
+          echo "--- what came out ---"
+          ls ohos-native | head
+          ls ohos-native/llvm/bin | grep -i "ohos-clang" | head -5
+
+      - name: Cross-compile the core
+        shell: bash
+        run: |
+          set -e
+          rustc --version
+          NDK="$PWD/ohos-native"
+          LINKER="$NDK/llvm/bin/aarch64-unknown-linux-ohos-clang"
+          [ -x "$LINKER" ] || {
+            echo "::error::linker not found: $LINKER"
+            ls "$NDK/llvm/bin" | grep -i clang | head -20
+            exit 1; }
+          echo "linker: $LINKER"
+
+          env \
+            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER="$LINKER" \
+            CC_aarch64_unknown_linux_ohos="$LINKER" \
+            AR_aarch64_unknown_linux_ohos="$NDK/llvm/bin/llvm-ar" \
+            cargo build --release --manifest-path core-rs/Cargo.toml \
+              --target aarch64-unknown-linux-ohos
+
+          echo "--- what was produced ---"
+          ls -la core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
+          file core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
+
+      - name: Hand the static library to the build job
+        uses: actions/upload-artifact@v4
+        with:
+          name: libpingzhu-core-ohos
+          path: core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
+          if-no-files-found: error
+
+  # Then the HAPs, where the SDK is.
   build:
+    needs: engine
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/sanchuanhehe/harmony-next-pipeline-docker/harmonyos-ci-image:v5.0.4
       options: --user root
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Take the engine
+        uses: actions/download-artifact@v4
+        with:
+          name: libpingzhu-core-ohos
+          path: core-rs/target/aarch64-unknown-linux-ohos/release
+
+      - name: Show what we have
+        shell: bash
+        run: |
+          echo "--- engine ---"
+          ls -la core-rs/target/aarch64-unknown-linux-ohos/release/ 2>/dev/null || echo "(missing)"
+          echo "--- toolchain ---"
+          ls /opt
+          echo "--- sdk ---"
+          find /opt -type d -path '*openharmony/native' 2>/dev/null | head -2
 
     steps:
       - name: Check out
