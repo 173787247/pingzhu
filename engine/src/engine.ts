@@ -18,9 +18,9 @@ import {
   composeSyllable, componentChar, isCanonicalComponentOrder, isWellFormedComponents,
   type KeyComponent,
 } from "./syllable.ts";
-import { Dictionary } from "./dictionary.ts";
+import { Dictionary, type Entry } from "./dictionary.ts";
 import {
-  ReadingGrid, type CandidateOrder, type Entry, type GridPath, type ReadingGridOptions,
+  ReadingGrid, type CandidateOrder, type GridPath, type ReadingGridOptions,
 } from "./grid.ts";
 import type { UserDictionary } from "./userdict.ts";
 import { Converter, type OutputScript } from "./converter.ts";

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    /*
+     * The sources import each other with explicit `.ts` extensions, because that
+     * is what Node's own type stripping requires and the project runs from source
+     * with no build step day to day. A published package cannot ship that: a
+     * consumer's bundler resolves `.js`. This rewrites the extensions on the way
+     * out, so one set of sources serves both.
+     */
+    "rewriteRelativeImportExtensions": true,
+    "allowImportingTsExtensions": true,
+
+    "strict": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}

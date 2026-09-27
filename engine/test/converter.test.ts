@@ -13,7 +13,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Converter, isOutputScript } from "../src/converter.ts";
+import { Converter, isOutputScript } from "../src/converter.ts"
+import { loadConverter } from "../src/node-data.ts";
 
 const sample = Converter.fromText(
   [
@@ -67,7 +68,7 @@ test("script names are validated", () => {
 });
 
 test("the real table converts the cases that matter", () => {
-  const converter = Converter.fromFile("../data/ts-conversion.tsv");
+  const converter = loadConverter("../data/ts-conversion.tsv");
   assert.ok(converter.size > 3000, `table looks empty: ${converter.size}`);
   assert.equal(converter.toSimplified("我愛你"), "我爱你");
   assert.equal(converter.toSimplified("萬丹"), "万丹");
@@ -77,4 +78,36 @@ test("the real table converts the cases that matter", () => {
   assert.equal(converter.toSimplified("乾坤"), "乾坤");
   assert.equal(converter.toSimplified("旋轉乾坤"), "旋转乾坤");
   assert.equal(converter.toSimplified("乾淨"), "干净");
+});
+
+/**
+ * The invariant `node-data.ts` claims in its header comment.
+ *
+ * It said "only this module touches node:fs" while `converter.ts` imported it
+ * for one convenience method — so every browser that wanted the conversion table
+ * got a module it could not load. A comment is not a constraint; this is.
+ */
+test("the platform-free modules import no node builtins", async () => {
+  const { readFileSync, readdirSync } = await import("node:fs");
+  const pure = [
+    "syllable.ts",
+    "keyboard.ts",
+    "grid.ts",
+    "dictionary.ts",
+    "userdict.ts",
+    "converter.ts",
+    "engine.ts",
+    "pinyin.ts",
+  ];
+  const present = new Set(readdirSync(new URL("../src", import.meta.url)));
+  for (const file of pure) {
+    if (!present.has(file)) continue;
+    const text = readFileSync(new URL(`../src/${file}`, import.meta.url), "utf8");
+    const match = text.match(/from\s+"(node:[^"]+)"/);
+    assert.equal(
+      match,
+      null,
+      `${file} imports ${match?.[1]} — it must stay platform-free so a browser can use it`,
+    );
+  }
 });
