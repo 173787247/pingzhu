@@ -222,6 +222,28 @@ node engine/bench-learn.mjs 5000 --recall   # 候選可達性
 
 ---
 
+## 当成函式库使用
+
+引擎可以独立使用，零执行期依赖：
+
+```bash
+npm install @173787247/pingzhu-engine
+```
+
+（装不起来的话——GitHub Packages 要求认证——改用 release 上的 tarball，一行、零设定：）
+
+```bash
+npm install https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-engine-0.8.0.tgz
+```
+
+```js
+import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
+import { loadDictionary, loadSyllableInventory, loadConverter } from "@173787247/pingzhu-engine/node";
+```
+
+主入口**不 import 任何 Node 内建模组**，所以浏览器与打包器都能用 ✓；
+档案系统相关的工具在 `/node` 子路径 ✓。这个分割由测试钉住，不是靠注解。
+
 ## 架构
 
 ```mermaid
