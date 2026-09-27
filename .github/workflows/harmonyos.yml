@@ -150,6 +150,18 @@ jobs:
           echo "path: ${KIT:-(not found)}"
           [ -n "$KIT" ] && grep -E "^export" "$KIT" | head -20
           echo
+          echo "--- inputMethodEngine: the API that reaches the editor ---"
+          IME=$(find /opt -name '@ohos.inputMethodEngine.d.ts' 2>/dev/null | head -1)
+          echo "path: ${IME:-(not found)}"
+          if [ -n "$IME" ]; then
+            echo "--- exported names ---"
+            grep -E "^export|^declare" "$IME" | head -30
+            echo "--- InputClient (what insertText lives on) ---"
+            sed -n '/interface InputClient/,/^  }/p' "$IME" | grep -E "^\s+(insertText|delete|getForward|moveCursor|sendKeyFunction|getEditorAttribute|on|off)" | head -20
+            echo "--- InputMethodAbility events ---"
+            grep -E "on\(type: '(inputStart|inputStop|keyboardShow|keyboardHide)'" "$IME" | head -10
+          fi
+          echo
           echo "--- native toolchain ---"
           find /opt -name 'ohos.toolchain.cmake' 2>/dev/null | head -3
           echo
