@@ -130,9 +130,25 @@ jobs:
           echo "--- sdk native ---"
           find /opt -type d -path '*openharmony/native' 2>/dev/null | head -2
 
-      - name: Check the project is well-formed
+      # The real check, in a file rather than inline.
+      #
+      # It was inline here once. A later rewrite of this workflow replaced it
+      # with a one-line `node --version` placeholder and nobody noticed for
+      # several days, because a check that quietly stops running looks exactly
+      # like a check that passes. Every structural failure that cost time today
+      # would have been caught by it.
+      #
+      # Being a file also means it runs before pushing — which is how its own
+      # json5 parsing bug was found rather than becoming a red CI.
+      - name: Check the project declares what the system looks for
         shell: bash
-        run: node --version || echo "NOTE  no node on PATH in this container"
+        run: |
+          NODE=$(command -v node || echo /opt/harmonyos-tools/command-line-tools/tool/node/bin/node)
+          if [ ! -x "$NODE" ]; then
+            echo "::error::no node interpreter found; this check must not be skipped silently"
+            exit 1
+          fi
+          "$NODE" tools/check-harmonyos-project.mjs harmonyos
 
       # What the SDK actually exports, asked of the SDK itself.
       #
