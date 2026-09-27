@@ -10,6 +10,26 @@ Zero runtime dependencies. Pure TypeScript sources, compiled to ESM for consumer
 npm install @173787247/pingzhu-engine
 ```
 
+**This one needs a GitHub token first.** GitHub Packages requires authentication
+even for public packages — verified on this package, not assumed:
+
+```
+npm error 401 Unauthorized - authentication token not provided
+```
+
+```bash
+# once
+echo "@173787247:registry=https://npm.pkg.github.com" >> ~/.npmrc
+echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc
+```
+
+**Or skip the registry entirely** — the tarball is attached to every release, so
+this needs no account and no token:
+
+```bash
+npm install https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-engine-0.8.0.tgz
+```
+
 ```js
 import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
 import { loadDictionary, loadSyllableInventory, loadConverter } from "@173787247/pingzhu-engine/node";

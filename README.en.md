@@ -143,16 +143,23 @@ are behind `pingzhu-engine/node`. The split is enforced by a test, not by a comm
 
 The engine stands alone, with zero runtime dependencies:
 
-```bash
-npm install @173787247/pingzhu-engine
-```
-
-(If that fails — GitHub Packages requires authentication — use the tarball attached
-to the release instead: one line, no setup.)
+**Option 1 — the tarball on the release page** (no account, no setup; recommended)
 
 ```bash
 npm install https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-engine-0.8.0.tgz
 ```
+
+**Option 2 — GitHub Packages** (needs a GitHub token first)
+
+```bash
+npm install @173787247/pingzhu-engine
+```
+
+> GitHub Packages **requires authentication even to install public packages** — not
+> assumed, verified on this exact package:
+> `npm error 401 Unauthorized - authentication token not provided`
+>
+> To use it, configure once: `echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc`
 
 ```js
 import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
