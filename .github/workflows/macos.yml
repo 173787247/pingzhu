@@ -86,9 +86,30 @@ jobs:
           lipo -info core-rs/target/libpingzhu_core_universal.a
           file dist/PingZhu.app/Contents/MacOS/PingZhu
 
+      # Zipped before uploading, and with `ditto`.
+      #
+      # `upload-artifact` with a directory uploads its *contents*, so downloading
+      # it back gives `Contents/...` with no `.app` around it — a bundle that
+      # cannot be reconstructed. The first version did exactly that, and the
+      # error only shows up on the way out:
+      #
+      #   error extracting "Contents/Info.plist": file exists
+      #
+      # `ditto -c -k --keepParent` is how macOS zips an application: it keeps the
+      # bundle as the top-level entry and preserves the permissions and extended
+      # attributes that a signed bundle depends on. `zip` does not.
+      - name: Package the app bundle
+        run: |
+          set -e
+          ditto -c -k --keepParent dist/PingZhu.app dist/PingZhu-0.9.0-macos.zip
+          ditto -x -k dist/PingZhu-0.9.0-macos.zip /tmp/roundtrip
+          test -x /tmp/roundtrip/PingZhu.app/Contents/MacOS/PingZhu
+          codesign --verify /tmp/roundtrip/PingZhu.app
+          echo "round-trip ok: unzipping gives back a runnable, signed bundle"
+
       - name: Upload the app bundle
         uses: actions/upload-artifact@v4
         with:
-          name: PingZhu.app
-          path: dist/PingZhu.app
+          name: PingZhu-0.9.0-macos.zip
+          path: dist/PingZhu-0.9.0-macos.zip
           if-no-files-found: error
