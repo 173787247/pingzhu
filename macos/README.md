@@ -56,9 +56,36 @@ ok    the engine runs on macOS
 **「link 得起来」和「跑得起来」是两件事** ✗ ——一个在 Darwin 上 link 得起来、
 却因为读不到语言模型而回传空字串的核心，**和使用者打字之前都看起来一模一样** ✗。
 
-唯一还是测不了的是 **IMK 那一层** ✗：启用输入源、送按键给它，需要一个
-已登入的 GUI 工作阶段 ✗，而 CI runner 没有 ✓。那一部分仍然需要一个人
-坐在一台 Mac 前面 ✓ ——但**他要检查的范围从「全部」缩小到「IMK 的黏合层」** ✓。
+### CI 能验证到哪，以及为什么停在那里
+
+| | |
+|---|---|
+| ✅ 编译（两个架构、真 macOS） | |
+| ✅ bundle 结构（26 项检查） | |
+| ✅ 引擎真的解码 | |
+| ✅ **装进 `~/Library/Input Methods`、签章有效** | |
+| ❌ **系统接受它** | **需要登入** ✗ |
+
+最后一项**试过三条路都不行** ✗：
+
+1. 等 20 秒 ✗
+2. 用 `lsregister` 向 LaunchServices 注册 ✗（安装程式就是这么做的 ✗）
+3. 重启 `TextInputMenuAgent` 与 `TextInputSwitcher` ✗
+
+**macOS 只在登入时扫描那个目录** ✓，而 CI runner 没办法登入 ✗。
+
+所以安装测试把这一点**当成结论报告，而不是当成失败** ✓：
+
+```
+note  the system does not list tw.pingzhu.ime.Bopomofo in this session
+note  macOS scans that directory at login; a mid-session copy is not
+note  picked up, and lsregister plus restarting the input source
+note  agents does not change it (both were tried).
+```
+
+> **一个意思是「这个我们早就知道」的红灯，是没有人会去读的红灯。**
+
+剩下需要你（或任何一台 Mac）做的：装上去、登入、到系统设定加入「平注」、打字 ✓
 
 ## CI 检查的四件「不会报错」的事
 
