@@ -228,7 +228,7 @@ prefers three mediocre characters to one good word.
 | **M4c** | Simplified output: OpenCC table, hotkey / floating button / config file | ✅ done |
 | **M6** | Android `InputMethodService`: self-drawn keyboard, candidate bar, JNI | ✅ done |
 | **M5** | macOS IMK shell: IMKInputController, candidate NSPanel, built and engine-tested in CI | ⚠️ **compiles and runs on hardware; the system does not accept it yet** (six hypotheses eliminated — see [macos/](macos/README.md)) |
-| **M7** | HarmonyOS IME Kit shell: ArkTS, NAPI, Rust core linked, built in CI | ⚠️ **engine is inside the HAP**; the keyboard UI and a real device are to do |
+| **M7** | HarmonyOS IME Kit shell: ArkTS, NAPI, Rust core, keyboard UI | ⚠️ **everything builds (engine + keyboard)** · **committing text and a real device are to do** |
 | **M8** | Symbol table, word association, text shortcuts | to do |
 
 Tests: **66 TypeScript**, **26 Rust** (including 1,529 differential cases), **3 Windows
