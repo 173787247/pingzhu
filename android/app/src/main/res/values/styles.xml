@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--
+      給輸入法視窗的主題。
+
+      InputMethodService 會用這個主題建立它的 SoftInputWindow，而視窗的高度模式就來自
+      這裡。預設會「包住內容」——在引擎還沒產生任何按鍵之前被量測時，這會包成 0，
+      之後每一次量測的上限都是 AT_MOST 0，於是稍後才到達的鍵盤沒有地方可以畫。
+
+      windowIsFloating=false 讓視窗填滿螢幕（鍵盤靠底對齊），
+      和 Gboard 的 fillxfill 一致。
+    -->
+    <style name="ImeTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>
