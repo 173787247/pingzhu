@@ -73,7 +73,14 @@ napi_value Create(napi_env env, napi_callback_info info) {
         engine_destroy(g_engine);
         g_engine = nullptr;
     }
-    g_engine = engine_create(dir.c_str());
+    // Three arguments, not one.
+    //
+    // engine_create(data_dir, layout, candidate_order) — the layout is "standard"
+    // (大千式) or "eten", and the candidate order is "longest-first",
+    // "frequency", or anything else for the default. Passing fewer arguments is
+    // a compile error on the C++ side, which is how this was found; a shell that
+    // loads the library dynamically would have found out at runtime instead.
+    g_engine = engine_create(dir.c_str(), "standard", "frequency");
     if (g_engine == nullptr) {
         // Not an exception: the caller decides whether a missing model is fatal.
         // An input method that cannot read its dictionary should say so and stay
