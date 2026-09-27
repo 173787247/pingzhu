@@ -2,6 +2,9 @@
 
 **English** ｜ [简体中文](README.zh-CN.md)
 
+**[▶ Try it in a browser](https://173787247.github.io/pingzhu/)** — nothing to install.
+Type `su3cl3` and watch the engine decode it, using the same modules the test suite runs against.
+
 An open-source, cross-platform **Bopomofo (注音 / Zhuyin)** input method for Windows,
 Android, macOS, HarmonyOS NEXT and Linux.
 
