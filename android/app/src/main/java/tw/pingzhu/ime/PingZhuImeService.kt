@@ -2,6 +2,8 @@ package tw.pingzhu.ime
 
 import android.content.Context
 import android.inputmethodservice.InputMethodService
+import android.view.Gravity
+import android.view.WindowManager
 import android.util.Log
 import android.os.Handler
 import android.os.Looper
@@ -36,6 +38,30 @@ class PingZhuImeService : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
+
+        /*
+         * The input method window spans the screen, and the keyboard sits at the
+         * bottom of it.
+         *
+         * The default is a window that wraps its content, and that is what broke
+         * this: the window is probed before the engine has produced any keys, so
+         * it wraps to zero — and every measurement afterwards is `AT_MOST 0`, so
+         * a keyboard that arrives a moment later has nowhere to be drawn. The
+         * window reports itself shown, has a surface, and composites nothing.
+         *
+         * Gboard's window is `fillxfill` for the same reason. The dump makes the
+         * difference visible in one line:
+         *
+         *     ours:   mAttrs={(0,0)(fillxwrap)
+         *     Gboard: mAttrs={(0,0)(fillxfill)
+         */
+        // `window` here is the input method's Dialog (a SoftInputWindow); the
+        // layout parameters live on the Window inside it. Two "window"s because
+        // they are two different things.
+        window?.window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+        )
         // Loading the 6 MB language model takes a moment; doing it here rather
         // than on the first keystroke means the first keystroke is not the one
         // that waits.
@@ -124,40 +150,39 @@ class PingZhuImeService : InputMethodService() {
 
     override fun onCreateInputView(): View {
         /*
-         * A container that sizes itself to its content, ignoring the height
-         * limit it is handed.
+         * Fills the window, falling back to the display when the window says it
+         * has no height.
          *
-         * The input view is probed with `AT_MOST 0` before the window has a
-         * height. A container that honours the limit reports zero, the window
-         * adopts zero, and the next probe is also zero — the keyboard is measured
-         * correctly the whole time and never gets a pixel to draw in. The limit
-         * is the thing being computed, so it cannot also be the answer.
+         * The input view is probed before the window has been sized, and that
+         * probe carries `AT_MOST 0`. A view that honours it reports zero, the
+         * window then really is zero, and the next probe is zero again — the
+         * keyboard is measured correctly the whole time and never gets a pixel.
+         * The limit is the thing being computed, so it cannot also be the answer.
          */
         val root = object : FrameLayout(this) {
             override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-                val child = getChildAt(0)
-                if (child == null) {
-                    super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-                    return
-                }
                 val width = MeasureSpec.getSize(widthMeasureSpec)
-                child.measure(
-                    MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-                    // UNSPECIFIED: ask the child how tall it wants to be. It is
-                    // the only thing that knows how many rows a keyboard has.
-                    MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
-                )
-                setMeasuredDimension(width, child.measuredHeight)
+                val limit = MeasureSpec.getSize(heightMeasureSpec)
+                val height = if (limit > 0) limit else resources.displayMetrics.heightPixels
+                setMeasuredDimension(width, height)
+                val childWidth = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
+                val childHeight = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+                for (index in 0 until childCount) {
+                    getChildAt(index).measure(childWidth, childHeight)
+                }
             }
         }
         val board = KeyboardView(this)
         board.onKey = { key -> onKeyPressed(key) }
         keyboard = board
+        // Bottom-aligned: the window is the whole screen, so the keyboard has to
+        // say where in it the keyboard belongs.
         root.addView(
             board,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM,
             ),
         )
         if (engine != null) buildKeyboard()
@@ -335,12 +360,31 @@ class PingZhuImeService : InputMethodService() {
         // The letters being typed stay in the field, underlined by the
         // application — the standard Android behaviour, and the reason the user
         // can see where the text will land.
-        val connection = currentInputConnection ?: return
+        val connection = currentInputConnection
+        if (connection == null) {
+            // Worth knowing about: without a connection the keyboard looks alive
+            // and types into nothing.
+            report("no input connection; composition cannot be shown")
+            return
+        }
         // The letters stay in the field, underlined by the application, whether
         // or not the candidate list is open: the point of showing them is that
         // the user can see where the text will land. Only the candidate page
         // depends on the list being open.
         connection.setComposingText(if (composing.isEmpty()) "" else sentence, 1)
+    }
+
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        // Set here as well as in onCreate, because the framework re-applies the
+        // window's layout when it shows it — so a size set once at startup is
+        // gone by the time the keyboard first appears. The symptom is a keyboard
+        // that works the first time and not the second, which is worse than one
+        // that never works.
+        window?.window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+        )
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
