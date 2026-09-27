@@ -346,16 +346,18 @@ $ node engine/bench-learn.mjs 5000
 
 | 文件 | 内容 |
 |---|---|
-| [docs/01-competitive-analysis.md](docs/01-competitive-analysis.md) | 自然输入法产品拆解：35 年版本史、功能清单、定价、平台矩阵、技术架构、使用者痛点 |
-| [docs/02-architecture.md](docs/02-architecture.md) | 架构决策：为何宽松授权核心、为何四平台原生壳、为何不用 Flutter |
-| [docs/03-platform-matrix.md](docs/03-platform-matrix.md) | 四平台输入法框架能力、签章与上架限制、HarmonyOS 可行性 |
-| [docs/04-data-and-licensing.md](docs/04-data-and-licensing.md) | 每一个可用元件的授权、资料来源合规、地雷清单 |
-| [docs/08-self-built-data.md](docs/08-self-built-data.md) | **资料层可以自建**：Unihan 读音／简繁、词频公式、无监督新词发现 |
-| [docs/05-roadmap.md](docs/05-roadmap.md) | MVP → v1 的路线、工作量估算、风险与退路 |
-| [docs/06-engine-design.md](docs/06-engine-design.md) | 引擎内部：切分演算法、读字格、资料格式、评测方法 |
-| [docs/07-research-tooling.md](docs/07-research-tooling.md) | 本仓库的调研工具链（可重现取证） |
-| [core-rs/README.md](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外壳怎么接、怎么验证 |
-| [windows/README.md](windows/README.md) | **Windows 可携版输入法**：操作、建置、限制 |
+| [docs/01](docs/01-competitive-analysis.md) | 自然输入法产品拆解：35 年版本史、功能清单、定价、平台矩阵、技术架构、使用者痛点 |
+| [docs/02](docs/02-architecture.md) | 架构决策：为何宽松授权核心、为何四平台原生壳、为何不用 Flutter |
+| [docs/03](docs/03-platform-matrix.md) | 四平台输入法框架能力、签章与上架限制、HarmonyOS 可行性 |
+| [docs/04](docs/04-data-and-licensing.md) | 每一个可用元件的授权、资料来源合规、地雷清单 |
+| [docs/05](docs/05-roadmap.md) | MVP → v1 的路线、工作量估算、风险与退路 |
+| [docs/06](docs/06-engine-design.md) | 引擎内部：切分演算法、读字格、资料格式、评测方法 |
+| [docs/07](docs/07-research-tooling.md) | 本仓库的调研工具链（可重现取证） |
+| [docs/08](docs/08-self-built-data.md) | **资料层可以自建**：Unihan 读音／简繁、词频公式、无监督新词发现 |
+| [docs/09](docs/09-zhuyin-vs-pinyin.md) | **注音 vs 拼音的量化论证**：方法、两种范围、自我验证、五条明确的限制 |
+| [core-rs/](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外壳怎么接、怎么验证 |
+| [windows/](windows/README.md) | **Windows 输入法**：操作、建置、限制 |
+| [android/](android/README.md) | **Android 输入法**：建置、设计取舍、已知限制 |
 | [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [03](research/03-platform-ime-frameworks.md) · [04](research/04-zhuyin-ime-internals.md) | 四份原始调研报告（约 34 万字，含逐条来源与【已查证】/【推测】/【需查证】三级标记） |
 
 ---
