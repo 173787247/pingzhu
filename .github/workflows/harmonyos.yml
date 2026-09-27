@@ -321,21 +321,37 @@ jobs:
           DOC
 
           cd /tmp
-          zip -qr "$GITHUB_WORKSPACE/pingzhu-harmonyos-project.zip" "$NAME"
+          # `zip` is not in this container — neither is unzip, curl, wget, python3,
+          # or node on PATH. tar is. The archive format is not the point; being
+          # able to open it on a Windows or Mac laptop is, and both do tar.gz.
+          ARCHIVE="$GITHUB_WORKSPACE/pingzhu-harmonyos-project.tar.gz"
+          if command -v zip >/dev/null 2>&1; then
+            zip -qr "$GITHUB_WORKSPACE/pingzhu-harmonyos-project.zip" "$NAME"
+            ARCHIVE="$GITHUB_WORKSPACE/pingzhu-harmonyos-project.zip"
+          elif command -v tar >/dev/null 2>&1; then
+            tar czf "$ARCHIVE" "$NAME"
+          else
+            echo "::error::neither zip nor tar is available in this container"
+            exit 1
+          fi
           cd "$GITHUB_WORKSPACE"
-          ls -la pingzhu-harmonyos-project.zip
+          ls -la "$ARCHIVE"
+
           echo "--- what is inside ---"
-          unzip -l pingzhu-harmonyos-project.zip | head -15
-          unzip -l pingzhu-harmonyos-project.zip | grep -cE "\.tsv$" | xargs echo "  .tsv files:"
-          unzip -l pingzhu-harmonyos-project.zip | grep -c "libpingzhu_core.a" | xargs echo "  static library:"
+          if command -v tar >/dev/null 2>&1; then
+            tar tzf "$ARCHIVE" | head -12
+            echo "  .tsv files:     $(tar tzf "$ARCHIVE" | grep -cE '\.tsv$')"
+            echo "  static library: $(tar tzf "$ARCHIVE" | grep -c 'libpingzhu_core.a')"
+            echo "  total entries:  $(tar tzf "$ARCHIVE" | wc -l)"
+          fi
 
       - name: Upload the project
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pingzhu-harmonyos-project
-          path: pingzhu-harmonyos-project.zip
-          if-no-files-found: warn
+          path: pingzhu-harmonyos-project.tar.gz
+          if-no-files-found: error
 
       - name: Upload the HAPs
         if: always()
