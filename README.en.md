@@ -230,15 +230,18 @@ Scheduling, effort and risk: [docs/05-roadmap.md](docs/05-roadmap.md).
 
 | | |
 |---|---|
-| [docs/01](docs/01-competitive-analysis.md) | Competitive analysis |
-| [docs/02](docs/02-technical-design.md) | Technical design |
-| [docs/03](docs/03-platform-matrix.md) | Platform matrix |
-| [docs/04](docs/04-data-and-licensing.md) | Data and licensing |
-| [docs/05](docs/05-roadmap.md) | Roadmap |
-| [docs/06](docs/06-engine-design.md) | Engine design |
-| [docs/07](docs/07-user-experience.md) | User experience |
-| [docs/08](docs/08-self-built-data.md) | Self-built data |
-| [docs/09](docs/09-zhuyin-vs-pinyin.md) | Zhuyin vs Pinyin, measured |
+| [docs/01](docs/01-competitive-analysis.md) | Competitive analysis: 35 years of the incumbent, pricing, platform matrix, pain points |
+| [docs/02](docs/02-architecture.md) | Architecture decisions: permissive core, native shells, why not Flutter |
+| [docs/03](docs/03-platform-matrix.md) | Input method frameworks per platform, signing and store limits, HarmonyOS feasibility |
+| [docs/04](docs/04-data-and-licensing.md) | Licence of every usable component, data provenance, the minefield list |
+| [docs/05](docs/05-roadmap.md) | MVP → v1: sequence, effort estimates, risks, fallbacks |
+| [docs/06](docs/06-engine-design.md) | Engine internals: segmentation, the reading grid, data format, evaluation |
+| [docs/07](docs/07-research-tooling.md) | The research toolchain in this repository (reproducible evidence) |
+| [docs/08](docs/08-self-built-data.md) | **The data layer can be built from scratch**: Unihan readings, frequency formula, unsupervised new-word discovery |
+| [docs/09](docs/09-zhuyin-vs-pinyin.md) | **Zhuyin vs Pinyin, measured**: method, two scopes, self-validation, five explicit limitations |
+| [core-rs/](core-rs/README.md) | **Rust core + C ABI**: how a shell connects, how it is verified |
+| [windows/](windows/README.md) | **Windows input method**: usage, build, limitations |
+| [android/](android/README.md) | **Android input method**: build, design trade-offs, known limitations |
 
 ---
 
