@@ -33,6 +33,7 @@ import { display } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { fileIo } from '@kit.CoreFileKit';
 import pingzhu from 'libpingzhu.so';
+import { Session } from './model/Session';
 
 const TAG = 'PingZhu';
 const DOMAIN = 0x0000;
@@ -71,6 +72,7 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
       this.panel = null;
     }
     this.client = null;
+    Session.setClient(null);
   }
 
   /**
@@ -123,13 +125,13 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
     this.ability.on('inputStart', (kbController: inputMethodEngine.KeyboardController,
                                    textInputClient: inputMethodEngine.InputClient) => {
       this.client = textInputClient;
-      hilog.info(DOMAIN, TAG, '編輯器連上了');
+      Session.setClient(textInputClient);
       this.prepareEngine();
     });
 
     this.ability.on('inputStop', () => {
       this.client = null;
-      hilog.info(DOMAIN, TAG, '編輯器斷開了');
+      Session.setClient(null);
     });
   }
 
@@ -186,7 +188,7 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
       step = 'engine create';
       const ok: boolean = pingzhu.create(dir);
       if (ok) {
-        hilog.info(DOMAIN, TAG, '引擎載入完成，ABI %{public}d', pingzhu.abiVersion);
+        hilog.info(DOMAIN, TAG, '引擎載入完成，ABI %{public}d', pingzhu.abiVersion());
         hilog.info(DOMAIN, TAG, '鍵面：%{public}s', pingzhu.keyboardRows('standard'));
       } else {
         hilog.error(DOMAIN, TAG, '引擎讀不到模型：%{public}s', dir);
@@ -195,38 +197,6 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
       // Which step, not just which code.
       hilog.error(DOMAIN, TAG, '解模型失敗於「%{public}s」：%{public}s',
         step, JSON.stringify(error));
-    }
-  }
-
-  /**
-   * Commits the current sentence into the editor.
-   *
-   * Returns the text so the panel can show what happened. An empty string means
-   * there was nothing to commit — not that something failed, which is why the
-   * client case is logged separately.
-   */
-  commitText(): string {
-    const text: string = pingzhu.commit();
-    if (text.length === 0) return text;
-    if (this.client === null) {
-      hilog.warn(DOMAIN, TAG, '沒有編輯器，%{public}d 個字沒有送出去', text.length);
-      return text;
-    }
-    try {
-      this.client.insertTextSync(text);
-    } catch (error) {
-      hilog.error(DOMAIN, TAG, '送出失敗：%{public}s', JSON.stringify(error));
-    }
-    return text;
-  }
-
-  /** Deletes one character backwards — the editor's, not ours. */
-  deleteBackward(): void {
-    if (this.client === null) return;
-    try {
-      this.client.deleteBackwardSync(1);
-    } catch (error) {
-      hilog.error(DOMAIN, TAG, '退格失敗：%{public}s', JSON.stringify(error));
     }
   }
 }
