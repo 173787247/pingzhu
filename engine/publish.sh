@@ -23,7 +23,29 @@ DRY_RUN=0
 # mirror: publishing there fails with an error about the package name rather than
 # about the registry, which is a confusing way to find out. Named explicitly so
 # the destination is never in doubt.
+# Two registries, one package name.
+#
+#   npmjs.org      the default. `npm install` works with no setup at all.
+#   GitHub Packages  hosted under the repository owner's GitHub account, which
+#                    means no second account — but every installer needs a
+#                    GitHub token configured, because GitHub Packages requires
+#                    authentication even for public packages:
+#
+#                      "You need an access token to publish, install, and delete
+#                       private, internal, and public packages."
+#                      https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry
+#
+# The tarball is also attached to every GitHub release, so there is a way to
+# install that needs neither registry nor account:
+#
+#   npm install https://github.com/173787247/pingzhu/releases/download/vX/pingzhu-engine-X.tgz
 REGISTRY="https://registry.npmjs.org"
+if [ "${1:-}" = "--github" ]; then
+  REGISTRY="https://npm.pkg.github.com"
+  shift
+elif [ "${1:-}" = "--dry-run" ]; then
+  :
+fi
 
 # ---------------------------------------------------------------- preflight
 
@@ -98,7 +120,15 @@ if [ "$DRY_RUN" = "1" ]; then
 fi
 
 log "publishing to $REGISTRY"
-npm publish --registry "$REGISTRY" --access public
+if [ "$REGISTRY" = "https://npm.pkg.github.com" ]; then
+  # GitHub Packages authenticates with a GitHub token, not an npm one.
+  GITHUB_TOKEN_VALUE="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+  [ -n "$GITHUB_TOKEN_VALUE" ] || fail "no GitHub token — run: gh auth refresh -s write:packages"
+  npm publish --registry "$REGISTRY" --access public \
+    --//npm.pkg.github.com/:_authToken="$GITHUB_TOKEN_VALUE"
+else
+  npm publish --registry "$REGISTRY" --access public
+fi
 
 log "verifying"
 sleep 5

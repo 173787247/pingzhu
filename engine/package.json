@@ -1,5 +1,5 @@
 {
-  "name": "pingzhu-engine",
+  "name": "@173787247/pingzhu-engine",
   "version": "0.8.0",
   "description": "Bopomofo (注音) input method engine — reading grid, Viterbi decoder, candidate ordering, Traditional/Simplified output",
   "license": "MIT",
