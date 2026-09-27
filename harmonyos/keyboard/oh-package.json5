@@ -6,5 +6,7 @@
   "main": "",
   "author": "grandocean",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "libpingzhu.so": "file:./src/main/cpp/types/libpingzhu"
+  }
 }

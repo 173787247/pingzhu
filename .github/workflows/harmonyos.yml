@@ -228,6 +228,22 @@ jobs:
           echo "path: ${PAA:-(not found)}"
           if [ -n "$PAA" ]; then grep -E "^export" "$PAA" 2>/dev/null | head -15; fi
           echo
+          echo "--- native toolchain (needed to link the Rust core) ---"
+          # The NAPI shim needs the OHOS NDK, and wiring core-rs in needs a Rust
+          # cross-compiler for aarch64-unknown-linux-ohos. Neither is certain to
+          # be in this image, and finding out by writing everything first is how
+          # the last four surprises happened.
+          for dir in native llvm; do
+            found=$(find /opt -maxdepth 8 -type d -name "$dir" 2>/dev/null | head -3)
+            echo "  $dir: ${found:-（none）}"
+          done
+          echo "  ohos.toolchain.cmake:"
+          find /opt -name 'ohos.toolchain.cmake' 2>/dev/null | head -3
+          echo "  clang in the SDK:"
+          find /opt -name 'clang' -type f 2>/dev/null | head -3
+          echo "  rustc / cargo:"
+          command -v rustc cargo 2>/dev/null || echo "  （no rust in this image）"
+          echo
           echo "--- what the kits directory contains ---"
           find /opt -type d -name 'kits' 2>/dev/null | head -3
           find /opt -name '@kit.*.d.ts' 2>/dev/null | head -25
