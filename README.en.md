@@ -33,18 +33,23 @@ Both write `pingzhu.ini`, so the setting is the same on every platform.
 
 ## Status
 
-**M0–M4c and M6 are done: Windows and Android are usable today.**
+**M0–M4c and M6 are done: Windows and Android are usable today. M5 (macOS) builds and runs — the system does not accept it yet.**
+
+macOS is the one piece that is finished and still not usable: it compiles, bundles,
+signs and runs its engine on real hardware, and the input menu never lists it. Six
+hypotheses have been eliminated and the only untested variable left is the login — the
+detail is in [macos/README.md](macos/README.md).
 
 | Platform | Framework | Engine | Shell |
 |---|---|---|---|
 | **Windows 10/11** | **TSF text service (in the language bar)** | ✅ C ABI | ✅ **usable** ([windows/](windows/README.md)) |
 | Windows 10/11 | Portable (tray + global hook + injection) | ✅ C ABI | ✅ usable (no admin rights) |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI (JNI) | ✅ **usable** ([android/](android/README.md)) |
-| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **builds, bundles, and the engine is exercised on macOS in CI** ([macos/](macos/README.md)) · **the IMK layer is not verified on hardware** |
+| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **builds, bundles and runs on real hardware** · **the system does not accept it yet** ([macos/](macos/README.md)) |
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI (NAPI) | technically confirmed, commercial process unverified ([docs/03](docs/03-platform-matrix.md)) |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | optional |
 
-**All three shells embed the same Rust core.** The same keys give the same words on Windows
+**All four shells embed the same Rust core.** The same keys give the same words on Windows
 and Android — not by intention, but because 1,529 differential cases hold the Rust core to
 byte-identical output against the TypeScript reference implementation.
 
@@ -222,7 +227,7 @@ prefers three mediocre characters to one good word.
 | **M4b** | Windows TSF shell: language bar, composition, display attributes, candidate positioning | ✅ done |
 | **M4c** | Simplified output: OpenCC table, hotkey / floating button / config file | ✅ done |
 | **M6** | Android `InputMethodService`: self-drawn keyboard, candidate bar, JNI | ✅ done |
-| **M5** | macOS IMK shell: IMKInputController, candidate NSPanel, built and engine-tested in CI | ⚠️ the IMK layer is not verified on hardware |
+| **M5** | macOS IMK shell: IMKInputController, candidate NSPanel, built and engine-tested in CI | ⚠️ **compiles and runs on hardware; the system does not accept it yet** (six hypotheses eliminated — see [macos/](macos/README.md)) |
 | **M7** | HarmonyOS IME Kit shell | researching |
 | **M8** | Symbol table, word association, text shortcuts | to do |
 
