@@ -1,0 +1,117 @@
+# Linux 外壳（fcitx5）
+
+平注的 Linux 输入法。
+
+**解码不在这里** —— 每一个按键都送到共用的 Rust 核心（`core-rs/`），
+通过 C ABI，和 Windows、Android、macOS、HarmonyOS 用的是同一份。
+
+```
+linux/fcitx5/
+├── src/
+│   ├── pingzhuengine.h        Engine（RAII 包装）+ 引擎类别
+│   └── pingzhuengine.cpp      keyEvent / activate / reset / 候选面板
+├── tests/
+│   └── engine_smoke.c         对着已安装的资料目录跑 su3cl3 → 你好
+├── CMakeLists.txt
+├── pingzhu-addon.conf         addon 描述
+└── pingzhu.conf               输入法条目
+```
+
+---
+
+## Linux 是五个平台里最好做的
+
+**因为开发机和目标机是同一台** ✓：
+
+| | 其他平台 | Linux |
+|---|---|---|
+| 编译错误 | 推上去，等 CI 4 分钟 | **1 秒** |
+| 验证 | 下载产物、装机、打字 | **本机直接跑** |
+
+**今天在 Linux 上总共花了约两分钟修完五轮编译器错误** ✓ ——
+而鸿蒙那边每一轮要 4 分钟 ✓
+
+---
+
+## 建置
+
+```bash
+sudo apt-get install fcitx5 libfcitx5core-dev libfcitx5config-dev \
+                     libfcitx5utils-dev fcitx5-modules-dev \
+                     extra-cmake-modules cmake pkg-config
+
+cargo build --release --manifest-path core-rs/Cargo.toml
+
+cd linux/fcitx5 && mkdir -p build && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+make
+sudo make install
+```
+
+**`-DCMAKE_INSTALL_PREFIX=/usr` 不是可选的** ✓ ——见下面第一节 ✓
+
+---
+
+## 四个「东西在，但对方不看那里」
+
+今天这个专案第七次遇到同一个形状 ✓ ——**而且四次都发生在把 Linux addon 装起来的过程中**：
+
+| # | 装到哪里 | 程序去哪里找 | 症状 |
+|---|---|---|---|
+| 1 | `/usr/local/share/fcitx5/addon` | **只有** `/usr/share/fcitx5/addon` | 清单里没有它 |
+| 2 | `/usr/lib/fcitx5/` | `/usr/lib/**x86_64-linux-gnu**/fcitx5/` | `Cannot find file` |
+| 3 | `Library=pingzhu` | 要 `Library=libpingzhu` | **同上，一模一样** |
+| 4 | `LANGUAGES CXX` | 测试是 `.c` | `Cannot determine link language` |
+
+**第 3 个我绝对猜不到** ✓ ——是**跟 `/usr/share/fcitx5/addon/quickphrase.conf` 逐行比对**看出来的 ✓
+
+**第 2 个的修法**：用 CMake 的 `GNUInstallDirs` ✓ ——它在 Debian 给
+`lib/x86_64-linux-gnu` ✓、在 Fedora 给 `lib64` ✓ ——**不要自己写 `lib/`** ✓
+
+---
+
+## 验证
+
+```bash
+cd build && ./tests/engine_smoke /usr/share/pingzhu
+```
+
+```
+ok    engine created, ABI 1
+ok    su3cl3: 你好
+ok    ji394su3: 我愛你
+ok    w96j0: 台灣
+```
+
+**同样三个词，和其他四个平台一致** ✓
+
+`fcitx5-diagnose` 应该列出 `PingZhu 0.9.0` 且**没有** `Cannot find file` ✓
+
+---
+
+## 键盘行为
+
+| 键 | 行为 |
+|---|---|
+| 注音键 | 组字，预编辑显示解码结果 |
+| 数字 | 候选单开着 → 选字；否则 → 照打（1 是 ㄅ） |
+| 空白 | 候选单开着 → 下一页；组字中 → 送出；否则 → 空白 |
+| Enter | 送出 |
+| ⌫ | 退回一个读音成分 |
+| Esc | 放弃组字 |
+| ↑↓ | 移动候选 |
+
+**「数字只在候选单开着时选字」是 v0.6.0 那个回归的规则** ✓ ——
+当时所有以 ㄅㄉㄓㄚㄞㄢ 开头的字都打不出来 ✓
+
+---
+
+## 还没有做的
+
+| | |
+|---|---|
+| **在真的桌面环境里打字** | ❌ 这里没有 X/Wayland，只验证到引擎与 addon 载入 |
+| 图示 | ❌ `Icon=pingzhu` 指向一个还没做的图示 |
+| 使用者词库的读写 | ❌ C ABI 有，addon 还没接 |
+| 繁简切换的快速键 | ❌ |
+| ibus 版本 | ❌ 只做了 fcitx5 |
