@@ -404,9 +404,11 @@ for iPad/iPhone, Linux and Android tablets — while its licensing model generat
 burden made overwhelmingly of activation and subscription failures rather than typing
 questions.
 
-**Windows and Android builds are usable today.** All three shells embed the same Rust
+**Windows and Android builds are usable today.** All four shells embed the same Rust
 core, held to byte-identical output against the TypeScript reference implementation by
-1,529 differential cases, so the same keys give the same words everywhere.
+1,529 differential cases, so the same keys give the same words everywhere. The macOS
+build compiles, signs and runs on real hardware; the system does not list it as an input
+source yet — see [macos/README.md](macos/README.md).
 
 | | |
 |---|---|
