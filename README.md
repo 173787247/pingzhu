@@ -24,7 +24,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | Windows 10/11 | 可携版（托盘 + 全域钩子 + 注入） | ✅ C ABI | ✅ 可用（不需管理员权限） |
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **真机上能编译、能打包、能跑引擎**·**但系统尚未接受它**（[macos/](macos/README.md)） |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
-| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI（NAPI，静态连结） | ⚠️ **CI 建置，引擎在 HAP 里（2.6 MB）**·**未在真机打过字** |
+| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI（NAPI，静态链接） | ⚠️ **CI 建置，引擎与键盘 UI 都在 HAP 里（2.6 MB）**·**未在真机打过字** |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | 选配 |
 
 ### 下载
@@ -343,7 +343,7 @@ $ node engine/bench-learn.mjs 5000
 | **M4c** | 繁简输出：OpenCC 对照表、热键／浮动按钮／设定档三种切换方式 | ✅ 已完成 |
 | **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 建置与引擎实测 | ⚠️ **真机可编译可执行，系统尚未接受**（六个假设已排除，见 [macos/](macos/README.md)） |
 | **M6** | Android `InputMethodService` 外壳：自绘键盘、候选列、JNI | ✅ 已完成 |
-| **M7** | HarmonyOS IME Kit 外壳：ArkTS、NAPI、Rust 核心接上、CI 建置 | ⚠️ **引擎已连结进 HAP**，键盘 UI 与真机待做 |
+| **M7** | HarmonyOS IME Kit 外壳：ArkTS、NAPI、Rust 核心、键盘 UI | ⚠️ **全部建置得过（引擎 + 键盘 UI）**·**把字送进编辑器与真机待做** |
 | **M8** | 其他加值功能：符号表、联想词、快捷输入 | 待做 |
 
 测试现况：**TypeScript 66 项**、**Rust 26 项**（含 1,529 例差异化测试）、
