@@ -39,7 +39,7 @@ Both write `pingzhu.ini`, so the setting is the same on every platform.
 | **Windows 10/11** | **TSF text service (in the language bar)** | ✅ C ABI | ✅ **usable** ([windows/](windows/README.md)) |
 | Windows 10/11 | Portable (tray + global hook + injection) | ✅ C ABI | ✅ usable (no admin rights) |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI (JNI) | ✅ **usable** ([android/](android/README.md)) |
-| macOS 12+ | InputMethodKit (IMK) | ✅ C ABI | to do (Developer ID + notarisation, not the App Store) |
+| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **builds and bundles** ([macos/](macos/README.md)) · **not yet typed on real hardware** |
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI (NAPI) | technically confirmed, commercial process unverified ([docs/03](docs/03-platform-matrix.md)) |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | optional |
 
@@ -221,7 +221,7 @@ prefers three mediocre characters to one good word.
 | **M4b** | Windows TSF shell: language bar, composition, display attributes, candidate positioning | ✅ done |
 | **M4c** | Simplified output: OpenCC table, hotkey / floating button / config file | ✅ done |
 | **M6** | Android `InputMethodService`: self-drawn keyboard, candidate bar, JNI | ✅ done |
-| **M5** | macOS IMK shell | to do |
+| **M5** | macOS IMK shell: IMKInputController, candidate NSPanel, built in CI | ⚠️ builds and bundles, not yet typed on hardware |
 | **M7** | HarmonyOS IME Kit shell | researching |
 | **M8** | Symbol table, word association, text shortcuts | to do |
 
@@ -249,6 +249,7 @@ Scheduling, effort and risk: [docs/05-roadmap.md](docs/05-roadmap.md).
 | [core-rs/](core-rs/README.md) | **Rust core + C ABI**: how a shell connects, how it is verified |
 | [windows/](windows/README.md) | **Windows input method**: usage, build, limitations |
 | [android/](android/README.md) | **Android input method**: build, design trade-offs, known limitations |
+| [macos/](macos/README.md) | **macOS input method**: build, what CI verifies, design and limits |
 
 ---
 
