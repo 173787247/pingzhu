@@ -65,20 +65,37 @@ SOURCES=("$HERE/Sources/main.swift"
          "$HERE/Sources/CandidateWindow.swift"
          "$HERE/Sources/PingZhuInputController.swift")
 
+# Both architectures, then one universal binary — matching the Rust archive.
+# Building only for the host would produce an input method that installs on an
+# Intel Mac, appears in the list, and then does not launch: the Rust half would
+# be universal and the Swift half would not, which is a mismatch nobody would
+# think to look for.
+#
 # -import-objc-header is how the C ABI reaches Swift without an Xcode project:
 # one header, one archive, no build system in between.
-swiftc \
-  -O \
-  -target "$(uname -m)-apple-macos12.0" \
-  -import-objc-header "$HERE/Sources/PingZhu-Bridging-Header.h" \
-  -I "$ROOT/core-rs/include" \
-  -L "$CORE_DIR" \
-  -lpingzhu_core_universal \
-  -framework Cocoa \
-  -framework InputMethodKit \
-  -o "$MACOS/PingZhu" \
-  "${SOURCES[@]}"
+SWIFT_FLAGS=(
+  -O
+  -import-objc-header "$HERE/Sources/PingZhu-Bridging-Header.h"
+  -I "$ROOT/core-rs/include"
+  -L "$CORE_DIR"
+  -lpingzhu_core_universal
+  -framework Cocoa
+  -framework InputMethodKit
+)
 
+for arch in arm64 x86_64; do
+  log "  swiftc -target $arch-apple-macos12.0"
+  swiftc "${SWIFT_FLAGS[@]}" \
+    -target "$arch-apple-macos12.0" \
+    -o "$ROOT/dist/PingZhu-$arch" \
+    "${SOURCES[@]}"
+done
+
+lipo -create "$ROOT/dist/PingZhu-arm64" "$ROOT/dist/PingZhu-x86_64" \
+  -output "$MACOS/PingZhu"
+rm -f "$ROOT/dist/PingZhu-arm64" "$ROOT/dist/PingZhu-x86_64"
+
+lipo -info "$MACOS/PingZhu" | sed 's/^/  /'
 log "  $(du -h "$MACOS/PingZhu" | cut -f1) binary"
 
 # ------------------------------------------------------------------ tests

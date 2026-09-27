@@ -71,6 +71,26 @@ jobs:
           # shows up with nothing to select.
           plutil -extract tsInputModeListKey raw "$APP/Contents/Info.plist" >/dev/null
 
+          # Both architectures, in the executable as well as the library.
+          #
+          # The Rust archive was universal while the Swift binary was built only
+          # for the runner's architecture — so the bundle would install on an
+          # Intel Mac, appear in the input source list, and then not launch. The
+          # first build did exactly that and nothing complained.
+          ARCHS=$(lipo -archs "$APP/Contents/MacOS/PingZhu")
+          echo "executable architectures: $ARCHS"
+          case "$ARCHS" in
+            *arm64*) ;;
+            *) echo "::error::the executable is missing arm64" && exit 1 ;;
+          esac
+          case "$ARCHS" in
+            *x86_64*) ;;
+            *) echo "::error::the executable is missing x86_64 — Intel Macs would install it and it would not launch" && exit 1 ;;
+          esac
+
+          # And the same for the linked-in core.
+          lipo -archs core-rs/target/libpingzhu_core_universal.a | grep -q x86_64
+
           echo "bundle checks passed"
 
       - name: Report the binary architectures
