@@ -39,7 +39,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 | 平台 | 拿什么 | 怎么装 |
 |---|---|---|
-| **HarmonyOS NEXT** | **[pingzhu-0.9.0-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](https://github.com/173787247/pingzhu/blob/main/macos/TESTING.md)） |
+| **HarmonyOS NEXT** | **[pingzhu-0.9.0-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](harmonyos/README.md)） |
 | **Linux** | 不发布二进制 | `cmake -DCMAKE_INSTALL_PREFIX=/usr` 建置 fcitx5 addon（[linux/](linux/README.md)） |
 
 **Windows**：装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z`

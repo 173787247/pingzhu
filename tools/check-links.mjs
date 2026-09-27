@@ -25,6 +25,42 @@ import { fileURLToPath } from "node:url";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const revision = process.argv[2] ?? "HEAD";
 
+
+/**
+ * Platform tables must not link across platforms.
+ *
+ * A row that names one platform and links to another platform's directory is a
+ * copy-paste error, and it passes every check this file used to make: the target
+ * exists, the anchor resolves, nothing is broken.
+ *
+ * It happened: the HarmonyOS row of the download table pointed at
+ * `macos/TESTING.md`, and the only reason it was found is that a person read the
+ * table. This is that person, written down.
+ *
+ * The rule is deliberately narrow — a row is only checked when it starts with a
+ * platform name, and only for links into another platform's directory. Widening
+ * it would produce false positives on sentences that legitimately compare
+ * platforms, and a check that cries wolf stops being read.
+ */
+const PLATFORM_DIRS = ['windows', 'android', 'macos', 'harmonyos', 'linux'];
+
+function checkPlatformRows(text, filename, failures) {
+    for (const line of text.split('\n')) {
+        if (!line.startsWith('|')) continue;
+
+        // Which platform does this row claim to be about? The first cell.
+        const label = line.slice(1).split('|')[0].toLowerCase();
+        const claimed = PLATFORM_DIRS.find((dir) => label.includes(dir));
+        if (!claimed) continue;
+
+        for (const [, target] of line.matchAll(/\]\(([a-z]+)\//g)) {
+            if (PLATFORM_DIRS.includes(target) && target !== claimed) {
+                failures.push(`${filename}: a row about ${claimed} links into ${target}/`);
+            }
+        }
+    }
+}
+
 const files = execFileSync("git", ["ls-files", "*.md", "*.txt"], { cwd: repo, encoding: "utf8" })
   .split("\n")
   .filter(Boolean)
@@ -89,6 +125,7 @@ let checkedUrls = 0;
 let checkedAnchors = 0;
 let added = 0;
 const changedFiles = [];
+const tableProblems = [];
 
 for (const file of files) {
   const original = before(file);
@@ -140,10 +177,20 @@ for (const file of files) {
   }
 }
 
+// Tables are checked on the current text, not on a diff: a wrong link is added
+// as easily as it is changed, and "URL added" is not damage by this file's other
+// rules. The HarmonyOS row of the download table pointed at macos/TESTING.md and
+// every existing check passed.
+for (const file of files) {
+    checkPlatformRows(readFileSync(join(repo, file), "utf8"), file, tableProblems);
+}
+for (const problem of tableProblems) console.log(`PLATFORM ROW  ${problem}`);
+
 console.log(`\nfiles scanned      ${files.length}`);
 console.log(`files converted    ${changedFiles.length}`);
 console.log(`URLs compared      ${checkedUrls}`);
 console.log(`URLs added         ${added}   (new links, not damage)`);
 console.log(`anchors resolved   ${checkedAnchors}`);
+problems += tableProblems.length;
 console.log(problems === 0 ? "\nno link or anchor damage" : `\n${problems} PROBLEM(S)`);
 process.exit(problems === 0 ? 0 : 1);

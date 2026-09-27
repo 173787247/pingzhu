@@ -5,7 +5,7 @@
 An open-source, cross-platform **Bopomofo (注音 / Zhuyin)** input method for Windows,
 Android, macOS, HarmonyOS NEXT and Linux.
 
-Named after 平注 (píng zhù) — *plain Zhuyin* — for the same reason 自然輸入法 is named after
+Named after 平注 (píng zhù) — *plain Zhuyin* — for the same reason 自然输入法 is named after
 natural input: it describes what the thing does, and it is not a trademark anyone else owns.
 
 ---
@@ -17,6 +17,14 @@ natural input: it describes what the thing does, and it is not a trademark anyon
 | **Windows 10/11** | **[⬇ pingzhu-0.7.6-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-setup.exe)**　·　[portable ZIP](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-win-x64.zip) |
 | **Android 8+** | **[⬇ pingzhu-0.8.0-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.8.0-android.apk)** |
 | **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)** ([needs verifying on a Mac first](macos/TESTING.md)) |
+
+**HarmonyOS** and **Linux** ship no installer — what they produce is a project and an
+addon, built from source:
+
+| Platform | What to take | How to install |
+|---|---|---|
+| **HarmonyOS NEXT** | **[pingzhu-0.9.0-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-harmonyos-project.zip)** | Open `harmonyos/` in DevEco, sign, Run ([steps](harmonyos/README.md)) |
+| **Linux** | no binary published | `cmake -DCMAKE_INSTALL_PREFIX=/usr` builds the fcitx5 addon ([linux/](linux/README.md)) |
 
 **Windows** installs to `%LOCALAPPDATA%\Programs\PingZhu` with no administrator rights.
 `Ctrl+Alt+Z` switches Chinese/English, `Ctrl+Alt+S` switches Traditional/Simplified (or use
@@ -92,7 +100,7 @@ number is smaller than the one usually quoted.** Full method and limitations in
 
 ### 1. The incumbent has no mobile version, and says so
 
-自然輸入法 (IQ Technology, in the market since 1995) ships only on Windows and macOS. Its own
+自然输入法 (IQ Technology, in the market since 1995) ships only on Windows and macOS. Its own
 support centre publishes articles literally titled "not supported" for iPad/iPhone, Linux
 and Android tablets.
 
@@ -212,7 +220,7 @@ not a port that drifted.
 
 ### The reading grid
 
-A syllable is 聲母 + 介音 + 韻母 + 聲調. Keys compose into readings, readings into a lattice,
+A syllable is 声母 + 介音 + 韵母 + 声调. Keys compose into readings, readings into a lattice,
 and segmentation and word selection are scored **jointly** — the decoder does not pick
 syllable boundaries first and words second, because those two decisions depend on each
 other. Viterbi over the lattice picks the best sentence; the candidate list comes from the
