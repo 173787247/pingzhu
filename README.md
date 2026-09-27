@@ -24,7 +24,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | Windows 10/11 | 可携版（托盘 + 全域钩子 + 注入） | ✅ C ABI | ✅ 可用（不需管理员权限） |
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **真机上能编译、能打包、能跑引擎**·**但系统尚未接受它**（[macos/](macos/README.md)） |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
-| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ⏳ NAPI 待做 | ⚠️ **能在 CI 上建置出 HAP**（[harmonyos/](harmonyos/README.md)）·**引擎尚未接上** |
+| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI（NAPI，静态连结） | ⚠️ **CI 建置，引擎在 HAP 里（2.6 MB）**·**未在真机打过字** |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | 选配 |
 
 ### 下载

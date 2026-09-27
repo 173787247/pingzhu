@@ -3,8 +3,10 @@
 平注的 HarmonyOS 输入法。**解码不在这里**——按这个专案一贯的做法，
 每一个按键都要送到共用的 Rust 核心，这样四个平台的选字结果一致。
 
-> ⚠️ **这一版还没有接上引擎。** 键盘打得出来、选字是空的。
-> 这句话写在这里而不是藏在最后。
+**引擎已经接上了** ✓ ——Rust 核心交叉编译成 `libpingzhu.so`，
+跟着 HAP 一起走（2.6MB，`libs/arm64-v8a/libpingzhu.so`）。
+但**还没有在真的鸿蒙装置上打过字** ✗ ——CI 只能证明它建置得出来、
+链接得起来、`.so` 在 HAP 里。
 
 ## 结构
 
@@ -89,11 +91,56 @@ find /opt -name '@kit.IMEKit.d.ts' | head -1 | xargs grep -E "^export"
 
 | | |
 |---|---|
-| **Rust 核心接上（NAPI）** | ❌ 最大的缺口 |
+| **Rust 核心接上（NAPI）** | ✅ **完成**——`libpingzhu.so` 在 HAP 里 |
 | 键盘 UI（大千式布局） | ❌ 现在是占位 |
 | 候选视窗 | ❌ |
 | 在真机或模拟器上打字 | ❌ 需要鸿蒙装置 |
 | 签章与上架（AGC） | ❌ 治理问题，不是 API 问题（见 [docs/03](../docs/03-platform-matrix.md)） |
+
+## 引擎怎么进去的
+
+**两半，两个 job** ✓ ——因为这个容器只有鸿蒙工具链 ✓：
+
+```yaml
+engine:  ubuntu-latest               ← 普通 runner：有 rust、有 curl
+  docker cp <image>:/opt/.../native  ← 從同一個映像取出 NDK
+  cargo build --target aarch64-unknown-linux-ohos
+  cargo test --release
+  upload-artifact: libpingzhu_core.a (24 MB)
+
+build:   container: <harmonyos image> ← SDK 在這裡
+  download-artifact
+  hvigorw assembleHap
+  unzip -l | grep '\.so'             ← 驗證，不是猜測
+```
+
+**这也是诚实的对半切** ✓ ——交叉编译核心跟鸿蒙的建置系统毫无关系 ✓，
+放在普通 runner 上意味着**这里失败就是 Rust 的问题，不是容器的问题** ✓
+
+`aarch64-unknown-linux-ohos` 是**有预编译 std 的 rustup 目标** ✓ ——
+不需要 nightly ✓、不需要 `build-std` ✓
+
+## 建置路上踩到的**八个**坑
+
+全部都是安静或有误导性的失败 ✓：
+
+| # | 问题 | 症状 |
+|---|---|---|
+| 1 | 容器里没有 `python3` | 检查脚本死在 `not found`，**而它要检查的工具链就在 `/opt`** |
+| 2 | `node` 也不在 PATH 上 | 同上 |
+| 3 | 容器的 shell 是 **dash** | `${PIPESTATUS[0]}` → `Bad substitution`，**而且在 BUILD SUCCESSFUL 之后** |
+| 4 | `@ohos.inputMethod.*` 在 API 12 不存在 | 大部分网路范例都是旧写法 |
+| 5 | `onCreate` 的签名和 `UIAbility` 不同 | IME 收 `(want)`、UIAbility 收 `(want, launchParam)` |
+| 6 | 容器没有 `curl` 也没有 `wget` | 装 Rust 的两种办法都死了 |
+| 7 | CMake 里的 `../` 手数差了一层 | 症状是**「档案不存在」**，不是「路径错了」 |
+| 8 | `engine_create` 收三个参数 | 编 C++ 会报错；**动态载入的外壳不会** |
+
+**第 7 个的修法**：不再手数 ✓ ——从 `CMakeLists.txt` 往上走直到找到
+`core-rs/Cargo.toml` ✓ **这样不可能差一层** ✓
+
+**第 8 个是第三个「一份描述不是那个函式库的东西」** ✗ ——前两个是
+`pingzhu.h` 少了两个宣告 ✓、`docs/03` 写着两个参数的签名 ✓
+（后者顺手一起修了 ✓）
 
 ## 启用的方式
 
