@@ -1,0 +1,11 @@
+{
+  "subtypes": [
+    {
+      "icon": "$media:icon",
+      "id": "PingZhuInputMethodExtensionAbility",
+      "label": "$string:keyboard_subtype_label",
+      "locale": "zh-Hant",
+      "mode": "lower"
+    }
+  ]
+}
