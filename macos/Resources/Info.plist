@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Structure copied from a working input method (McBopomofo, MIT), because the
+  documentation for these keys is thin and the failure mode is silent.
+
+  Two things were wrong in the first version and neither produced an error:
+
+    1. `tsInputModeListKey` was at the top level. It belongs inside
+       `ComponentInputModeDict`. At the top level it is simply ignored, so the
+       bundle installs into ~/Library/Input Methods and the system never lists it.
+    2. `tsInputModeScriptKey` was `smRoman`. For Traditional Chinese it is
+       `smTradChinese`.
+
+  Both are the kind of mistake that a "does the key exist" check passes:
+  the key existed, in the wrong place.
+-->
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
@@ -20,6 +35,11 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
 
+    <!-- Legacy four-character signature. Not used by anything modern, but
+         every shipping input method has one. -->
+    <key>CFBundleSignature</key>
+    <string>PZHU</string>
+
     <key>CFBundleShortVersionString</key>
     <string>0.9.0</string>
 
@@ -29,21 +49,36 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
 
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+
+    <key>LSHasLocalizedDisplayName</key>
+    <true/>
+
     <!--
       An input method has no windows of its own until the user types, so it must
       not appear in the Dock or the application switcher.
+
+      LSUIElement, not LSBackgroundOnly: the latter prevents the process from
+      connecting to the window server at all, which an input method needs in
+      order to draw its candidate window.
     -->
-    <key>LSBackgroundOnly</key>
+    <key>LSUIElement</key>
     <true/>
+
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
 
     <key>NSHumanReadableCopyright</key>
     <string>MIT License — https://github.com/173787247/pingzhu</string>
 
     <!--
-      IMK finds the server through these two. The connection name is a Mach port
-      name and must match the string in Sources/main.swift exactly; a mismatch
-      produces an input method that installs, appears in the list, and then does
-      nothing at all.
+      IMK finds the server through these. The connection name is a Mach port name
+      and must match the string in Sources/main.swift exactly; a mismatch produces
+      an input method that installs, appears in the list, and then does nothing.
     -->
     <key>InputMethodConnectionName</key>
     <string>tw.pingzhu.ime_Connection</string>
@@ -51,39 +86,69 @@
     <key>InputMethodServerControllerClass</key>
     <string>PingZhuInputController</string>
 
-    <key>tsInputModeListKey</key>
+    <key>InputMethodServerDelegateClass</key>
+    <string>PingZhuInputController</string>
+
+    <key>TISInputSourceID</key>
+    <string>tw.pingzhu.ime</string>
+
+    <key>TISIntendedLanguage</key>
+    <string>zh-Hant</string>
+
+    <key>TISParticipatesInTouchBar</key>
+    <false/>
+
+    <key>tsInputMethodCharacterRepertoireKey</key>
+    <array>
+        <string>Hant</string>
+        <string>Hans</string>
+    </array>
+
+    <!--
+      The modes. `tsInputModeListKey` lives inside `ComponentInputModeDict`, not
+      at the top level, and `tsVisibleInputModeOrderedArrayKey` says which of them
+      the user sees.
+    -->
+    <key>ComponentInputModeDict</key>
     <dict>
-        <key>tw.pingzhu.ime.Bopomofo</key>
+        <key>tsInputModeListKey</key>
         <dict>
-            <key>TISInputSourceID</key>
-            <string>tw.pingzhu.ime.Bopomofo</string>
-
-            <key>TISIntendedLanguage</key>
-            <string>zh-Hant</string>
-
-            <key>tsInputModeCharacterRepertoireKey</key>
-            <array>
+            <key>tw.pingzhu.ime.Bopomofo</key>
+            <dict>
+                <key>TISIntendedLanguage</key>
                 <string>zh-Hant</string>
-            </array>
 
-            <key>tsInputModeDefaultStateKey</key>
-            <true/>
+                <key>TISDoubleSpaceSubstitution</key>
+                <string>。</string>
 
-            <key>tsInputModeIsVisibleKey</key>
-            <true/>
+                <key>tsInputModeCharacterRepertoireKey</key>
+                <array>
+                    <string>Hant</string>
+                    <string>Hans</string>
+                </array>
 
-            <key>tsInputModeMenuIconFileKey</key>
-            <string>menu-icon.pdf</string>
+                <key>tsInputModeDefaultStateKey</key>
+                <true/>
 
-            <key>tsInputModePaletteIconFileKey</key>
-            <string>menu-icon.pdf</string>
+                <key>tsInputModeIsVisibleKey</key>
+                <true/>
 
-            <key>tsInputModePrimaryInScriptKey</key>
-            <true/>
+                <key>tsInputModePrimaryInScriptKey</key>
+                <true/>
 
-            <key>tsInputModeScriptKey</key>
-            <string>smRoman</string>
+                <!-- Traditional Chinese, not `smRoman`. The script key decides
+                     which input source category the mode is filed under, and a
+                     Bopomofo keyboard filed under Roman is not offered when the
+                     user is typing Chinese. -->
+                <key>tsInputModeScriptKey</key>
+                <string>smTradChinese</string>
+            </dict>
         </dict>
+
+        <key>tsVisibleInputModeOrderedArrayKey</key>
+        <array>
+            <string>tw.pingzhu.ime.Bopomofo</string>
+        </array>
     </dict>
 </dict>
 </plist>

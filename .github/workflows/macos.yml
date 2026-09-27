@@ -67,9 +67,30 @@ jobs:
           CLASS=$(plutil -extract InputMethodServerControllerClass raw "$APP/Contents/Info.plist")
           grep -q "@objc($CLASS)" macos/Sources/PingZhuInputController.swift
 
-          # The declared input mode must be in the list, or the input method
-          # shows up with nothing to select.
-          plutil -extract tsInputModeListKey raw "$APP/Contents/Info.plist" >/dev/null
+          # The declared input mode must be in the list, IN THE RIGHT PLACE.
+          #
+          # The first version of this check looked for `tsInputModeListKey` at the
+          # top level and passed — while the key was in the wrong place and the
+          # system ignored the whole bundle. "Does the key exist" is not the
+          # question; "is the structure right" is.
+          plutil -extract ComponentInputModeDict.tsInputModeListKey raw \
+            "$APP/Contents/Info.plist" >/dev/null
+          plutil -extract ComponentInputModeDict.tsVisibleInputModeOrderedArrayKey raw \
+            "$APP/Contents/Info.plist" >/dev/null
+
+          # And the mode has to declare the right script, or it is filed under
+          # Roman and never offered while typing Chinese.
+          MODE=$(plutil -extract ComponentInputModeDict.tsVisibleInputModeOrderedArrayKey.0 raw \
+            "$APP/Contents/Info.plist")
+          SCRIPT=$(plutil -extract "ComponentInputModeDict.tsInputModeListKey.$MODE.tsInputModeScriptKey" raw \
+            "$APP/Contents/Info.plist")
+          echo "input mode: $MODE (script $SCRIPT)"
+          test "$SCRIPT" = "smTradChinese"
+
+          # The input source identifier IMK reports must match what the install
+          # test looks for, or it reports a false failure.
+          TISID=$(plutil -extract TISInputSourceID raw "$APP/Contents/Info.plist")
+          test "$TISID" = "tw.pingzhu.ime"
 
           # Both architectures, in the executable as well as the library.
           #
