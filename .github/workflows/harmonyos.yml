@@ -170,6 +170,25 @@ jobs:
           [ -n "$PAA" ] && grep -E "^export" "$PAA" | head -10
           exit 0
 
+      # The language model, into the HAP.
+      #
+      # The native side cannot read inside a HAP, so the extension unpacks these
+      # to the app's files directory on first use and passes that path to
+      # engine_create. Android does the same thing with an assets copy task.
+      #
+      # Done here rather than committed: the .tsv files are the same ones the
+      # other three platforms use, and a copy in the repository would be a second
+      # version of them.
+      - name: Put the language model in the HAP
+        shell: bash
+        run: |
+          set -e
+          DEST=harmonyos/keyboard/src/main/resources/rawfile
+          mkdir -p "$DEST"
+          cp data/*.tsv "$DEST/"
+          echo "--- rawfile ---"
+          ls -la "$DEST"
+
       - name: Install dependencies
         shell: bash
         run: |
