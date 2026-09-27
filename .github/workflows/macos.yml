@@ -113,6 +113,18 @@ jobs:
             echo "probe  the probe itself did not compile — reporting what the shell can see instead"
           fi
 
+      # The part of the IMK layer that can be checked without a person: does the
+      # bundle register itself as an input source at all?
+      #
+      # The runner has an Aqua session (see the probe), so this is a real
+      # answer rather than a hopeful one. What it cannot check is typing.
+      - name: Install it and ask the system whether it took
+        run: |
+          set -e
+          swiftc -O -framework Carbon -framework Cocoa \
+            -o dist/InstallTest macos/Tests/Install/main.swift
+          ./dist/InstallTest "$PWD/dist/PingZhu.app"
+
       - name: Report the binary architectures
         run: |
           lipo -info core-rs/target/libpingzhu_core_universal.a
