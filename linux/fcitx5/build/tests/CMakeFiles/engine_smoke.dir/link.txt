@@ -1,1 +1,0 @@
-/usr/bin/cc -O3 -DNDEBUG CMakeFiles/engine_smoke.dir/engine_smoke.c.o -o engine_smoke  /home/rchua/GO/pingzhu/core-rs/target/release/libpingzhu_core.a 

@@ -1,0 +1,8 @@
+# CMake's build tree. Committing it bakes one machine's absolute paths into
+# CMakeCache.txt, and anyone who clones gets:
+#
+#   CMake Error: The current CMakeCache.txt directory ... is different than
+#   the directory .../linux/fcitx5/build/CMakeCache.txt
+#
+# Which is what CI reported the first time this workflow ran.
+build/
