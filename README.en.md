@@ -46,7 +46,7 @@ detail is in [macos/README.md](macos/README.md).
 | Windows 10/11 | Portable (tray + global hook + injection) | ✅ C ABI | ✅ usable (no admin rights) |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI (JNI) | ✅ **usable** ([android/](android/README.md)) |
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **builds, bundles and runs on real hardware** · **the system does not accept it yet** ([macos/](macos/README.md)) |
-| HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI (NAPI) | technically confirmed, commercial process unverified ([docs/03](docs/03-platform-matrix.md)) |
+| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ⏳ NAPI to do | ⚠️ **HAPs build in CI** ([harmonyos/](harmonyos/README.md)) · **engine not wired up yet** |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | optional |
 
 **All four shells embed the same Rust core.** The same keys give the same words on Windows
@@ -228,7 +228,7 @@ prefers three mediocre characters to one good word.
 | **M4c** | Simplified output: OpenCC table, hotkey / floating button / config file | ✅ done |
 | **M6** | Android `InputMethodService`: self-drawn keyboard, candidate bar, JNI | ✅ done |
 | **M5** | macOS IMK shell: IMKInputController, candidate NSPanel, built and engine-tested in CI | ⚠️ **compiles and runs on hardware; the system does not accept it yet** (six hypotheses eliminated — see [macos/](macos/README.md)) |
-| **M7** | HarmonyOS IME Kit shell | researching |
+| **M7** | HarmonyOS IME Kit shell: ArkTS, module.json5, built in CI | ⚠️ **two HAPs build**; the engine (NAPI) is to do |
 | **M8** | Symbol table, word association, text shortcuts | to do |
 
 Tests: **66 TypeScript**, **26 Rust** (including 1,529 differential cases), **3 Windows

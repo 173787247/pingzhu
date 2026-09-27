@@ -24,7 +24,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | Windows 10/11 | 可携版（托盘 + 全域钩子 + 注入） | ✅ C ABI | ✅ 可用（不需管理员权限） |
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **真机上能编译、能打包、能跑引擎**·**但系统尚未接受它**（[macos/](macos/README.md)） |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
-| HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI（NAPI） | **技术已确认可行**，商业流程待查证（见 [docs/03](docs/03-platform-matrix.md)） |
+| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ⏳ NAPI 待做 | ⚠️ **能在 CI 上建置出 HAP**（[harmonyos/](harmonyos/README.md)）·**引擎尚未接上** |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | 选配 |
 
 ### 下载
@@ -343,7 +343,7 @@ $ node engine/bench-learn.mjs 5000
 | **M4c** | 繁简输出：OpenCC 对照表、热键／浮动按钮／设定档三种切换方式 | ✅ 已完成 |
 | **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 建置与引擎实测 | ⚠️ **真机可编译可执行，系统尚未接受**（六个假设已排除，见 [macos/](macos/README.md)） |
 | **M6** | Android `InputMethodService` 外壳：自绘键盘、候选列、JNI | ✅ 已完成 |
-| **M7** | HarmonyOS IME Kit 外壳 | 研究中 |
+| **M7** | HarmonyOS IME Kit 外壳：ArkTS、module.json5、CI 建置 | ⚠️ **两颗 HAP 建得出来**，引擎（NAPI）待做 |
 | **M8** | 其他加值功能：符号表、联想词、快捷输入 | 待做 |
 
 测试现况：**TypeScript 66 项**、**Rust 26 项**（含 1,529 例差异化测试）、
@@ -371,6 +371,7 @@ $ node engine/bench-learn.mjs 5000
 | [windows/](windows/README.md) | **Windows 输入法**：操作、建置、限制 |
 | [android/](android/README.md) | **Android 输入法**：建置、设计取舍、已知限制 |
 | [macos/](macos/README.md) | **macOS 输入法**：建置、CI 验证、设计与限制 |
+| [harmonyos/](harmonyos/README.md) | **HarmonyOS 输入法**：结构、CI 建置、踩过的坑 |
 | [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [03](research/03-platform-ime-frameworks.md) · [04](research/04-zhuyin-ime-internals.md) | 四份原始调研报告（约 34 万字，含逐条来源与【已查证】/【推测】/【需查证】三级标记） |
 
 ---
