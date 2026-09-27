@@ -97,6 +97,9 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
          * screen is the one nobody tests — the decoder would keep working while
          * the picture slowly stopped matching it.
          */
+        /** The raw native payload, for diagnosis. Not for drawing. */
+        fun rawKeyboardLabels(): String = nativeKeyboardLabels(0L)
+
         fun keyboardRows(): List<List<Pair<Char, String>>> =
             nativeKeyboardLabels(0L)
                 .split('\n')

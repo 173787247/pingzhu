@@ -5,6 +5,8 @@
     <string name="ime_subtype">注音（大千式）</string>
 
     <string name="setup_intro">一套注音輸入法。解碼引擎與 Windows 版共用同一份 Rust 核心，所以兩邊的選字結果一致。\n\n不需要任何權限：語言模型在 APK 裡，使用者詞庫在自己的目錄裡，不會連網。</string>
+    <string name="setup_try">先在这里试打</string>
+    <string name="setup_try_hint">啟用並選擇平注之後，在這裡打 su3cl3 再按空白</string>
     <string name="setup_enable">1. 啟用輸入法</string>
     <string name="setup_select">2. 選擇輸入法</string>
     <string name="setup_how">怎麼打</string>
