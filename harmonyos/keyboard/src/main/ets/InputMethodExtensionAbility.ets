@@ -12,13 +12,24 @@
  * 舊寫法在 API 12 的 SDK 裡找不到模組——第一次建置就是這樣失敗的。
  */
 import { InputMethodExtensionAbility } from '@kit.IMEKit';
+import { Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'PingZhu';
 const DOMAIN = 0x0000;
 
 export default class PingZhuInputMethodExtensionAbility extends InputMethodExtensionAbility {
-  onCreate(want: ESObject, launchParam: ESObject): void {
+  // One parameter, not two.
+  //
+  // InputMethodExtensionAbility.onCreate takes (want: Want). UIAbility takes
+  // (want, launchParam). Copying the UIAbility shape produces:
+  //
+  //   Type '(want: any, launchParam: any) => void' is not assignable to
+  //   type '(want: Want) => void'
+  //
+  // ESObject is what I reached for first, and ArkTS only warns about it while
+  // the signature mismatch is a hard error. The compiler was right about both.
+  onCreate(want: Want): void {
     hilog.info(DOMAIN, TAG, '輸入法 Extension 建立');
   }
 
