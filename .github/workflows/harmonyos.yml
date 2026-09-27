@@ -170,13 +170,26 @@ jobs:
           ohpm install --all 2>&1 | tail -20 || true
 
       - name: Build the HAPs
+        shell: bash
         run: |
           cd harmonyos
           set +e
-          hvigorw clean --no-daemon 2>&1 | tail -5
-          hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon 2>&1 | tail -80
-          STATUS=${PIPESTATUS[0]}
-          echo "hvigorw exit: $STATUS"
+          # The container's default shell is `sh` — dash — and ${PIPESTATUS[0]} is
+          # a bash-ism. It failed with "Bad substitution" *after* hvigor had
+          # already printed BUILD SUCCESSFUL, which is a confusing way to learn
+          # that the shell is not the one you assumed.
+          #
+          # Asking for bash explicitly, and writing to a file instead of piping so
+          # the exit status survives either way.
+          hvigorw clean --no-daemon > /tmp/clean.log 2>&1
+          echo "clean exit: $?"
+          tail -3 /tmp/clean.log
+
+          hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon > /tmp/build.log 2>&1
+          STATUS=$?
+          echo "--- last 60 lines ---"
+          tail -60 /tmp/build.log
+          echo "hvigorw assembleHap exit: $STATUS"
           exit $STATUS
 
       - name: Report what was produced
