@@ -53,61 +53,101 @@ jobs:
         run: |
           set -e
           echo "--- module declarations ---"
-          # Every module in build-profile.json5 needs a directory, and every
-          # directory needs the three files hvigor looks for. A missing one
-          # produces a build error that names the wrong file.
-          python3 - <<'PY'
-          import json, re, sys
-          from pathlib import Path
+          # Node, not Python: this container carries the HarmonyOS toolchain and
+          # not much else. The first version of this step used python3 and died
+          # with "python3: not found" — while the toolchain it was checking for
+          # was sitting right there in /opt.
+          #
+          # The check itself is worth having: hvigor's own errors for a missing
+          # hvigorfile.ts or a module name that disagrees with module.json5 name
+          # the wrong file, which sends you looking in the wrong place.
+          cat > /tmp/check.mjs <<'JS'
+          import { readFileSync, existsSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
 
-          root = Path('harmonyos')
-          text = (root / 'build-profile.json5').read_text(encoding='utf-8')
-          # json5 with one trailing comma per list; strip them for the parse
-          cleaned = re.sub(r',(\s*[}\]])', r'\1', text)
-          profile = json.loads(cleaned)
+          // These files are json5 but only use one json5 feature — trailing
+          // commas — so stripping them is enough to parse with JSON.parse.
+          const parse = (path) =>
+            JSON.parse(readFileSync(path, 'utf8').replace(/,(\s*[}\]])/g, '$1'));
 
-          failures = []
-          for module in profile['modules']:
-              name = module['name']
-              src = root / module['srcPath'].lstrip('./')
-              for required in ('build-profile.json5', 'hvigorfile.ts', 'oh-package.json5'):
-                  if not (src / required).is_file():
-                      failures.append(f'{name}: missing {required}')
-              manifest = src / 'src/main/module.json5'
-              if not manifest.is_file():
-                  failures.append(f'{name}: missing src/main/module.json5')
-                  continue
-              manifest_text = re.sub(r',(\s*[}\]])', r'\1', manifest.read_text(encoding='utf-8'))
-              declared = json.loads(manifest_text)['module']
-              if declared['name'] != name:
-                  failures.append(f"{name}: module.json5 says '{declared['name']}'")
-              if declared.get('type') not in ('entry', 'feature', 'shared'):
-                  failures.append(f"{name}: unknown module type {declared.get('type')}")
-              print(f"  {name}: {declared['type']}, mainElement={declared.get('mainElement', '-')}")
+          const root = 'harmonyos';
+          const profile = parse(join(root, 'build-profile.json5'));
+          const failures = [];
 
-          if failures:
-              for f in failures:
-                  print(f"FAIL  {f}")
-              sys.exit(1)
-          print(f"{len(profile['modules'])} modules declared correctly")
-          PY
+          for (const module of profile.modules) {
+            const name = module.name;
+            const src = join(root, module.srcPath.replace(/^\.\//, ''));
+            for (const required of ['build-profile.json5', 'hvigorfile.ts', 'oh-package.json5']) {
+              if (!existsSync(join(src, required))) failures.push(`${name}: missing ${required}`);
+            }
+            const manifestPath = join(src, 'src/main/module.json5');
+            if (!existsSync(manifestPath)) {
+              failures.push(`${name}: missing src/main/module.json5`);
+              continue;
+            }
+            const declared = parse(manifestPath).module;
+            if (declared.name !== name) {
+              failures.push(`${name}: module.json5 says '${declared.name}' instead`);
+            }
+            if (!['entry', 'feature', 'shared'].includes(declared.type)) {
+              failures.push(`${name}: unknown module type '${declared.type}'`);
+            }
+            console.log(`  ${name}: type=${declared.type} mainElement=${declared.mainElement ?? '-'}`);
+          }
 
-          echo
-          echo "--- the input method extension ---"
-          # The IME module must point srcEntry at a real file, or the system
-          # installs the HAP and never offers the keyboard.
-          MANIFEST="harmonyos/keyboard/src/main/module.json5"
-          SRC=$(python3 -c "
-          import json,re
-          t=re.sub(r',(\s*[}\]])',r'\1',open('$MANIFEST',encoding='utf-8').read())
-          print(json.loads(t)['module']['srcEntry'])")
-          FILE="harmonyos/keyboard/src/main/${SRC#./}"
-          test -f "$FILE" || { echo "FAIL srcEntry points at $FILE, which does not exist"; exit 1; }
-          grep -q "InputMethodExtensionAbility" "$FILE" || {
-            echo "FAIL $FILE does not extend InputMethodExtensionAbility"; exit 1; }
-          echo "  srcEntry -> $FILE"
-          grep -q "mainElement" "$MANIFEST"
-          echo "  mainElement is declared"
+          // The input method module has to point srcEntry at a real file that
+          // actually extends the right class, or the HAP installs and the system
+          // never offers the keyboard.
+          const imeManifest = parse(join(root, 'keyboard/src/main/module.json5')).module;
+          const srcEntry = imeManifest.srcEntry.replace(/^\.\//, '');
+          const imeFile = join(root, 'keyboard/src/main', srcEntry);
+          if (!existsSync(imeFile)) {
+            failures.push(`keyboard: srcEntry points at ${imeFile}, which does not exist`);
+          } else {
+            const source = readFileSync(imeFile, 'utf8');
+            if (!source.includes('InputMethodExtensionAbility')) {
+              failures.push(`${imeFile} does not extend InputMethodExtensionAbility`);
+            }
+            console.log(`  keyboard srcEntry -> ${imeFile}`);
+          }
+
+          // Every resource the manifests reference must exist. A missing icon is
+          // a build failure; a missing string is a blank label at runtime.
+          const referenced = [];
+          for (const [, kind, name] of readFileSync(join(root, 'AppScope/app.json5'), 'utf8')
+                 .matchAll(/\$(media|string):([A-Za-z0-9_]+)/g)) {
+            referenced.push({ kind, name, where: 'AppScope' });
+          }
+          for (const module of profile.modules) {
+            const manifestPath = join(root, module.srcPath.replace(/^\.\//, ''), 'src/main/module.json5');
+            if (!existsSync(manifestPath)) continue;
+            for (const [, kind, name] of readFileSync(manifestPath, 'utf8')
+                   .matchAll(/\$(media|string):([A-Za-z0-9_]+)/g)) {
+              referenced.push({ kind, name, where: module.name });
+            }
+          }
+          for (const ref of referenced) {
+            const scope = ref.where === 'AppScope' ? 'AppScope/resources/base' : `${ref.where}/src/main/resources/base`;
+            if (ref.kind === 'media') {
+              const dir = join(root, scope, 'media');
+              const found = existsSync(dir) && readdirSync(dir).some((f) => f.startsWith(ref.name + '.'));
+              if (!found) failures.push(`${ref.where}: $media:${ref.name} has no file in ${dir}`);
+            } else {
+              const file = join(root, scope, 'element/string.json');
+              const has = existsSync(file) && JSON.parse(readFileSync(file, 'utf8'))
+                .string.some((entry) => entry.name === ref.name);
+              if (!has) failures.push(`${ref.where}: $string:${ref.name} is not defined in ${file}`);
+            }
+          }
+          console.log(`  ${referenced.length} resource references resolved`);
+
+          if (failures.length) {
+            for (const failure of failures) console.log(`FAIL  ${failure}`);
+            process.exit(1);
+          }
+          console.log(`${profile.modules.length} modules declared correctly`);
+          JS
+          node /tmp/check.mjs
 
       - name: Install dependencies
         run: |
