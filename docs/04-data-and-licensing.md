@@ -46,7 +46,7 @@
 | Linux | fcitx5 / fcitx5-chewing | **LGPL-2.1-or-later** | 动态连结可接受 |
 | Linux | [fcitx/fcitx5-chewing](https://github.com/fcitx/fcitx5-chewing) | 无授权档（API 回报 `NONE`） | ⚠️ 无授权档＝保留所有权利 |
 
-**本专案的对策**：四个平台的外壳全部自己写（Windows TSF 以 Microsoft MIT 范例为参考，
+**本专案的对策**：五个平台的外壳全部自己写（Windows TSF 以 Microsoft MIT 范例为参考，
 macOS IMK 以 MIT 的 McBopomofo 为参考，Android 以 Apache-2.0 的 AnySoftKeyboard 为骨架参考），
 **不引入任何 GPL-3.0 外壳**。
 

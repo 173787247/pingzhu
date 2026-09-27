@@ -198,7 +198,7 @@ Google 注音输入法与 IQQI 智能输入法都曾在台湾行动市场存在�
 
 ### 3. 开源生态有零件，但没有成品
 
-注音引擎的零件其实不缺，缺的是把它们组合成一个四平台产品的人（详见
+注音引擎的零件其实不缺，缺的是把它们组合成一个五平台产品的人（详见
 [docs/04-data-and-licensing.md](docs/04-data-and-licensing.md)）：
 
 - **libchewing**（新酷音）核心已重写为 **Rust**、附 C API 与官方 Swift Package，授权 LGPL-2.1
@@ -206,7 +206,7 @@ Google 注音输入法与 IQQI 智能输入法都曾在台湾行动市场存在�
 - **RIME／librime** 是 BSD-3，但它的「注音」是把拼音词库用拼写代数转写而成，且官方各平台前端全是 GPL-3.0
 - 纯 Android 的注音键盘（如朴实注音）多为 GPL-3.0 且功能单薄
 
-平注的定位就是那个缺掉的成品：**宽松授权的可携核心 ＋ 四个平台的原生外壳**。
+平注的定位就是那个缺掉的成品：**宽松授权的可携核心 ＋ 五个平台的原生外壳**。
 
 ---
 
@@ -378,14 +378,15 @@ $ node engine/bench-learn.mjs 5000
 | 文件 | 内容 |
 |---|---|
 | [docs/01](docs/01-competitive-analysis.md) | 自然输入法产品拆解：35 年版本史、功能清单、定价、平台矩阵、技术架构、使用者痛点 |
-| [docs/02](docs/02-architecture.md) | 架构决策：为何宽松授权核心、为何四平台原生壳、为何不用 Flutter |
-| [docs/03](docs/03-platform-matrix.md) | 四平台输入法框架能力、签章与上架限制、HarmonyOS 可行性 |
+| [docs/02](docs/02-architecture.md) | 架构决策：为何宽松授权核心、为何五平台原生外壳、为何不用 Flutter |
+| [docs/03](docs/03-platform-matrix.md) | 五平台输入法框架能力、签章与上架限制、HarmonyOS 可行性 |
 | [docs/04](docs/04-data-and-licensing.md) | 每一个可用元件的授权、资料来源合规、地雷清单 |
 | [docs/05](docs/05-roadmap.md) | MVP → v1 的路线、工作量估算、风险与退路 |
 | [docs/06](docs/06-engine-design.md) | 引擎内部：切分演算法、读字格、资料格式、评测方法 |
 | [docs/07](docs/07-research-tooling.md) | 本仓库的调研工具链（可重现取证） |
 | [docs/08](docs/08-self-built-data.md) | **资料层可以自建**：Unihan 读音／简繁、词频公式、无监督新词发现 |
 | [docs/09](docs/09-zhuyin-vs-pinyin.md) | **注音 vs 拼音的量化论证**：方法、两种范围、自我验证、五条明确的限制 |
+| [demo/](demo/index.html) | **網頁試打版**：不裝任何東西，打開就能打注音（引擎與測試同一份） |
 | [core-rs/](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外壳怎么接、怎么验证 |
 | [windows/](windows/README.md) | **Windows 输入法**：操作、建置、限制 |
 | [android/](android/README.md) | **Android 输入法**：建置、设计取舍、已知限制 |
