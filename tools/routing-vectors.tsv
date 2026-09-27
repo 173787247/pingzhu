@@ -1,0 +1,45 @@
+# 按鍵路由的測試向量。
+#
+# 這個專案有四個外殼，每個都有自己的 router（Windows C++、Android Kotlin、
+# 參考實作 TS、macOS Swift）。**同一條規則寫四遍就會有四份走樣的機會**——
+# 而這個專案已經為了這件事吃過一次虧：v0.6.0 的數字鍵規則讓所有以
+# ㄅㄉㄓㄚㄞㄢ 開頭的字都打不出來，原因就是「數字要先在組字中才能組字」。
+#
+# 所以規則的測試案例放在這裡，由各外殼的測試讀取。新增規則時改這裡，
+# 四邊一起紅。
+#
+# 欄位：
+#   key        按鍵。跳脫寫法：
+#                \n   Return / Enter        \b   Delete (Backspace)
+#                \e   Escape                 space 空白鍵
+#                \v   下箭頭（開啟候選單）    \f   上箭頭（關閉候選單）
+#   composing  引擎目前是否持有未完成的讀音
+#   window     候選單是否開著
+#   candidates 候選單裡是否有東西
+#   action     期望的動作
+#
+# 動作的定義見 windows/src/router.h、android/.../Router.kt、macos/.../Router.swift
+
+key	composing	window	candidates	action
+s	0	0	0	Compose
+u	0	0	0	Compose
+3	0	0	0	Compose
+\n	1	0	0	Commit
+\e	1	0	0	Cancel
+\b	1	0	0	Backspace
+\b	0	0	0	Backspace
+\v	1	0	0	OpenCandidates
+\f	1	1	1	CloseCandidates
+space	1	0	0	Commit
+space	1	1	1	NextPage
+space	0	0	0	Pass
+1	0	0	0	Compose
+2	0	0	0	Compose
+5	0	0	0	Compose
+8	0	0	0	Compose
+0	0	0	0	Compose
+1	1	1	1	SelectCandidate
+9	1	1	1	SelectCandidate
+0	1	1	1	SelectCandidate
+2	1	1	0	Compose
+2	0	0	0	Compose
