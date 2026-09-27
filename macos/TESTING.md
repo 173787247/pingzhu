@@ -3,7 +3,22 @@
 CI 能验证的已经全部验证过了（[README](README.md) 里有清单和那条边界）。
 **剩下这一步只能由人来做**，而这份清单的目的是让它花十分钟，而不是一小时。
 
-## 1. 拿到 `.app`
+## 0. 一行装好（推荐）
+
+在这台 Mac 上打开「终端」，贴这一行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/173787247/pingzhu/main/macos/install.sh | bash
+```
+
+它会下载、检查签章、装进 `~/Library/Input Methods/`，
+**然后问系统看不看得到它**——那正是 CI 问不出来的那件事。
+
+跑完它会把还需要手动做的三件事印在最后。
+
+---
+
+## 1. 或者手动拿 `.app`
 
 **浏览器**（最简单）：打开下面这个网址，页面最下方下载 `PingZhu.app`
 
