@@ -7,25 +7,22 @@
  * 跟 Windows、Android、macOS 一樣，選字邏輯在共用的 Rust 核心裡
  * （core-rs/），透過 NAPI 進來。這一版還沒有接上——所以現在的鍵盤
  * 打得出來、但選字是空的。**這一句寫在這裡而不是藏起來。**
+ *
+ * import 用 Kit 風格（@kit.IMEKit），不是舊的 @ohos.inputMethod.*。
+ * 舊寫法在 API 12 的 SDK 裡找不到模組——第一次建置就是這樣失敗的。
  */
-import InputMethodExtensionAbility from '@ohos.inputMethod.InputMethodExtensionAbility';
-import InputMethodEngine from '@ohos.inputMethod.InputMethodEngine';
-import hilog from '@ohos.hilog';
+import { InputMethodExtensionAbility } from '@kit.IMEKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'PingZhu';
 const DOMAIN = 0x0000;
 
 export default class PingZhuInputMethodExtensionAbility extends InputMethodExtensionAbility {
-  private engine: InputMethodEngine.InputMethodEngine | null = null;
-
   onCreate(want: ESObject, launchParam: ESObject): void {
     hilog.info(DOMAIN, TAG, '輸入法 Extension 建立');
-    // 面板的內容由 KeyboardPanel 提供；這裡只建立與框架的連線。
-    this.engine = InputMethodEngine.getInputMethodEngine();
   }
 
   onDestroy(): void {
     hilog.info(DOMAIN, TAG, '輸入法 Extension 結束');
-    this.engine = null;
   }
 }
