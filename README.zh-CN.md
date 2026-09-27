@@ -2,6 +2,9 @@
 
 **简体中文** ｜ [English](README.md)
 
+**[▶ 线上试打](https://173787247.github.io/pingzhu/)** ——不用装任何东西。
+打 `su3cl3` 就能看引擎解码，用的是测试套件跑的同一份模组。
+
 **开放原始码、跨平台的注音输入法引擎 —— 目标是成为「自然输入法」的平替。**
 
 Windows · macOS · Android · HarmonyOS NEXT · Linux
