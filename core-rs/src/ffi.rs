@@ -406,3 +406,60 @@ pub unsafe extern "C" fn engine_commit(handle: *mut EngineHandle) -> *const c_ch
 pub extern "C" fn engine_abi_version() -> u32 {
     1
 }
+
+#[cfg(test)]
+mod header_tests {
+    use std::collections::BTreeSet;
+
+    /// The public header and the actual ABI must agree.
+    ///
+    /// They did not: `engine_set_output_script` and `engine_output_script` were
+    /// exported by the Rust core and missing from `pingzhu.h` for two releases.
+    /// The Windows shell never noticed because it loads the library *dynamically*
+    /// and looks symbols up by name — it never reads the header. The macOS shell
+    /// links against it, and was the first thing to try to compile against a
+    /// declaration that was not there.
+    ///
+    /// A header that describes something other than the library is worse than no
+    /// header: it is a document that is wrong in a way nobody can see.
+    #[test]
+    fn the_header_declares_every_exported_function() {
+        let source = include_str!("ffi.rs");
+        let header = include_str!("../include/pingzhu.h");
+
+        let mut exported = BTreeSet::new();
+        for line in source.lines() {
+            if let Some(rest) = line.split("extern \"C\" fn engine_").nth(1) {
+                let name = rest.split(|c: char| !c.is_ascii_alphanumeric() && c != '_').next().unwrap_or("");
+                if !name.is_empty() {
+                    exported.insert(format!("engine_{name}"));
+                }
+            }
+        }
+        assert!(exported.len() > 20, "only found {} exports — the parser broke", exported.len());
+
+        let mut declared = BTreeSet::new();
+        for line in header.lines() {
+            let trimmed = line.trim_start();
+            if trimmed.starts_with("//") || trimmed.starts_with('*') {
+                continue;
+            }
+            let mut rest = trimmed;
+            while let Some(index) = rest.find("engine_") {
+                rest = &rest[index..];
+                let name: String = rest
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                    .collect();
+                declared.insert(name);
+                rest = &rest[1..];
+            }
+        }
+
+        let missing: Vec<_> = exported.difference(&declared).cloned().collect();
+        assert!(
+            missing.is_empty(),
+            "exported but not declared in include/pingzhu.h: {missing:?}"
+        );
+    }
+}
