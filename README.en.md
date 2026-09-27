@@ -33,12 +33,21 @@ Both write `pingzhu.ini`, so the setting is the same on every platform.
 
 ## Status
 
-**M0–M4c and M6 are done: Windows and Android are usable today. M5 (macOS) builds and runs — the system does not accept it yet.**
+**Five platforms, six shells, one Rust core.**
 
-macOS is the one piece that is finished and still not usable: it compiles, bundles,
-signs and runs its engine on real hardware, and the input menu never lists it. Six
-hypotheses have been eliminated and the only untested variable left is the login — the
-detail is in [macos/README.md](macos/README.md).
+Six shells, five platforms, one Rust core — the same keys give the same words
+everywhere, held there by 1,529 differential cases rather than by intention.
+
+### Two that are not ticked yet
+
+**macOS**: it compiles, bundles, signs and runs its engine on real hardware, and
+the input menu never lists it. Six hypotheses eliminated; the only untested
+variable left is the login — see [macos/README.md](macos/README.md).
+
+**Linux**: the engine passes the same three phrases in CI, and fcitx5 really does
+load the addon and start the engine; **typing on a desktop has not been made to
+work**, because WSLg does not forward input methods — see
+[linux/README.md](linux/README.md).
 
 | Platform | Framework | Engine | Shell |
 |---|---|---|---|
@@ -49,7 +58,7 @@ detail is in [macos/README.md](macos/README.md).
 | **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI (NAPI, statically linked) | ✅ **typed 你好 on real hardware (Mate XT · HarmonyOS 6.1)** ([harmonyos/](harmonyos/README.md)) |
 | **Linux** | **fcitx5 addon** | ✅ C ABI (statically linked) | ⚠️ **builds; the engine is exercised against the installed data** ([linux/](linux/README.md)) · **not typed on a real desktop** |
 
-**All four shells embed the same Rust core.** The same keys give the same words on Windows
+**All six shells embed the same Rust core.** The same keys give the same words on Windows
 and Android — not by intention, but because 1,529 differential cases hold the Rust core to
 byte-identical output against the TypeScript reference implementation.
 
