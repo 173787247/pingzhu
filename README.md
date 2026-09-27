@@ -22,7 +22,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 |---|---|---|---|
 | **Windows 10/11** | **TSF 文字服务（进语言列）** | ✅ C ABI | ✅ **可用**（[windows/](windows/README.md)） |
 | Windows 10/11 | 可携版（托盘 + 全域钩子 + 注入） | ✅ C ABI | ✅ 可用（不需管理员权限） |
-| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **能編譯、能打包**（[macos/](macos/README.md)）·**尚未在真機打過字** |
+| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **能编译、能打包、引擎实测可解码**（[macos/](macos/README.md)）·**IMK 整合层未在真机验证** |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
 | HarmonyOS NEXT | IME Kit / `InputMethodExtensionAbility` | ✅ C ABI（NAPI） | **技术已确认可行**，商业流程待查证（见 [docs/03](docs/03-platform-matrix.md)） |
 | Linux | fcitx5 / ibus addon | ✅ C ABI | 选配 |
@@ -336,7 +336,7 @@ $ node engine/bench-learn.mjs 5000
 | **M4a** | Windows 可携版外壳（托盘／钩子／候选视窗／注入） | ✅ 已完成 |
 | **M4b** | Windows TSF 外壳：进语言列、组字、显示属性、候选视窗定位、安装程式 | ✅ 已完成 |
 | **M4c** | 繁简输出：OpenCC 对照表、热键／浮动按钮／设定档三种切换方式 | ✅ 已完成 |
-| **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 建置 | ⚠️ 能編譯能打包，未在真機打字 |
+| **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 建置与引擎实测 | ⚠️ IMK 整合层未在真机验证 |
 | **M6** | Android `InputMethodService` 外壳：自绘键盘、候选列、JNI | ✅ 已完成 |
 | **M7** | HarmonyOS IME Kit 外壳 | 研究中 |
 | **M8** | 其他加值功能：符号表、联想词、快捷输入 | 待做 |
