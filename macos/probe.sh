@@ -55,6 +55,37 @@ if thirdParty.isEmpty {
 SWIFT
 swift /tmp/pingzhu-probe.swift 2>&1 | sed 's/^/  /'
 
+# If it is not listed, try nudging the agents that serve the list — before
+# anyone logs out.
+#
+# Every test so far has installed and then checked immediately, and none of them
+# made the source appear. The one thing never tried is a fresh login, and that is
+# expensive here: the machine is reached over a remote desktop that does not come
+# back on its own, so logging out means losing access until someone is physically
+# there.
+#
+# These two restarts are the cheap version of the same idea. They cannot break
+# anything — both agents are launched on demand — and if one of them works, the
+# login is unnecessary.
+if ! grep -q "PINGZHU IS LISTED" /tmp/pingzhu-last-probe 2>/dev/null; then
+    if ! swift /tmp/pingzhu-probe.swift 2>/dev/null | grep -q "PINGZHU IS LISTED"; then
+        head_ "not listed — nudging the agents that serve the list"
+        for agent in TextInputMenuAgent TextInputSwitcher; do
+            if pgrep -x "$agent" >/dev/null 2>&1; then
+                echo "  restarting $agent"
+                killall "$agent" 2>/dev/null || true
+                sleep 2
+            else
+                echo "  $agent is not running"
+            fi
+        done
+        sleep 3
+        echo
+        echo "  after the restart:"
+        swift /tmp/pingzhu-probe.swift 2>&1 | sed 's/^/  /'
+    fi
+fi
+
 head_ "where input methods live on this machine"
 for dir in "/Library/Input Methods" "$HOME/Library/Input Methods"; do
     echo "  $dir"
