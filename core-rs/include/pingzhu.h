@@ -26,6 +26,21 @@ typedef struct EngineHandle EngineHandle;
 
 /* ABI version, so a shell can refuse a mismatched library instead of corrupting
  * memory. Bump on any signature change. */
+/// The drawn keyboard, one line per row: `key:label|key:label|...`.
+///
+/// Pairs, not two parallel runs of characters: the ETen layout has more keys in
+/// its first row than it has Bopomofo components, so two runs would be different
+/// lengths with no way to say which key was missing a label. The separators are
+/// `|` and `:`, chosen because no key is either — a comma is a key, in the
+/// fourth row.
+///
+/// Derived from the same table the decoder uses, so the keyboard that is drawn
+/// and the keys that are understood cannot drift apart. A key with no component
+/// has an empty label. Returns NULL for an unknown layout name. Free with
+/// engine_keyboard_rows_free.
+char *engine_keyboard_rows(const char *layout);
+void engine_keyboard_rows_free(char *text);
+
 uint32_t engine_abi_version(void);
 
 /* data_dir must contain bopomofo-lm.tsv.
