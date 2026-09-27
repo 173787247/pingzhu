@@ -77,11 +77,47 @@ do {
 }
 report("installed", destination.path)
 
+// Nudge the system into looking.
+//
+// macOS scans ~/Library/Input Methods at login, and a bundle copied in the
+// middle of a session is not noticed until something tells the system to look —
+// which, without this, means the input method appears only after a logout. That
+// is fine for a person and useless for a test.
+//
+// Registering the bundle with LaunchServices is the documented nudge, and it is
+// also what an installer does. Nothing reports success or failure; the proof is
+// whether the source shows up below.
+let lsregister = "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if FileManager.default.isExecutableFile(atPath: lsregister) {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: lsregister)
+    process.arguments = ["-f", destination.path]
+    process.standardOutput = FileHandle.nullDevice
+    process.standardError = FileHandle.nullDevice
+    try? process.run()
+    process.waitUntilExit()
+    report("registered with LaunchServices", "yes")
+} else {
+    report("registered with LaunchServices", "lsregister not found at the expected path")
+}
+
+// And restart the agents that own the input source list, if they are running.
+// They come back on their own.
+for agent in ["TextInputMenuAgent", "TextInputSwitcher"] {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+    process.arguments = [agent]
+    process.standardOutput = FileHandle.nullDevice
+    process.standardError = FileHandle.nullDevice
+    try? process.run()
+    process.waitUntilExit()
+}
+
 // The system watches that directory, but not instantly. Give it a moment rather
 // than concluding too early — a false negative here would be worse than a slow
 // test, because it would send someone looking for a bug that is not there.
 var found: TISInputSource?
-for attempt in 1...10 {
+for attempt in 1...20 {
     found = allSources().first { string($0, kTISPropertyInputSourceID) == sourceID }
     if found != nil {
         report("the system found it after", "\(attempt)s")
