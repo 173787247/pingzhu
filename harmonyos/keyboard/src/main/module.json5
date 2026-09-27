@@ -2,12 +2,47 @@
   "module": {
     "name": "keyboard",
     "type": "feature",
-    "srcEntry": "./ets/InputMethodExtensionAbility.ets",
     "description": "$string:keyboard_module_desc",
-    "mainElement": "PingZhuInputMethodExtensionAbility",
-    "deviceTypes": ["phone", "tablet"],
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ],
     "deliveryWithInstall": true,
     "installationFree": false,
-    "requestPermissions": []
+
+    /*
+     * The input method itself.
+     *
+     * This is the whole reason the module exists, and for several attempts it
+     * was wrong: `srcEntry` and `mainElement` were at the module level, which
+     * is how an *entry* module names its ability. An InputMethodExtensionAbility
+     * is an extension, and an extension has to be in `extensionAbilities` with
+     * `"type": "inputMethod"` — otherwise the system installs the HAP, records
+     * `"extensionInfos": []`, and never offers the keyboard.
+     *
+     * Found by asking the phone: `bm dump -n tw.pingzhu.ime` showed
+     * `extensionAbilityType: 255` and an empty `extensionInfos`, and iFlytek's
+     * working IME on the same device showed what it should look like. Then the
+     * official guide and Huawei's own KikaInput sample confirmed the shape.
+     *
+     * `metadata` points at input_method_config.json, which lists the subtypes.
+     * Without it the extension is declared but has nothing to offer.
+     */
+    "extensionAbilities": [
+      {
+        "srcEntry": "./ets/InputMethodExtensionAbility.ets",
+        "name": "PingZhuInputMethodExtensionAbility",
+        "label": "$string:keyboard_subtype_label",
+        "description": "$string:keyboard_module_desc",
+        "type": "inputMethod",
+        "exported": true,
+        "metadata": [
+          {
+            "name": "ohos.extension.input_method",
+            "resource": "$profile:input_method_config"
+          }
+        ]
+      }
+    ]
   }
 }
