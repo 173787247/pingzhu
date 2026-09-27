@@ -152,7 +152,15 @@ Android／鸿蒙需要 `.so`），不是速度。距离 10 ms 的体验门槛还
 而 `InputMethodService` 是四个框架里最单纯的。**这是投报率最高的一段。**
 **风险**：低—中。主要风险在输入法 UI 的易用性，而非技术。
 
-### M7 · HarmonyOS NEXT 外壳（未知，需先做可行性验证）
+### M7 · HarmonyOS NEXT 外壳 —— ✅ 真机验证完成
+
+**2026-09-27 在 HUAWEI Mate XT（HarmonyOS 6.1，API 20）上：
+`su3cl3` → 你好，字进了备忘录。**
+
+完整路径：鸿蒙键盘 → ArkTS → NAPI → Rust 核心 → 解码 →
+`InputClient.insertTextSync` → 备忘录。
+
+**下面是动手之前的可行性调研，保留了。**
 
 **已查证的结论**：框架**明文支持三方输入法**（官方文件写「面向…三方输入法应用」，
 `hdc shell ime -e <bundle>` 明文支持启用三方输入法，并有官方范例 App **KikaInput**）。
