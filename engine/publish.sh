@@ -39,15 +39,12 @@ elif ! npm whoami --registry "$REGISTRY" >/dev/null 2>&1; then
   cat >&2 <<'EOF'
 [npm] not logged in to registry.npmjs.org.
 
-      npm login --registry https://registry.npmjs.org
+      bash npm-login.sh
 
-      Create the account at https://www.npmjs.com/signup if you do not have
-      one. Two-factor auth is worth enabling: it is required for publishing
-      anyway once the package has a maintainer.
-
-      (Your ~/.npmrc currently points at registry.npmmirror.com, which is a
-      read-only mirror. `npm login` with the flag above writes the real
-      registry's token without touching that setting.)
+      That one uses a token, so it needs no browser — which matters here,
+      because a WSL shell has none and `npm login` fails with a message about
+      the BROWSER environment variable that reads like a configuration problem.
+      It also keeps the token out of your shell history.
 EOF
   exit 1
 else
