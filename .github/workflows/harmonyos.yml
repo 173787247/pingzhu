@@ -46,26 +46,45 @@ jobs:
           node --version 2>&1 || true
           ohpm --version 2>&1 || true
           echo "--- sdk ---"
-          ls "${OHOS_SDK_HOME:-/opt/ohos-sdk}" 2>/dev/null || \
-            ls /opt 2>/dev/null | head -20 || true
+          ls /opt 2>/dev/null || true
+          echo "--- where is node ---"
+          # This container carries the HarmonyOS toolchain and little else: no
+          # python3, and node is not on PATH either — yet hvigorw needs it, so it
+          # must be somewhere. Rather than guess, ask the wrapper.
+          find /opt /usr/local -maxdepth 6 -name 'node' -type f 2>/dev/null | head -5 || true
+          echo "--- how hvigorw finds it ---"
+          head -30 "$(command -v hvigorw)" 2>/dev/null || true
 
       - name: Check the project is well-formed
         run: |
           set -e
           echo "--- module declarations ---"
-          # Node, not Python: this container carries the HarmonyOS toolchain and
-          # not much else. The first version of this step used python3 and died
-          # with "python3: not found" — while the toolchain it was checking for
-          # was sitting right there in /opt.
+
+          # This container has neither python3 nor node on PATH. The check was
+          # written in Python first and then in Node, and both died with
+          # "not found" while the toolchain it was checking sat in /opt.
           #
-          # The check itself is worth having: hvigor's own errors for a missing
-          # hvigorfile.ts or a module name that disagrees with module.json5 name
-          # the wrong file, which sends you looking in the wrong place.
+          # So: find an interpreter, and if there is none, say so — loudly and by
+          # name — rather than skipping in silence. A check that quietly does not
+          # run is worse than no check, because it looks like it passed.
+          NODE=""
+          for candidate in node /opt/harmonyos-tools/command-line-tools/node/bin/node \
+                           /usr/local/bin/node /usr/bin/node; do
+            if command -v "$candidate" >/dev/null 2>&1; then NODE="$candidate"; break; fi
+          done
+
+          if [ -z "$NODE" ]; then
+            echo "NOTE  no node interpreter found, so the structural check did not run."
+            echo "NOTE  hvigor will still catch real problems below — with worse messages."
+            exit 0
+          fi
+          echo "using $NODE"
+
           cat > /tmp/check.mjs <<'JS'
           import { readFileSync, existsSync, readdirSync } from 'node:fs';
           import { join } from 'node:path';
 
-          // These files are json5 but only use one json5 feature — trailing
+          // These files are json5 but use only one json5 feature — trailing
           // commas — so stripping them is enough to parse with JSON.parse.
           const parse = (path) =>
             JSON.parse(readFileSync(path, 'utf8').replace(/,(\s*[}\]])/g, '$1'));
@@ -95,39 +114,35 @@ jobs:
             console.log(`  ${name}: type=${declared.type} mainElement=${declared.mainElement ?? '-'}`);
           }
 
-          // The input method module has to point srcEntry at a real file that
-          // actually extends the right class, or the HAP installs and the system
-          // never offers the keyboard.
           const imeManifest = parse(join(root, 'keyboard/src/main/module.json5')).module;
           const srcEntry = imeManifest.srcEntry.replace(/^\.\//, '');
           const imeFile = join(root, 'keyboard/src/main', srcEntry);
           if (!existsSync(imeFile)) {
             failures.push(`keyboard: srcEntry points at ${imeFile}, which does not exist`);
           } else {
-            const source = readFileSync(imeFile, 'utf8');
-            if (!source.includes('InputMethodExtensionAbility')) {
+            if (!readFileSync(imeFile, 'utf8').includes('InputMethodExtensionAbility')) {
               failures.push(`${imeFile} does not extend InputMethodExtensionAbility`);
             }
             console.log(`  keyboard srcEntry -> ${imeFile}`);
           }
 
-          // Every resource the manifests reference must exist. A missing icon is
-          // a build failure; a missing string is a blank label at runtime.
+          // Every $media:/$string: reference must resolve. A missing icon is a
+          // build failure; a missing string is a blank label at runtime, and
+          // nothing reports it.
           const referenced = [];
-          for (const [, kind, name] of readFileSync(join(root, 'AppScope/app.json5'), 'utf8')
-                 .matchAll(/\$(media|string):([A-Za-z0-9_]+)/g)) {
-            referenced.push({ kind, name, where: 'AppScope' });
-          }
+          const collect = (text, where) => {
+            for (const [, kind, name] of text.matchAll(/\$(media|string):([A-Za-z0-9_]+)/g)) {
+              referenced.push({ kind, name, where });
+            }
+          };
+          collect(readFileSync(join(root, 'AppScope/app.json5'), 'utf8'), 'AppScope');
           for (const module of profile.modules) {
             const manifestPath = join(root, module.srcPath.replace(/^\.\//, ''), 'src/main/module.json5');
-            if (!existsSync(manifestPath)) continue;
-            for (const [, kind, name] of readFileSync(manifestPath, 'utf8')
-                   .matchAll(/\$(media|string):([A-Za-z0-9_]+)/g)) {
-              referenced.push({ kind, name, where: module.name });
-            }
+            if (existsSync(manifestPath)) collect(readFileSync(manifestPath, 'utf8'), module.name);
           }
           for (const ref of referenced) {
-            const scope = ref.where === 'AppScope' ? 'AppScope/resources/base' : `${ref.where}/src/main/resources/base`;
+            const scope = ref.where === 'AppScope'
+              ? 'AppScope/resources/base' : `${ref.where}/src/main/resources/base`;
             if (ref.kind === 'media') {
               const dir = join(root, scope, 'media');
               const found = existsSync(dir) && readdirSync(dir).some((f) => f.startsWith(ref.name + '.'));
@@ -147,7 +162,7 @@ jobs:
           }
           console.log(`${profile.modules.length} modules declared correctly`);
           JS
-          node /tmp/check.mjs
+          "$NODE" /tmp/check.mjs
 
       - name: Install dependencies
         run: |
