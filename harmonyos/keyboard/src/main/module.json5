@@ -1,0 +1,13 @@
+{
+  "module": {
+    "name": "keyboard",
+    "type": "feature",
+    "srcEntry": "./ets/InputMethodExtensionAbility.ets",
+    "description": "$string:keyboard_module_desc",
+    "mainElement": "PingZhuInputMethodExtensionAbility",
+    "deviceTypes": ["phone", "tablet"],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "requestPermissions": []
+  }
+}

@@ -1,0 +1,147 @@
+name: HarmonyOS
+
+# HarmonyOS has no runner of its own at GitHub, and the SDK is not something you
+# can apt-get. What makes this possible is a container image with the whole
+# toolchain already in it (ohpm, hvigorw, the ArkTS compiler), which runs on an
+# ordinary ubuntu runner.
+#
+# Two things to be honest about:
+#
+#   1. The image is third-party. It is not Huawei's. Using it means someone
+#      else's image executes this repository's code, so it is pinned to an exact
+#      version rather than a moving tag, and the build produces only a HAP —
+#      nothing here is published, installed or trusted by anyone. The day there
+#      is an official route, this comment should be replaced along with the image.
+#
+#   2. Building is not running. A HAP that compiles proves the ArkTS is
+#      well-formed and the module declares what the framework expects. It does
+#      not prove the keyboard types. That needs a HarmonyOS device or emulator,
+#      and neither is available here.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'harmonyos/**'
+      - '.github/workflows/harmonyos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sanchuanhehe/harmony-next-pipeline-docker/harmonyos-ci-image:v5.0.4
+      options: --user root
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Show the toolchain
+        run: |
+          echo "--- versions ---"
+          which ohpm hvigorw node 2>&1 || true
+          node --version 2>&1 || true
+          ohpm --version 2>&1 || true
+          echo "--- sdk ---"
+          ls "${OHOS_SDK_HOME:-/opt/ohos-sdk}" 2>/dev/null || \
+            ls /opt 2>/dev/null | head -20 || true
+
+      - name: Check the project is well-formed
+        run: |
+          set -e
+          echo "--- module declarations ---"
+          # Every module in build-profile.json5 needs a directory, and every
+          # directory needs the three files hvigor looks for. A missing one
+          # produces a build error that names the wrong file.
+          python3 - <<'PY'
+          import json, re, sys
+          from pathlib import Path
+
+          root = Path('harmonyos')
+          text = (root / 'build-profile.json5').read_text(encoding='utf-8')
+          # json5 with one trailing comma per list; strip them for the parse
+          cleaned = re.sub(r',(\s*[}\]])', r'\1', text)
+          profile = json.loads(cleaned)
+
+          failures = []
+          for module in profile['modules']:
+              name = module['name']
+              src = root / module['srcPath'].lstrip('./')
+              for required in ('build-profile.json5', 'hvigorfile.ts', 'oh-package.json5'):
+                  if not (src / required).is_file():
+                      failures.append(f'{name}: missing {required}')
+              manifest = src / 'src/main/module.json5'
+              if not manifest.is_file():
+                  failures.append(f'{name}: missing src/main/module.json5')
+                  continue
+              manifest_text = re.sub(r',(\s*[}\]])', r'\1', manifest.read_text(encoding='utf-8'))
+              declared = json.loads(manifest_text)['module']
+              if declared['name'] != name:
+                  failures.append(f"{name}: module.json5 says '{declared['name']}'")
+              if declared.get('type') not in ('entry', 'feature', 'shared'):
+                  failures.append(f"{name}: unknown module type {declared.get('type')}")
+              print(f"  {name}: {declared['type']}, mainElement={declared.get('mainElement', '-')}")
+
+          if failures:
+              for f in failures:
+                  print(f"FAIL  {f}")
+              sys.exit(1)
+          print(f"{len(profile['modules'])} modules declared correctly")
+          PY
+
+          echo
+          echo "--- the input method extension ---"
+          # The IME module must point srcEntry at a real file, or the system
+          # installs the HAP and never offers the keyboard.
+          MANIFEST="harmonyos/keyboard/src/main/module.json5"
+          SRC=$(python3 -c "
+          import json,re
+          t=re.sub(r',(\s*[}\]])',r'\1',open('$MANIFEST',encoding='utf-8').read())
+          print(json.loads(t)['module']['srcEntry'])")
+          FILE="harmonyos/keyboard/src/main/${SRC#./}"
+          test -f "$FILE" || { echo "FAIL srcEntry points at $FILE, which does not exist"; exit 1; }
+          grep -q "InputMethodExtensionAbility" "$FILE" || {
+            echo "FAIL $FILE does not extend InputMethodExtensionAbility"; exit 1; }
+          echo "  srcEntry -> $FILE"
+          grep -q "mainElement" "$MANIFEST"
+          echo "  mainElement is declared"
+
+      - name: Install dependencies
+        run: |
+          cd harmonyos
+          ohpm install --all 2>&1 | tail -20 || true
+
+      - name: Build the HAPs
+        run: |
+          cd harmonyos
+          set +e
+          hvigorw clean --no-daemon 2>&1 | tail -5
+          hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon 2>&1 | tail -80
+          STATUS=${PIPESTATUS[0]}
+          echo "hvigorw exit: $STATUS"
+          exit $STATUS
+
+      - name: Report what was produced
+        if: always()
+        run: |
+          echo "--- HAPs ---"
+          find harmonyos -name '*.hap' -o -name '*.app' 2>/dev/null | while read -r f; do
+            echo "  $f  ($(du -h "$f" | cut -f1))"
+          done
+          FOUND=$(find harmonyos -name '*.hap' 2>/dev/null | wc -l)
+          echo "  $FOUND HAP file(s)"
+          if [ "$FOUND" -eq 0 ]; then
+            echo "::warning::no HAP was produced — read the build log above"
+          fi
+
+      - name: Upload the HAPs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pingzhu-harmonyos-hap
+          path: |
+            harmonyos/**/*.hap
+          if-no-files-found: warn
