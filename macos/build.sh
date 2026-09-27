@@ -98,6 +98,20 @@ rm -f "$ROOT/dist/PingZhu-arm64" "$ROOT/dist/PingZhu-x86_64"
 lipo -info "$MACOS/PingZhu" | sed 's/^/  /'
 log "  $(du -h "$MACOS/PingZhu" | cut -f1) binary"
 
+# Signed, ad-hoc.
+#
+# Two reasons, and the first one is not obvious: `lipo -create` **invalidates**
+# whatever signature the linker applied, and macOS ignores a bundle it cannot
+# verify. The first CI run installed the app into ~/Library/Input Methods and the
+# system never listed it — no error, no warning, the input method simply did not
+# exist as far as the system was concerned.
+#
+# Ad-hoc is enough for a locally installed input method; distributing one needs a
+# Developer ID, which is a different problem (see docs/03-platform-matrix.md).
+log "signing (ad-hoc)"
+codesign --force --deep --sign - "$APP" 2>&1 | sed 's/^/  /'
+codesign --verify --verbose=1 "$APP" 2>&1 | sed 's/^/  /' || true
+
 # ------------------------------------------------------------------ tests
 
 log "exercising the engine through the C ABI"

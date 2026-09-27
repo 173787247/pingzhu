@@ -34,6 +34,18 @@ func string(_ source: TISInputSource, _ key: CFString) -> String? {
     property(source, key) as? String
 }
 
+/// Whether the bundle carries a signature macOS will accept.
+func codesignIsValid(_ bundle: URL) -> Bool {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+    process.arguments = ["--verify", bundle.path]
+    process.standardOutput = FileHandle.nullDevice
+    process.standardError = FileHandle.nullDevice
+    try? process.run()
+    process.waitUntilExit()
+    return process.terminationStatus == 0
+}
+
 func allSources() -> [TISInputSource] {
     (TISCreateInputSourceList(nil, true)?.takeRetainedValue() as? [TISInputSource]) ?? []
 }
@@ -79,17 +91,25 @@ for attempt in 1...10 {
 }
 
 guard let source = found else {
-    let visible = allSources()
+    // Printed line by line, not as one multi-line message: CI shows the first
+    // line of a failure and truncates the rest, so a long explanation is a
+    // silent one.
+    print("FAIL  the system never listed \(sourceID)")
+    print("FAIL  it is installed at \(destination.path) and nobody can see it")
+    for (key, value) in [
+        ("bundle exists", "\(FileManager.default.fileExists(atPath: destination.path))"),
+        ("executable exists", "\(FileManager.default.isExecutableFile(atPath: destination.appendingPathComponent("Contents/MacOS/PingZhu").path))"),
+        ("signature valid", codesignIsValid(destination) ? "yes" : "NO — lipo invalidates it; sign after assembling"),
+        ("waited", "10s"),
+    ] {
+        print("FAIL  \(key): \(value)")
+    }
+    let others = allSources()
         .compactMap { string($0, kTISPropertyBundleID) }
         .filter { !$0.hasPrefix("com.apple.") }
-    fail("""
-        the system never listed \(sourceID).
-        It is installed at \(destination.path) and can be found by nobody —
-        which is exactly the failure that reports nothing.
-        third-party input sources visible: \(visible.isEmpty ? "none" : visible.joined(separator: ", "))
-        Check Info.plist: tsInputModeListKey, InputMethodConnectionName,
-        and that CFBundlePackageType is APPL.
-        """)
+    print("FAIL  third-party input sources visible: \(others.isEmpty ? "none" : others.joined(separator: ", "))")
+    print("FAIL  check Info.plist: tsInputModeListKey, InputMethodConnectionName, CFBundlePackageType = APPL")
+    exit(1)
 }
 report("registered as", string(source, kTISPropertyLocalizedName) ?? "?")
 
