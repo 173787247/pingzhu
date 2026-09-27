@@ -400,9 +400,6 @@ pub unsafe extern "C" fn engine_commit(handle: *mut EngineHandle) -> *const c_ch
     }
 }
 
-/// ABI version, so a shell can refuse to load a mismatched library instead of
-/// corrupting memory.
-#[no_mangle]
 /// The drawn keyboard, one line per row: `key:label|key:label|…`.
 ///
 /// The layout lives in `keyboard.rs` — `key_rows()` derives it from the same
@@ -470,6 +467,13 @@ pub unsafe extern "C" fn engine_keyboard_rows_free(text: *mut c_char) {
     }
 }
 
+/// ABI version, so a shell can refuse to load a mismatched library instead of
+/// corrupting memory.
+///
+/// `#[no_mangle]` is not decoration. Without it this symbol gets a Rust-mangled
+/// name, the header declares something the linker cannot find, and nothing says
+/// so until something tries to link — which is what the HarmonyOS build did.
+#[no_mangle]
 pub extern "C" fn engine_abi_version() -> u32 {
     1
 }
@@ -491,6 +495,47 @@ mod header_tests {
     ///
     /// A header that describes something other than the library is worse than no
     /// header: it is a document that is wrong in a way nobody can see.
+    #[test]
+    fn every_exported_function_has_no_mangle() {
+        // Without #[no_mangle] the symbol gets a Rust-mangled name and no C
+        // linker can find it. Nothing else notices: the function compiles, the
+        // tests pass, the header declares it, and the failure appears only when
+        // something tries to link.
+        //
+        // That is exactly what happened here. Inserting a new function above
+        // `engine_abi_version` split that function from its own #[no_mangle]
+        // attribute — the attribute stayed behind and attached to the new
+        // function's doc comment. 28 tests passed. The linker did not.
+        let source = include_str!("ffi.rs");
+        let lines: Vec<&str> = source.lines().collect();
+        let mut missing = Vec::new();
+        for (index, line) in lines.iter().enumerate() {
+            let trimmed = line.trim_start();
+            if !trimmed.starts_with("pub ") || !trimmed.contains("extern \"C\" fn") {
+                continue;
+            }
+            // The attribute has to be on the function, which means somewhere in
+            // the run of attributes and doc comments immediately above it. The
+            // first line that is neither stops the search.
+            let mut found = false;
+            for previous in lines[..index].iter().rev() {
+                let p = previous.trim_start();
+                if p.starts_with("#[no_mangle]") {
+                    found = true;
+                    break;
+                }
+                if !(p.starts_with("#[") || p.starts_with("///")) {
+                    break;
+                }
+            }
+            if !found {
+                missing.push(trimmed.split('(').next().unwrap_or(trimmed).to_string());
+            }
+        }
+        assert!(missing.is_empty(),
+            "these are exported but will be name-mangled, so no C linker can find them: {missing:?}");
+    }
+
     #[test]
     fn the_keyboard_wire_format_is_what_the_shells_parse() {
         // The format is `key:label` pairs, comma-separated, one row per line,
