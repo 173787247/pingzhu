@@ -338,12 +338,29 @@ jobs:
           ls -la "$ARCHIVE"
 
           echo "--- what is inside ---"
+          # Listed once, into a file, then read.
+          #
+          # `tar tzf ... | head` killed the step with exit 141 — SIGPIPE — because
+          # `head` closes the pipe and `set -e` treats tar's death as a failure.
+          # The archive had already been built correctly; only the reporting
+          # died, which is a bad way to fail: the red build said "packaging
+          # failed" and the package was sitting right there.
           if command -v tar >/dev/null 2>&1; then
-            tar tzf "$ARCHIVE" | head -12
-            echo "  .tsv files:     $(tar tzf "$ARCHIVE" | grep -cE '\.tsv$')"
-            echo "  static library: $(tar tzf "$ARCHIVE" | grep -c 'libpingzhu_core.a')"
-            echo "  total entries:  $(tar tzf "$ARCHIVE" | wc -l)"
+            tar tzf "$ARCHIVE" > /tmp/listing.txt 2>&1 || true
+            sed -n '1,12p' /tmp/listing.txt
+            echo "  .tsv files:     $(grep -cE '\.tsv$' /tmp/listing.txt || true)"
+            echo "  static library: $(grep -c 'libpingzhu_core.a' /tmp/listing.txt || true)"
+            echo "  total entries:  $(wc -l < /tmp/listing.txt)"
           fi
+
+          # And the claim worth checking: the .a and the model are really in
+          # there. A project that opens in DevEco but cannot link is worse than
+          # no project, because the failure looks like the user's mistake.
+          grep -q 'libpingzhu_core.a' /tmp/listing.txt || {
+            echo "::error::the cross-compiled engine is not in the archive"; exit 1; }
+          grep -q 'bopomofo-lm.tsv' /tmp/listing.txt || {
+            echo "::error::the language model is not in the archive"; exit 1; }
+          echo "  verified: the engine and the model are both inside"
 
       - name: Upload the project
         if: always()
