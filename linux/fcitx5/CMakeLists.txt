@@ -84,7 +84,18 @@ target_link_libraries(pingzhu PRIVATE Fcitx5::Core Fcitx5::Utils ${PINGZHU_CORE_
 # tool does not list, with no error — which is the same shape as the HarmonyOS
 # extension that was declared in the wrong place.
 install(TARGETS pingzhu LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/fcitx5)
-install(FILES pingzhu-addon.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/fcitx5/addon)
+# The addon's name is its config file's name, and the InputMethodEntry has to
+# agree with it.
+#
+# This file was pingzhu-addon.conf, so fcitx5 called the addon `pingzhu-addon`;
+# the input method entry said its addon was `bopomofo`; and the input method
+# config said `Addon=pingzhu`. Three names, none of them matching, and the only
+# symptom was:
+#
+#   Group Item pingzhu in group Default is not valid. Removed.
+#
+# Which says the input method was removed and not why.
+install(FILES pingzhu.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/fcitx5/addon)
 install(FILES pingzhu.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/fcitx5/inputmethod)
 enable_testing()
 add_subdirectory(tests)

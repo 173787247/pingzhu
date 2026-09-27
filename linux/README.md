@@ -70,6 +70,27 @@ sudo make install
 
 ---
 
+## 名字要对三次
+
+fcitx5 的 addon 有**三个名字**，而它们必须一致 ✓ ——**不一致的症状只有一句**：
+
+```
+Group Item pingzhu in group Default is not valid. Removed.
+```
+
+**它说输入法被移除了，不说为什么，也不说怎么修** ✗
+
+| 名字 | 在哪里 | 我写错成 |
+|---|---|---|
+| addon 名 = **设定档名** | `share/fcitx5/addon/**.conf` | `pingzhu-addon.conf` ✗ → addon 叫 `pingzhu-addon` |
+| `InputMethodEntry` 的 `addon` 栏位 | `listInputMethods()` | `"bopomofo"` ✗ |
+| `inputmethod/*.conf` 的 `Addon=` | `share/fcitx5/inputmethod/` | `pingzhu` ✓ |
+
+**三个名字，没有一个对得上** ✓ 改成全部 `pingzhu` ✓ 才通过 ✓
+
+加一个相关的：`OnDemand=True` 会让 fcitx5 **在 addon 载入之前**检查 profile ✗ ——
+于是它不认识 `pingzhu` ✓ 就把它从组里删掉 ✓。**改成 `False`** ✓
+
 ## 验证
 
 ```bash
