@@ -35,6 +35,13 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | **Android 8+** | **[⬇ pingzhu-0.8.0-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.8.0-android.apk)** |
 | **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)） |
 
+**HarmonyOS** 和 **Linux** 没有安装包——它们的产物是专案与 addon，要从原始码建置：
+
+| 平台 | 拿什么 | 怎么装 |
+|---|---|---|
+| **HarmonyOS NEXT** | **[pingzhu-0.9.0-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](https://github.com/173787247/pingzhu/blob/main/macos/TESTING.md)） |
+| **Linux** | 不发布二进制 | `cmake -DCMAKE_INSTALL_PREFIX=/usr` 建置 fcitx5 addon（[linux/](linux/README.md)） |
+
 **Windows**：装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z`
 切换中英、`Ctrl+Alt+S` 切换繁简（或用右下角的浮动按钮），打 `su3cl3` 会出现「你好」。
 详细操作见 [windows/README.md](windows/README.md)。
@@ -44,17 +51,29 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 ## 现况
 
-**M0 – M4c 与 M6 完成 —— Windows 与 Android 都可实际使用。M5（macOS）能编、能跑，但系统尚未接受它。**
+**五个平台、六个外壳、一份 Rust 核心。**
 
-解码引擎、资料管线、个人化学习、Rust 核心 ＋ C ABI，以及四个外壳：Windows TSF
-（进语言列）、Windows 可携版、Android `InputMethodService`、macOS InputMethodKit。
+| 平台 | 外壳 | 状态 |
+|---|---|---|
+| **Windows 10/11** | TSF 文字服务（进语言列） | ✅ **可用，已发布** |
+| **Windows 10/11** | 可携版（托盘 ＋ 全域钩子） | ✅ **可用，已发布** |
+| **Android 8+** | `InputMethodService` | ✅ **可用，已发布** |
+| **HarmonyOS NEXT** | IME Kit `InputMethodExtensionAbility` | ✅ **真机打出「你好」**（Mate XT · HarmonyOS 6.1） |
+| **Linux** | fcitx5 addon | ⚠️ **引擎与载入已验证**，未在桌面打过字 |
+| **macOS 12+** | InputMethodKit | ⚠️ 能编能跑，**系统尚未接受**（见下） |
 
-**四个外壳共用同一个 Rust 核心**——所以同一串按键在 Windows 与 Android 上得到同样的词。
+**六个外壳共用同一个 Rust 核心**——所以同一串按键在每个平台上得到同样的词。
 这不是设计意图，是被 1,529 例差异化测试钉住的事实。
 
-**macOS 是唯一一个「做完了但还不能用」的**：它在真机上编译、打包、签名、跑引擎
-全部通过，输入法选单里却始终没有它。六个假设已经排除，剩下的唯一变量是「登入」
-——细节与那份清单在 [macos/README.md](macos/README.md)。
+### 两个还没打勾的
+
+**macOS**：它在真机上编译、打包、签章、跑引擎全部通过，输入法选单里却始终
+没有它。六个假设已经排除，剩下的唯一变数是「登入」——细节在
+[macos/README.md](macos/README.md)。
+
+**Linux**：引擎在 CI 上跑过同样三个词，addon 也真的被 fcitx5 载入、启动过
+引擎；**但「在桌面环境里打字」没有测成功**，因为 WSLg 不转发输入法——
+原因在 [linux/README.md](linux/README.md)。
 
 Windows 有两个外壳，共用同一份引擎与同一个候选视窗：
 
@@ -405,7 +424,7 @@ for iPad/iPhone, Linux and Android tablets — while its licensing model generat
 burden made overwhelmingly of activation and subscription failures rather than typing
 questions.
 
-**Windows and Android builds are usable today.** All four shells embed the same Rust
+**Six shells, five platforms, one Rust core.** All of them embed the same Rust
 core, held to byte-identical output against the TypeScript reference implementation by
 1,529 differential cases, so the same keys give the same words everywhere. The macOS
 build compiles, signs and runs on real hardware; the system does not list it as an input

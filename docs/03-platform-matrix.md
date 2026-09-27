@@ -275,7 +275,7 @@ tx-trie 127 MB。
 
 ---
 
-## 四个外壳共用的 C ABI
+## 六个外壳共用的 C ABI
 
 ```c
 EngineHandle* engine_create(const char* data_dir, const char* layout, const char* candidate_order);
@@ -293,8 +293,8 @@ const char*  engine_choose(EngineHandle, int index);
 
 三个设计约束：
 
-1. **回传字串的所有权固定在引擎**，呼叫端不负责释放——避免四个外壳各写一套记忆体管理。
+1. **回传字串的所有权固定在引擎**，呼叫端不负责释放——避免六个外壳各写一套记忆体管理。
 2. **按键以 UTF-8 字元传入，而非 keycode**——键盘排列的知识留在核心，
    新增许氏键盘不需要改四个平台。
 3. **没有非同步介面**。解码是 15.2 µs 的纯函式计算，同步呼叫即可；
-   引入非同步只会让四个外壳各写一套 callback 生命周期。
+   引入非同步只会让六个外壳各写一套 callback 生命周期。
