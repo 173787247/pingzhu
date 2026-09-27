@@ -147,7 +147,10 @@ std::vector<fcitx::InputMethodEntry> PingZhuEngine::listInputMethods() {
     // only because that one is a constant.
     std::vector<fcitx::InputMethodEntry> methods;
     methods.reserve(1);
-    methods.emplace_back("pingzhu", "PingZhu", "zh_TW", "bopomofo");
+    // The fourth argument is the addon this input method belongs to, and it has
+    // to be the addon's name — which is its config file's name. It said
+    // "bopomofo" at first, which matched nothing.
+    methods.emplace_back("pingzhu", "PingZhu", "zh_TW", "pingzhu");
     methods.back().setLabel("平注");
     methods.back().setIcon("pingzhu");
     return methods;
