@@ -33,6 +33,17 @@ uint32_t engine_abi_version(void);
  * candidate_order: "same-span-first" | "longest-first" | "frequency" | NULL.
  * Returns NULL if the language model cannot be read. */
 EngineHandle *engine_create(const char *data_dir, const char *layout, const char *candidate_order);
+/// Select the output script: "traditional" or "simplified".
+///
+/// Input, the language model and the user dictionary are Traditional regardless;
+/// this only decides which script leaves the engine. Returns false for an
+/// unknown name rather than silently keeping the old value, so a shell that
+/// misspells it finds out.
+bool engine_set_output_script(EngineHandle *handle, const char *script);
+
+/// The current output script. Never NULL.
+const char *engine_output_script(EngineHandle *handle);
+
 void engine_destroy(EngineHandle *handle);
 
 /* Learned words, plain text. */
