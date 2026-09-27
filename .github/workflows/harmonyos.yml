@@ -164,6 +164,31 @@ jobs:
           JS
           "$NODE" /tmp/check.mjs
 
+      # What the SDK actually exports, asked of the SDK itself.
+      #
+      # The first build failed with "Cannot find module
+      # '@ohos.inputMethod.InputMethodExtensionAbility'" — the article-style
+      # imports that most examples still use do not exist in an API 12 SDK,
+      # which moved to Kit-style imports (@kit.IMEKit). Rather than guess a
+      # second time, print what is there.
+      - name: Ask the SDK what the IME API is called
+        if: always()
+        shell: bash
+        run: |
+          echo "--- IME type declarations in the SDK ---"
+          SDK=$(ls -d /opt/ohos-sdk/* 2>/dev/null | head -1)
+          echo "sdk root: ${SDK:-none}"
+          find /opt -name '*.d.ts' 2>/dev/null | xargs grep -l -i "InputMethodExtensionAbility" 2>/dev/null | head -5 || true
+          echo "--- kit modules mentioning inputMethod ---"
+          find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -3 || true
+          find /opt -path '*kits*' -name '*.d.ts' 2>/dev/null | head -20 || true
+          echo "--- what IMEKit exports ---"
+          KIT=$(find /opt -name '@kit.IMEKit.d.ts' 2>/dev/null | head -1)
+          if [ -n "$KIT" ]; then grep -E "^export" "$KIT" | head -30; else echo "(not found)"; fi
+          echo "--- what PerformanceAnalysisKit exports (hilog) ---"
+          PAA=$(find /opt -name '@kit.PerformanceAnalysisKit.d.ts' 2>/dev/null | head -1)
+          if [ -n "$PAA" ]; then grep -E "^export" "$PAA" | head -20; else echo "(not found)"; fi
+
       - name: Install dependencies
         run: |
           cd harmonyos
