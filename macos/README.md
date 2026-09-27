@@ -12,9 +12,17 @@ macos/
 │   ├── Engine.swift                  C ABI 的 Swift 包装
 │   ├── Router.swift                  按键路由（纯逻辑，可测）
 │   └── PingZhu-Bridging-Header.h     pingzhu.h
-├── Tests/main.swift                  读共用测试向量的自我测试
-├── Resources/Info.plist              tsInputModeListKey、连线名称
-└── build.sh                          编出 PingZhu.app
+├── Tests/
+│   ├── Router/main.swift             读共用测试向量（22 条）
+│   ├── Engine/main.swift             在 macOS 上真的跑一次引擎
+│   ├── Install/main.swift            装进去，问系统看不看得到它
+│   └── Probe/main.swift              问 runner 能看到什么
+├── Resources/Info.plist              连线名称、输入模式、脚本
+├── build.sh                          编出 PingZhu.app
+├── install.sh                        在 Mac 上一行装好
+├── probe.sh                          系统看不看得到它
+├── diagnose.sh                       为什么看不到（逐项排除）
+└── TESTING.md                        真机测试清单
 ```
 
 ## 建置
@@ -56,54 +64,68 @@ ok    the engine runs on macOS
 **「link 得起来」和「跑得起来」是两件事** ✗ ——一个在 Darwin 上 link 得起来、
 却因为读不到语言模型而回传空字串的核心，**和使用者打字之前都看起来一模一样** ✗。
 
-### CI 能验证到哪，以及为什么停在那里
+### 状态：**真机上验证过，而系统不接受它**
 
-| | |
+这一节的原文写的是「还没在真机验证」。**那已经不对了**——在一台 Mac mini 上
+（macOS、Aqua 工作阶段、真的登入）试过之后，事实是：
+
+| 项目 | 结果 |
 |---|---|
-| ✅ 编译（两个架构、真 macOS） | |
-| ✅ bundle 结构（26 项检查） | |
-| ✅ 引擎真的解码 | |
-| ✅ **装进 `~/Library/Input Methods`、签章有效** | |
-| ❌ **系统接受它** | **需要登入** ✗ |
+| 在真 macOS 上编译（arm64 + x86_64） | ✅ |
+| bundle 结构（26 项检查） | ✅ |
+| **引擎真的解码**（`su3cl3` → 你好） | ✅ |
+| 安装到 `~/Library/Input Methods/` 与 `/Library/Input Methods/` | ✅ |
+| 签名有效（ad-hoc）、执行档双架构 | ✅ |
+| **执行档真的跑得起来** | ✅ |
+| **LaunchServices 认识它**（22 条纪录） | ✅ |
+| **系统把它列成输入来源** | ❌ **从来没有** |
 
-**试过四件事，都没用** ✗：
+输入法选单里只有 ABC、macOS 内建的繁体注音与简体拼音、以及**自然输入法 V13**
+（同一台机器上的对照组 ✓ 它运作正常 ✓）。**没有平注。**
 
-1. 等 20 秒 ✗
-2. 用 `lsregister` 向 LaunchServices 注册 ✗（安装程式就是这么做的 ✗）
-3. 重启 `TextInputMenuAgent` 与 `TextInputSwitcher` ✗
-4. 用 `open` 启动它一次 ✗（就像使用者双击那样 ✗）
+### 排除掉的六个假设
 
-**而机制我不知道** ✗。
+每一个都是**安静的失败**——没有一个会报错 ✗：
 
-我先前写的是「macOS 只在登入时扫描那个目录」✗ ——**那是我把猜测写成了解释** ✗。
-探测结果否定了它 ✓：runner 的 `launchctl managername` 是 **`Aqua`** ✓，
-**那本来就是一个已登入的 GUI 工作阶段** ✗。
+| # | 假设 | 怎么排除的 |
+|---|---|---|
+| 1 | `tsInputModeScriptKey` 应该是 `smRoman` | 改成 `smTradChinese`，一样不列 |
+| 2 | 需要 `ComponentInputModeDict` | 补上，一样不列 |
+| 3 | 应该装到 `/Library`（系统层） | 装了，一样不列 |
+| 4 | 执行档一启动就崩 | 它跑得好好的（连续 3 秒） |
+| 5 | LaunchServices 不认识它 | 它认识（22 条纪录） |
+| 6 | `ComponentInputModeDict` 是旧格式所以被忽略 | 删掉，一样不列 |
 
-所以诚实的说法是**观察到的事实** ✓，不是从没被证实的成因 ✗：
+而跟**同一台机器上正在运作的输入法**逐键比对之后，
+「它有、我们没有」的键是**空的** ✓ ——我们的 `Info.plist` 有它有的每一个键 ✓
 
-> 在 GitHub 的 macOS runner 上，同一个 session 里新装的输入法
-> **不会变成可见的输入来源** ✗ ——原因不明 ✓
+### 唯一还没测过的变量：**登入**
 
-> **一个意思是「这个我们早就知道」的红灯，是没有人会去读的红灯。**
+到目前为止**六次检查全部是「装完立刻看」**：CI ✓、`~/Library` ✓、`/Library` ✓、
+删掉 `ComponentInputModeDict` 之后 ✓、用 `ditto` 重铺之后 ✓
 
-剩下需要你（或任何一台 Mac）做的：装上去、登入、到系统设定加入「平注」、打字 ✓
+**没有一次是「装完 → 登出 → 登入 → 再检查」** ✓
 
-## CI 检查的四件「不会报错」的事
+而自然输入法是**安装程式装的** ✓，机器从那之后一直登入着 ✓ ——
+所以「新装的输入法在登入之后会不会出现」这一件事，**从来没有被观察过** ✓
 
-一个输入法 bundle 有很多种坏法，**每一种都是安静地坏掉**：
+macOS 在登入时读取 `~/Library/Input Methods` ✓；`lsregister` ✓、
+重启输入源代理 ✓、`open` 一次 ✓ 都试过而无效 ✓ ——但那些都不是登入 ✗
 
-| 检查 | 错了会怎样 |
-|---|---|
-| `CFBundlePackageType` = `APPL` | 装进 `~/Library/Input Methods` 之后永远不出现在清单里 |
-| `InputMethodConnectionName` 与 `main.swift` 一致 | **伺服器启动了，系统找不到它——输入法会安装、会出现在清单里、然后什么都不做** |
-| `InputMethodServerControllerClass` 与 `@objc(...)` 一致 | 同上，但更难查 |
-| 执行档同时有 `arm64` 与 `x86_64` | Intel Mac 上装得起来、出现在清单里、打不开 |
+**这是下一步。** 顺序写在 [TESTING.md](TESTING.md) 里，登出放在最后 ✓
+（这台机器是透过向日葵连的，而向日葵不会在登出后自动登入 ✓）
 
-最后一条是**第一次建置真的犯过的错** ✗：Rust 那一半是 universal ✓，Swift 那一半
-只有 arm64 ✗（我用了 `$(uname -m)` ✗），而 CI 没抱怨 ✗——因为它当时只检查
-「编译成功」，没检查「产物是什么」✗。
+### CI 仍然是主力
 
-> **「建置成功」和「产物是对的」是两件事，而 CI 预设只验证前者。**
+开发这个专案不需要 Mac ✓ 就能改引擎、Windows 外壳或 Android 外壳 ✓ ——
+**但 Swift 打 InputMethodKit 需要** ✗，而另一个选择是「一份从来没被编译过的程式码」✗
+
+这个 repo 是 public 的 ✓ 而 GitHub Actions 的 macOS runner 对 public repo 免费 ✓，
+所以 `.github/workflows/macos.yml` 会编译两个架构、跑 22 条路由向量、
+在 macOS 上真的跑一次引擎、检查 bundle 的 26 件事、并上传可下载的 `.app` ✓
+
+**「它能编译」是事实，不是期望** ✓ ——而**「系统接不接受它」是另一件事** ✗，
+那是 CI 结构上问不出来的 ✓
 
 ## 设计取舍
 
