@@ -7,6 +7,7 @@
  * 都打不出来）。
  */
 import pingzhu from 'libpingzhu.so';
+import { Session } from '../model/Session';
 
 /** One key on the board. */
 interface Key {
@@ -55,8 +56,8 @@ export struct KeyboardPanel {
   private tap(letter: string): void {
     try {
       pingzhu.feedKey(letter);
-      this.composing = pingzhu.composing;
-      this.candidates = pingzhu.candidates;
+      this.composing = pingzhu.composing();
+      this.candidates = pingzhu.candidates();
     } catch (error) {
       this.failure = `${error}`;
     }
@@ -67,11 +68,19 @@ export struct KeyboardPanel {
       const text: string = pingzhu.commit();
       this.composing = '';
       this.candidates = [];
-      if (text.length > 0) {
-        // The extension sends it to the editor; until that is wired up the
-        // panel shows what would have been committed rather than pretending.
-        this.failure = '';
-        this.composing = `（已選：${text}）`;
+      if (text.length === 0) return;
+
+      // Through the Session, not into this.composing.
+      //
+      // The first version wrote `this.composing = （已選：${text}）` and stopped
+      // there — the word was decoded, selected, shown on the panel, and dropped.
+      // The editor and the engine are different things, and this is the call
+      // that carries text from one to the other.
+      const sent: boolean = Session.insertText(text);
+      if (!sent) {
+        // Worth showing. Text that is decoded and then dropped looks exactly
+        // like text that was never typed.
+        this.composing = `沒有編輯器（${text}）`;
       }
     } catch (error) {
       this.failure = `${error}`;
@@ -88,13 +97,32 @@ export struct KeyboardPanel {
             .padding({ left: 8, right: 8, top: 4, bottom: 4 })
             .backgroundColor('#FFFFFF')
             .borderRadius(4)
-            .onClick(() => { this.commit(); })
+            // Picks the candidate that was tapped, not the default.
+            //
+            // The first version called commit() here, which commits the best
+            // candidate — so tapping 妳好 gave 你好. Selecting by index is the
+            // whole point of showing a list.
+            .onClick(() => { this.pickCandidate(index + 1); })
         }, (item: string, index: number) => `${index}-${item}`)
       }
       .width('100%')
       .height(40)
       .padding({ left: 8, right: 8 })
       .backgroundColor('#E8E8E8')
+    }
+  }
+
+  private pickCandidate(oneBased: number): void {
+    try {
+      const text: string = pingzhu.selectCandidate(oneBased);
+      this.composing = '';
+      this.candidates = [];
+      if (text.length === 0) return;
+      if (!Session.insertText(text)) {
+        this.composing = `沒有編輯器（${text}）`;
+      }
+    } catch (error) {
+      this.failure = `${error}`;
     }
   }
 
@@ -147,8 +175,13 @@ export struct KeyboardPanel {
         Text('⌫')
           .fontSize(18).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)
-          .onClick(() => { pingzhu.reset(); this.composing = ''; this.candidates = []; })
-        Text('空白')
+          .onClick(() => {
+            pingzhu.reset();
+            this.composing = '';
+            this.candidates = [];
+            Session.deleteBackward();
+          })
+        Text('送出')
           .fontSize(16).textAlign(TextAlign.Center).layoutWeight(3).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)
           .onClick(() => { this.commit(); })

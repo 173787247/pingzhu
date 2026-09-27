@@ -177,6 +177,44 @@ napi_value FeedKey(napi_env env, napi_callback_info info) {
     return result;
 }
 
+// Picks the n-th candidate and commits it.
+//
+// The panel's candidate list had onClick handlers that just called commit(),
+// which commits the *default* — so tapping 妳好 gave 你好. Selecting by index is
+// the whole point of showing a list.
+napi_value SelectCandidate(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    uint32_t index = 0;
+    if (argc < 1 || napi_get_value_uint32(env, args[0], &index) != napi_ok) {
+        napi_throw_error(env, nullptr, "selectCandidate() expects a 1-based index");
+        return nullptr;
+    }
+    if (g_engine == nullptr) {
+        napi_throw_error(env, nullptr, "selectCandidate() before create()");
+        return nullptr;
+    }
+    const char* text = engine_select_candidate(g_engine, index);
+    napi_value result;
+    napi_create_string_utf8(env, text == nullptr ? "" : text, NAPI_AUTO_LENGTH, &result);
+    return result;
+}
+
+napi_value NextPage(napi_env env, napi_callback_info info) {
+    if (g_engine == nullptr) { napi_value r; napi_get_boolean(env, false, &r); return r; }
+    napi_value result;
+    napi_get_boolean(env, engine_next_candidate_page(g_engine), &result);
+    return result;
+}
+
+napi_value CandidateCount(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_create_uint32(env, g_engine == nullptr ? 0 : engine_candidate_count(g_engine), &result);
+    return result;
+}
+
 napi_value Composing(napi_env env, napi_callback_info info) {
     if (g_engine == nullptr) { napi_value r; napi_create_string_utf8(env, "", 0, &r); return r; }
     const char* text = engine_composing(g_engine);
@@ -245,6 +283,9 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"candidates", nullptr, Candidates, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"bestSentence", nullptr, BestSentence, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"feedKey", nullptr, FeedKey, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"selectCandidate", nullptr, SelectCandidate, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"nextPage", nullptr, NextPage, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"candidateCount", nullptr, CandidateCount, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"composing", nullptr, Composing, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"commit", nullptr, Commit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"reset", nullptr, Reset, nullptr, nullptr, nullptr, napi_default, nullptr},
