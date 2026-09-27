@@ -1,0 +1,106 @@
+name: Linux
+
+# Linux is the only platform where the build machine and the target machine are
+# the same thing, so this workflow is short on purpose: it installs fcitx5,
+# builds the addon against the shared Rust core, installs it where fcitx5
+# actually looks, and runs the engine against the installed data.
+#
+# Every "cannot find file" this project has hit came from a file that existed in
+# a directory the program does not search. The last step checks for exactly that
+# string, because fcitx5 reports it and nothing else does.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'linux/**'
+      - 'core-rs/**'
+      - 'data/**'
+      - '.github/workflows/linux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install fcitx5 and the build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            fcitx5 libfcitx5core-dev libfcitx5config-dev \
+            libfcitx5utils-dev fcitx5-modules-dev \
+            extra-cmake-modules cmake pkg-config
+          echo "--- versions ---"
+          fcitx5 --version
+          pkg-config --modversion Fcitx5Core
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build the core
+        run: |
+          cargo build --release --manifest-path core-rs/Cargo.toml
+          ls -la core-rs/target/release/libpingzhu_core.a
+
+      - name: Build the addon
+        run: |
+          cd linux/fcitx5
+          mkdir -p build
+          cd build
+          # The prefix matters: installing to /usr/local puts the addon config
+          # where fcitx5 never looks, and nothing says so.
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+          make
+
+      - name: Install it the way a package would
+        run: |
+          cd linux/fcitx5/build
+          sudo make install
+          echo "--- where things landed ---"
+          # Resolved through GNUInstallDirs, not written by hand. On Debian the
+          # addon library belongs in the multiarch directory, and `lib/fcitx5`
+          # is a directory fcitx5 does not search — which took four attempts to
+          # find, all of them reporting "the file exists".
+          ls -la /usr/lib/*/fcitx5/libpingzhu.so
+          ls -la /usr/share/fcitx5/addon/pingzhu-addon.conf
+          ls -la /usr/share/fcitx5/inputmethod/pingzhu.conf
+          ls -la /usr/share/pingzhu/bopomofo-lm.tsv
+
+      - name: The engine works with the installed data
+        run: |
+          cd linux/fcitx5/build
+          ./tests/engine_smoke /usr/share/pingzhu
+
+      - name: fcitx5 recognises the addon
+        run: |
+          set +e
+          fcitx5 --disable=x11,wayland -d > /tmp/fcitx5.log 2>&1 &
+          sleep 10
+
+          echo "--- addon config is found ---"
+          fcitx5-diagnose > /tmp/diagnose.txt 2>&1
+          grep -E "PingZhu" /tmp/diagnose.txt | head -3
+
+          # The string fcitx5 prints when a file exists somewhere it does not
+          # look. If it appears, the install path is wrong, not the build.
+          if grep -q "Cannot find file" /tmp/diagnose.txt; then
+            echo "::error::fcitx5 cannot find the addon library — check CMAKE_INSTALL_LIBDIR"
+            grep -B2 -A2 "Cannot find file" /tmp/diagnose.txt
+            exit 1
+          fi
+
+          echo "--- the addon loads ---"
+          grep -E "Loaded addon pingzhu|input method.*pingzhu" /tmp/fcitx5.log | head -3
+          exit 0
+
+      - name: Report
+        if: always()
+        run: |
+          echo "### Linux" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- addon: \`linux/fcitx5/build/libpingzhu.so\`" >> $GITHUB_STEP_SUMMARY
+          echo "- engine checks: \`su3cl3\` → 你好, \`ji394su3\` → 我愛你, \`w96j0\` → 台灣" >> $GITHUB_STEP_SUMMARY
+          echo "- not covered: typing on a real desktop (no X/Wayland here)" >> $GITHUB_STEP_SUMMARY

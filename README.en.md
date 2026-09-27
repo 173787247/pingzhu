@@ -47,7 +47,7 @@ detail is in [macos/README.md](macos/README.md).
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI (JNI) | ✅ **usable** ([android/](android/README.md)) |
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **builds, bundles and runs on real hardware** · **the system does not accept it yet** ([macos/](macos/README.md)) |
 | **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI (NAPI, statically linked) | ✅ **typed 你好 on real hardware (Mate XT · HarmonyOS 6.1)** ([harmonyos/](harmonyos/README.md)) |
-| Linux | fcitx5 / ibus addon | ✅ C ABI | optional |
+| **Linux** | **fcitx5 addon** | ✅ C ABI (statically linked) | ⚠️ **builds; the engine is exercised against the installed data** ([linux/](linux/README.md)) · **not typed on a real desktop** |
 
 **All four shells embed the same Rust core.** The same keys give the same words on Windows
 and Android — not by intention, but because 1,529 differential cases hold the Rust core to

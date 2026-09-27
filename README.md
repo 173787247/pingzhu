@@ -25,7 +25,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **真机上能编译、能打包、能跑引擎**·**但系统尚未接受它**（[macos/](macos/README.md)） |
 | **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
 | **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI（NAPI，静态链接） | ✅ **在真机（Mate XT · HarmonyOS 6.1）打出「你好」**（[harmonyos/](harmonyos/README.md)） |
-| Linux | fcitx5 / ibus addon | ✅ C ABI | 选配 |
+| **Linux** | **fcitx5 addon** | ✅ C ABI（静态连结） | ⚠️ **能建置、引擎实测通过**（[linux/](linux/README.md)）·**未在真的桌面环境打过字** |
 
 ### 下载
 
