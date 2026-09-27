@@ -3,10 +3,24 @@
 平注的 HarmonyOS 输入法。**解码不在这里**——按这个专案一贯的做法，
 每一个按键都要送到共用的 Rust 核心，这样四个平台的选字结果一致。
 
-**引擎已经接上了** ✓ ——Rust 核心交叉编译成 `libpingzhu.so`，
-跟着 HAP 一起走（2.6MB，`libs/arm64-v8a/libpingzhu.so`）。
-但**还没有在真的鸿蒙装置上打过字** ✗ ——CI 只能证明它建置得出来、
-链接得起来、`.so` 在 HAP 里。
+# ✅ 在真的鸿蒙手机上打出了中文
+
+**2026-09-27，HUAWEI Mate XT（HarmonyOS 6.1，API 20）** ✓：
+
+```
+s u 3 c l 3   →   你好   →   備忘錄
+```
+
+**完整的路径** ✓：
+
+```
+鴻蒙鍵盤 → ArkTS → NAPI → Rust 核心（core-rs）→ 解碼
+                                          ↓
+備忘錄 ← InputClient.insertTextSync ← Session ← 送出
+```
+
+**这不是模拟器** ✗ ——是真的手机、真的系统输入法框架、
+真的从零交叉编译的 Rust 核心 ✓
 
 ## 结构
 
@@ -96,7 +110,10 @@ find /opt -name '@kit.IMEKit.d.ts' | head -1 | xargs grep -E "^export"
 | 候选列 | ✅ 画得出来 |
 | **把字送进编辑器** | ✅ **完成**——`InputClient.insertTextSync` |
 | **语言模型** | ✅ **在 HAP 里**（6.4 MB 的 `bopomofo-lm.tsv`） |
-| **在真机或模拟器上打字** | ❌ **唯一剩下的**——需要鸿蒙装置 |
+| **在真机打字** | ✅ **完成**——`su3cl3` → 你好 |
+| 候选翻页、组字上屏显示 | ⚠️ 可用但不完整 |
+| 符号表、联想词 | ❌ 尚未实作 |
+| 签名与上架（AGC） | ❌ 治理问题 |
 | 签章与上架（AGC） | ❌ 治理问题，不是 API 问题（见 [docs/03](../docs/03-platform-matrix.md)） |
 
 ## 引擎怎么进去的
@@ -221,6 +238,32 @@ find /opt -name '@ohos.inputMethodEngine.d.ts' | xargs grep -A2 "interface Input
 
 模型档由 CI 复制进 `rawfile/` ✓，**不签进 repo** ✓ ——
 那是其他三个平台在用的同一批 `.tsv` ✓，repo 里再放一份就是第二个版本 ✓
+
+## CI 会挡住哪些错
+
+`tools/check-harmonyos-project.mjs`（61 项检查）在每次 push 时跑，
+**而且可以在本机先跑**：
+
+```bash
+node tools/check-harmonyos-project.mjs harmonyos
+```
+
+它检查的是**今天每一个花过时间的结构性失败** ✓：
+
+| 检查 | 对应的失败 |
+|---|---|
+| `extensionAbilities` 里有 `type: "inputMethod"` | 系统看不到键盘（花了几小时那个） |
+| metadata 指向的 profile 存在、subtypes 非空 | 宣告了却什么都提供不了 |
+| `main_pages.json` 列的页面存在 | `setUiContent` 载不到 → 空白面板 |
+| `index.d.ts` ↔ `napi_init.cpp` 互相吻合 | `@State` 收到 function，元件拒绝渲染 |
+| 每个 `$media:` / `$string:` 都能解析 | 缺图示是建置失败，缺字串是执行时的空白标签 |
+
+**而且验证过它会红** ✓ ——故意拿掉 `extensionAbilities`、少一个宣告、
+删掉 profile ✓ ——三种都会 FAIL ✓。
+
+> **它自己也曾经是个空壳。** 检查器原本写在 workflow 里，
+> 后来一次重写把它换成了一行 `node --version`，
+> **而没有人发现——因为一个悄悄停掉的检查，看起来和通过的检查一模一样。**
 
 ## 启用的方式
 
