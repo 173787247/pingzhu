@@ -23,8 +23,10 @@ gh run download 36299727585 --repo 173787247/pingzhu --name PingZhu.app --dir ~/
 cp -R ~/Downloads/PingZhu.app ~/Library/Input\ Methods/
 ```
 
-**然后登出再登入。** 这一步不能省 ✗ ——macOS 只在登入时扫描那个目录 ✗，
-CI 上试过三条路都无法绕过（见 README）。
+**然后登出再登入。** 这一步不能省 ✗ ——CI 上试过四件事都无法让系统在
+同一个 session 里看到它 ✗，而**原因不明** ✓（见 README 里那段诚实的说明 ✗）。
+
+对**人**来说这只是一次登出登入 ✓，所以照做就好 ✓。
 
 ## 3. 加进输入方式
 

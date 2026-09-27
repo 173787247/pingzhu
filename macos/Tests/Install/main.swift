@@ -146,30 +146,38 @@ for attempt in 1...20 {
 }
 
 guard let source = found else {
-    // A finding, not a defect — and it took several attempts to establish that.
+    // A finding, not a defect — and the mechanism is genuinely unknown.
     //
-    // macOS scans ~/Library/Input Methods at login. A bundle copied in during a
-    // session is not picked up, and neither lsregister nor restarting
-    // TextInputMenuAgent and TextInputSwitcher changes that; both were tried
-    // here and neither worked.
+    // Four things were tried on a runner and none of them made the system list
+    // the input source in the same session:
     //
-    // So this is the boundary of what CI can verify for this platform. The
-    // bundle is built, signed, correctly structured (26 checks, separately) and
-    // installs — and whether the system *accepts* it is only knowable after a
-    // login, which a runner cannot perform.
+    //   1. waiting 20 seconds
+    //   2. `lsregister -f`, which is what an installer does
+    //   3. restarting TextInputMenuAgent and TextInputSwitcher
+    //   4. launching the bundle once, the way a person double-clicking it would
     //
-    // Reported honestly rather than asserted, because a red build that means
-    // "we already know this" is a red build nobody reads.
+    // An earlier version of this message said "macOS scans that directory at
+    // login" and left it there. That was a guess dressed as an explanation, and
+    // the probe contradicts it: the runner reports `launchctl managername` as
+    // `Aqua`, which *is* a logged-in GUI session. So the honest statement is
+    // what was observed, not a cause that was never established.
+    //
+    // What this means for the project: CI can verify the build, the bundle, the
+    // engine, the installation and the signature. It cannot verify that the
+    // system accepts the input method. That needs a person at a Mac, and it is
+    // the only thing left in the checklist.
     print("note  the system does not list \(sourceID) in this session")
-    print("note  it is installed and signed at \(destination.path)")
-    print("note  macOS scans that directory at login; a mid-session copy is not")
-    print("note  picked up, and lsregister plus restarting the input source")
-    print("note  agents does not change it (both were tried).")
-    print("note  everything checkable without a login passed:")
-    print("note    bundle present, executable present, signature valid")
-    print("note    the language model is in the bundle")
-    print("note  what remains for a person on a Mac: log in with it installed,")
+    print("note  it is installed, signed and was launched at \(destination.path)")
+    print("note  four attempts to make the system see it all failed:")
+    print("note    waiting 20s, lsregister -f, restarting the input source agents,")
+    print("note    and opening the bundle once")
+    print("note  the mechanism is not known; what is known is that it does not")
+    print("note  happen in a runner session, which reports itself as Aqua.")
+    print("note  everything checkable without the system's acceptance passed:")
+    print("note    bundle, executable, signature, language model, installation")
+    print("note  what remains for a person at a Mac: install, log out and back in,")
     print("note  add 平注 under System Settings → Keyboard → Input Sources, and type.")
+    print("note  see TESTING.md.")
     exit(0)
 }
 

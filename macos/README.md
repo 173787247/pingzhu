@@ -66,22 +66,23 @@ ok    the engine runs on macOS
 | ✅ **装进 `~/Library/Input Methods`、签章有效** | |
 | ❌ **系统接受它** | **需要登入** ✗ |
 
-最后一项**试过三条路都不行** ✗：
+**试过四件事，都没用** ✗：
 
 1. 等 20 秒 ✗
 2. 用 `lsregister` 向 LaunchServices 注册 ✗（安装程式就是这么做的 ✗）
 3. 重启 `TextInputMenuAgent` 与 `TextInputSwitcher` ✗
+4. 用 `open` 启动它一次 ✗（就像使用者双击那样 ✗）
 
-**macOS 只在登入时扫描那个目录** ✓，而 CI runner 没办法登入 ✗。
+**而机制我不知道** ✗。
 
-所以安装测试把这一点**当成结论报告，而不是当成失败** ✓：
+我先前写的是「macOS 只在登入时扫描那个目录」✗ ——**那是我把猜测写成了解释** ✗。
+探测结果否定了它 ✓：runner 的 `launchctl managername` 是 **`Aqua`** ✓，
+**那本来就是一个已登入的 GUI 工作阶段** ✗。
 
-```
-note  the system does not list tw.pingzhu.ime.Bopomofo in this session
-note  macOS scans that directory at login; a mid-session copy is not
-note  picked up, and lsregister plus restarting the input source
-note  agents does not change it (both were tried).
-```
+所以诚实的说法是**观察到的事实** ✓，不是从没被证实的成因 ✗：
+
+> 在 GitHub 的 macOS runner 上，同一个 session 里新装的输入法
+> **不会变成可见的输入来源** ✗ ——原因不明 ✓
 
 > **一个意思是「这个我们早就知道」的红灯，是没有人会去读的红灯。**
 
