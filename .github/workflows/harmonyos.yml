@@ -234,6 +234,109 @@ jobs:
             echo "  no keyboard HAP was produced"
           fi
 
+      # A project someone can open, sign and run.
+      #
+      # The HAPs above are unsigned, and HarmonyOS NEXT refuses to install an
+      # unsigned HAP — signing needs a Huawei developer account and DevEco's
+      # automatic signing, which is a person at a computer, not a CI job.
+      #
+      # So what is actually useful from here is the whole project in the state
+      # DevEco needs it: the Rust static library already cross-compiled (CMake
+      # links it, and building it needs the OHOS NDK), the language model already
+      # in rawfile/, and the sources. Unzip, open, sign, run.
+      - name: Package the project for a real device
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          NAME=pingzhu-harmonyos-project
+          rm -rf "/tmp/$NAME"
+          mkdir -p "/tmp/$NAME"
+
+          cp -r harmonyos "/tmp/$NAME/"
+          cp -r core-rs "/tmp/$NAME/"
+          cp -r data "/tmp/$NAME/"
+          cp README.md LICENSE "/tmp/$NAME/" 2>/dev/null || true
+          mkdir -p "/tmp/$NAME/repo"
+          cp -r tools "/tmp/$NAME/repo/" 2>/dev/null || true
+
+          # The cross-compiled engine, so CMake finds it without anyone needing
+          # to install the OHOS NDK first.
+          mkdir -p "/tmp/$NAME/core-rs/target/aarch64-unknown-linux-ohos/release"
+          cp core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a \
+             "/tmp/$NAME/core-rs/target/aarch64-unknown-linux-ohos/release/" 2>/dev/null || true
+
+          # Build output is not part of a project someone opens.
+          find "/tmp/$NAME" -type d \( -name build -o -name .cxx -o -name .hvigor -o -name oh_modules \) \
+            -prune -exec rm -rf {} + 2>/dev/null || true
+
+          cat > "/tmp/$NAME/HOW-TO-TEST.md" <<'DOC'
+          # Testing on a HarmonyOS device
+
+          CI builds these HAPs and cannot install them: HarmonyOS NEXT refuses an
+          unsigned HAP, and signing needs a Huawei developer account and a person
+          at a computer. So this archive is the project in the state DevEco needs.
+
+          ## What is already done for you
+
+          - `core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a`
+            — the engine, cross-compiled. CMake links it. Building it yourself
+            needs the OHOS NDK; it is here so you do not have to.
+          - `harmonyos/keyboard/src/main/resources/rawfile/*.tsv`
+            — the language model, ready to be unpacked at runtime.
+          - The sources, as built and verified by CI.
+
+          ## Steps
+
+          1. Install DevEco Studio from developer.huawei.com, and log in with a
+             Huawei account (free).
+
+          2. Open the `harmonyos` directory as a project.
+
+          3. Sign it: File → Project Structure → Signing Configs →
+             "Automatically generate signature".
+
+          4. On the phone or laptop: Settings → About → tap the version number
+             seven times to enable developer mode, then enable USB debugging.
+
+          5. Connect it and press Run.
+
+          6. Enable the keyboard: Settings → System → Input method → 平注.
+             Or from a terminal: `hdc shell ime -e tw.pingzhu.ime`
+
+          ## What to expect
+
+              su3cl3    then space   → 你好
+              ji394su3  then space   → 我愛你
+              w96j0     then space   → 台灣
+
+          ## What has never been tested
+
+          **Nobody has typed on this.** CI proves it compiles, links, and that the
+          engine and the language model are inside the HAP. It does not prove a
+          single key works. The panel, the candidate list and the connection to
+          the editor have never run.
+
+          Expect it not to work the first time, and send what it says.
+          DOC
+
+          cd /tmp
+          zip -qr "$GITHUB_WORKSPACE/pingzhu-harmonyos-project.zip" "$NAME"
+          cd "$GITHUB_WORKSPACE"
+          ls -la pingzhu-harmonyos-project.zip
+          echo "--- what is inside ---"
+          unzip -l pingzhu-harmonyos-project.zip | head -15
+          unzip -l pingzhu-harmonyos-project.zip | grep -cE "\.tsv$" | xargs echo "  .tsv files:"
+          unzip -l pingzhu-harmonyos-project.zip | grep -c "libpingzhu_core.a" | xargs echo "  static library:"
+
+      - name: Upload the project
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pingzhu-harmonyos-project
+          path: pingzhu-harmonyos-project.zip
+          if-no-files-found: warn
+
       - name: Upload the HAPs
         if: always()
         uses: actions/upload-artifact@v4
