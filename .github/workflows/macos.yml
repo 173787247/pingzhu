@@ -93,6 +93,25 @@ jobs:
 
           echo "bundle checks passed"
 
+      # Answers, rather than asserts: how far can verification go on a runner?
+      # A GUI session would mean the input method itself could be enabled and
+      # typed into here; no GUI session means that stays a person's job.
+      #
+      # It runs even if the build failed, because the answer is worth having
+      # either way — and it never fails the job, because "no GUI session" is a
+      # finding, not a defect.
+      - name: Probe what the runner can see
+        if: always()
+        run: |
+          set -e
+          launchctl managername || true
+          echo "---"
+          swiftc -O -framework Carbon -o dist/Probe macos/Tests/Probe/main.swift
+          ./dist/Probe
+          echo "---"
+          echo "who: $(whoami)"
+          echo "console user: $(stat -f%Su /dev/console 2>/dev/null || echo unknown)"
+
       - name: Report the binary architectures
         run: |
           lipo -info core-rs/target/libpingzhu_core_universal.a
