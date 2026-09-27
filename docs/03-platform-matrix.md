@@ -278,7 +278,7 @@ tx-trie 127 MB。
 ## 四个外壳共用的 C ABI
 
 ```c
-EngineHandle engine_create(const char* data_dir, const char* layout);
+EngineHandle* engine_create(const char* data_dir, const char* layout, const char* candidate_order);
 void         engine_destroy(EngineHandle);
 void         engine_feed_key(EngineHandle, const char* key);   // UTF-8，單一按鍵
 void         engine_backspace(EngineHandle);
