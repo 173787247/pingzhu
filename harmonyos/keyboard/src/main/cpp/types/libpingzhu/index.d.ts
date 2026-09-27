@@ -1,13 +1,24 @@
 /**
  * The NAPI surface, as ArkTS sees it.
  *
- * This file is what the ArkTS compiler type-checks against — the C++ and this
- * declaration are two descriptions of the same thing, and nothing keeps them in
- * step automatically. They are the mechanism by which the two can disagree
- * silently, so both are short and every function is listed in both.
+ * This file and the C++ are two descriptions of the same thing, and nothing
+ * keeps them in step automatically — they are the mechanism by which the two
+ * can disagree silently. Both are kept short and every function is listed in
+ * both.
  */
 export const engineLinked: boolean;
 export const engineDescription: string;
+
+/** The ABI version the Rust core reports. Proves the static library is really linked. */
+export const abiVersion: number;
+
+/**
+ * Loads the language model from a directory the caller obtained from the
+ * ability context. The native side cannot know where the HAP unpacked things.
+ *
+ * @returns whether the model could be read
+ */
+export function create(modelDir: string): boolean;
 
 /**
  * Turns a sequence of Bopomofo keystrokes into text.
