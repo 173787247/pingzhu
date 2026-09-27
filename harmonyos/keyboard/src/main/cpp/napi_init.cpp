@@ -2,42 +2,91 @@
  * The NAPI surface of the shared engine.
  *
  * ArkTS cannot call a C ABI. It calls a NAPI module, which is a C++ shim with a
- * fixed registration shape. This file is that shim and nothing else: every
- * function here is a translation of one engine call, so the decisions stay in
- * core-rs/ where the other three platforms also read them.
+ * fixed registration shape. This file is that shim: every function here is a
+ * translation of one engine call, so the decisions stay in core-rs/ where the
+ * other three platforms also read them.
  *
- * Right now it answers one question — is the engine there — and the answer is
- * honestly "not yet". Wiring the Rust static library in is the next step, and
- * until it is done the keyboard can be drawn and cannot select words. Saying so
- * through the API means the ArkTS side can show it rather than guess.
+ * The engine is linked in statically (see CMakeLists.txt), which means the
+ * declarations in pingzhu.h and the definitions in core-rs/src/ffi.rs have to
+ * agree or the link fails. core-rs/src/ffi.rs has a test that reads the header
+ * and checks exactly that, because the Windows and Android shells load the
+ * library dynamically and would never notice a disagreement.
  */
 #include <string>
+#include <vector>
 
 #include "napi/native_api.h"
+#include "pingzhu.h"
 
 namespace {
 
-// Where the engine would be called from. Kept as a separate function so the
-// shape of the real binding is visible even while it is a stub.
-std::string engine_description() {
-    return "not linked yet";
+// One engine per process is enough for an input method: the system runs one
+// instance of the extension and every text field goes through it.
+EngineHandle* g_engine = nullptr;
+
+void ensure_engine() {
+    if (g_engine != nullptr) return;
+    // The model lives in the HAP's resources; the path is supplied by the ArkTS
+    // side on first use, so this stays a lazy no-op until then.
 }
 
 napi_value EngineLinked(napi_env env, napi_callback_info info) {
     napi_value result;
-    napi_get_boolean(env, false, &result);
+    napi_get_boolean(env, g_engine != nullptr, &result);
     return result;
 }
 
 napi_value EngineDescription(napi_env env, napi_callback_info info) {
-    const std::string text = engine_description();
+    const std::string text = g_engine != nullptr
+        ? "core-rs linked"
+        : "core-rs linked, model not loaded";
     napi_value result;
     napi_create_string_utf8(env, text.c_str(), text.size(), &result);
     return result;
 }
 
-// The syllable-to-word call, once the engine is in. The signature is the one
-// the other three shells use, so the ArkTS side can be written against it now.
+// The ABI version the Rust side reports. Reading it proves the static library
+// is really in this binary and not a stub.
+napi_value AbiVersion(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_create_uint32(env, engine_abi_version(), &result);
+    return result;
+}
+
+// Loads the language model. Called once, from the ArkTS side, with a path it
+// obtained from the ability context — the native side has no way to know where
+// the HAP unpacked its resources.
+napi_value Create(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    size_t length = 0;
+    if (argc < 1 || napi_get_value_string_utf8(env, args[0], nullptr, 0, &length) != napi_ok) {
+        napi_throw_error(env, nullptr, "create() expects the model directory as a string");
+        return nullptr;
+    }
+    std::string dir(length, '\0');
+    napi_get_value_string_utf8(env, args[0], dir.data(), length + 1, &length);
+
+    if (g_engine != nullptr) {
+        engine_destroy(g_engine);
+        g_engine = nullptr;
+    }
+    g_engine = engine_create(dir.c_str());
+    if (g_engine == nullptr) {
+        // Not an exception: the caller decides whether a missing model is fatal.
+        // An input method that cannot read its dictionary should say so and stay
+        // usable, not take the whole keyboard down.
+        napi_value result;
+        napi_get_boolean(env, false, &result);
+        return result;
+    }
+    napi_value result;
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
 napi_value Decode(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value args[1] = {nullptr};
@@ -51,11 +100,23 @@ napi_value Decode(napi_env env, napi_callback_info info) {
     std::string keys(length, '\0');
     napi_get_value_string_utf8(env, args[0], keys.data(), length + 1, &length);
 
-    // No engine yet, so the honest answer is the input unchanged rather than an
-    // empty string. An empty string looks like a decode that found nothing;
-    // this looks like what it is.
+    if (g_engine == nullptr) {
+        napi_throw_error(env, nullptr, "decode() before create()");
+        return nullptr;
+    }
+
+    engine_reset(g_engine);
+    engine_feed_keys(g_engine, keys.c_str());
+    const char* text = engine_best_sentence(g_engine);
+
     napi_value result;
-    napi_create_string_utf8(env, keys.c_str(), keys.size(), &result);
+    // A null pointer here is a bug in the core, not an empty decode. Saying so
+    // is better than handing ArkTS a string that looks like "nothing matched".
+    if (text == nullptr) {
+        napi_throw_error(env, nullptr, "the engine returned no sentence");
+        return nullptr;
+    }
+    napi_create_string_utf8(env, text, NAPI_AUTO_LENGTH, &result);
     return result;
 }
 
@@ -66,6 +127,8 @@ static napi_value Init(napi_env env, napi_value exports) {
     napi_property_descriptor desc[] = {
         {"engineLinked", nullptr, EngineLinked, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"engineDescription", nullptr, EngineDescription, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"abiVersion", nullptr, AbiVersion, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"create", nullptr, Create, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"decode", nullptr, Decode, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
