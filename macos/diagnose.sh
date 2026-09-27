@@ -26,6 +26,21 @@ set -uo pipefail
 say()  { printf '\033[1;34m[diag]\033[0m %s\n' "$*"; }
 head_() { printf '\n\033[1m=== %s ===\033[0m\n' "$*"; }
 
+# macOS has no `timeout` unless coreutils is installed from Homebrew. This is the
+# portable version: run it in the background, kill it if it is still there.
+#
+# The first version of this script ran `lsregister -dump` bare. That walks the
+# whole LaunchServices database — minutes on a machine with many applications —
+# and with no way to stop it, it simply sat there. The user reported a timeout.
+with_timeout() {
+    local seconds="$1"; shift
+    "$@" & local pid=$!
+    ( sleep "$seconds"; kill -9 "$pid" 2>/dev/null ) & local watcher=$!
+    wait "$pid" 2>/dev/null; local status=$?
+    kill "$watcher" 2>/dev/null; wait "$watcher" 2>/dev/null
+    return $status
+}
+
 [ "$(uname -s)" = "Darwin" ] || { echo "this is a macOS diagnostic" >&2; exit 1; }
 
 OURS=""
@@ -34,6 +49,7 @@ for candidate in "$HOME/Library/Input Methods/PingZhu.app" "/Library/Input Metho
 done
 [ -n "$OURS" ] || { echo "PingZhu.app is not installed; run install.sh first" >&2; exit 1; }
 say "checking $OURS"
+say "(every command below is time-limited; nothing should hang)"
 
 BINARY="$OURS/Contents/MacOS/PingZhu"
 
@@ -42,17 +58,17 @@ echo "  file: $(file -b "$BINARY" 2>/dev/null || echo '?')"
 echo "  executable: $([ -x "$BINARY" ] && echo yes || echo NO)"
 
 echo
-echo "  running it for 5 seconds, capturing everything:"
+say "running it for 3 seconds…"
 OUT="$(mktemp)"
 ( "$BINARY" >"$OUT" 2>&1 & echo $! > "$OUT.pid" ) 2>/dev/null
-sleep 5
+sleep 3
 PID="$(cat "$OUT.pid" 2>/dev/null || echo '')"
 if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
-    echo "    still running after 5s (pid $PID) — it starts"
+    echo "    still running after 3s (pid $PID) — it starts"
     kill "$PID" 2>/dev/null
     RUNS=yes
 else
-    echo "    NOT RUNNING after 5s — it exited or crashed"
+    echo "    NOT RUNNING after 3s — it exited or crashed"
     RUNS=no
 fi
 echo "    output:"
@@ -65,13 +81,22 @@ head_ "2. does LaunchServices know about it?"
 # so only the lines around our bundle are shown.
 LSREG="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 if [ -x "$LSREG" ]; then
-    FOUND=$("$LSREG" -dump 2>/dev/null | grep -c -i "pingzhu" || true)
-    echo "  entries mentioning pingzhu: $FOUND"
-    if [ "$FOUND" -gt 0 ]; then
-        "$LSREG" -dump 2>/dev/null | grep -i -B2 -A8 "pingzhu" | head -40 | sed 's/^/    /'
+    say "dumping the database, hard-limited to 25 seconds…"
+    DUMP="$(mktemp)"
+    if with_timeout 25 "$LSREG" -dump >"$DUMP" 2>/dev/null; then
+        FOUND=$(grep -c -i "pingzhu" "$DUMP" || true)
+        echo "  entries mentioning pingzhu: $FOUND"
+        if [ "$FOUND" -gt 0 ]; then
+            grep -i -B2 -A8 "pingzhu" "$DUMP" | head -40 | sed 's/^/    /'
+        else
+            echo "    LaunchServices has never heard of it — that is why nothing else has"
+        fi
     else
-        echo "    LaunchServices has never heard of it — that is why nothing else has"
+        echo "  the dump did NOT finish in 25s — this machine's database is large."
+        echo "  That is not a symptom, it is just a slow command. Skipping it,"
+        echo "  because the previous version waited here forever."
     fi
+    rm -f "$DUMP"
 else
     echo "  lsregister not found at the expected path"
 fi
