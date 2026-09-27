@@ -103,14 +103,15 @@ jobs:
       - name: Probe what the runner can see
         if: always()
         run: |
-          set -e
-          launchctl managername || true
+          echo "session: $(launchctl managername || echo unknown)"
+          echo "user: $(whoami)"
+          echo "console owner: $(stat -f%Su /dev/console 2>/dev/null || echo unknown)"
           echo "---"
-          swiftc -O -framework Carbon -o dist/Probe macos/Tests/Probe/main.swift
-          ./dist/Probe
-          echo "---"
-          echo "who: $(whoami)"
-          echo "console user: $(stat -f%Su /dev/console 2>/dev/null || echo unknown)"
+          if swiftc -O -framework Carbon -o dist/Probe macos/Tests/Probe/main.swift; then
+            ./dist/Probe || true
+          else
+            echo "probe  the probe itself did not compile — reporting what the shell can see instead"
+          fi
 
       - name: Report the binary architectures
         run: |

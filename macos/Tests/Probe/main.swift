@@ -9,66 +9,76 @@ import Foundation
  answer at all.
 
  Prints findings and always exits 0 — this is a question, not an assertion.
+
+ Deliberately uses as few Carbon constants as possible: the first version
+ referenced one that does not exist in the Swift overlay and the probe failed to
+ compile, which is a silly way to learn nothing.
  */
 
 func report(_ label: String, _ value: String) {
     print("probe  \(label): \(value)")
 }
 
-// Is there a session that can display windows? `Aqua` means a real logged-in GUI
-// session; `Background` or `StandardIO` means there is nobody to type.
-let manager = ProcessInfo.processInfo.environment["XPC_SERVICE_NAME"] ?? "(unset)"
-report("XPC_SERVICE_NAME", manager)
+func property(_ source: TISInputSource, _ key: CFString) -> CFTypeRef? {
+    guard let raw = TISGetInputSourceProperty(source, key) else { return nil }
+    return Unmanaged<CFTypeRef>.fromOpaque(raw).takeUnretainedValue()
+}
 
-let consoleUser = ProcessInfo.processInfo.environment["USER"] ?? "(unknown)"
-report("user", consoleUser)
+func string(_ source: TISInputSource, _ key: CFString) -> String? {
+    guard let value = property(source, key) else { return nil }
+    return (value as? String)
+}
 
-// Can this process see input sources at all? A GUI-less session usually returns
-// an empty list rather than failing, which is the quiet version of "no".
+report("user", ProcessInfo.processInfo.environment["USER"] ?? "(unknown)")
+report("over ssh", ProcessInfo.processInfo.environment["SSH_CONNECTION"] == nil ? "no" : "yes")
+
+// Can this process see input sources at all? A session with no window server
+// returns an empty list rather than failing — the quiet version of "no".
 guard let sources = TISCreateInputSourceList(nil, true)?.takeRetainedValue() as? [TISInputSource] else {
     report("input sources", "TISCreateInputSourceList returned nil")
     exit(0)
 }
 report("input sources visible", "\(sources.count)")
 
-var keyboardLayouts = 0
-var inputMethods = 0
-for source in sources {
-    guard let raw = TISGetInputSourceProperty(source, kTISPropertyInputSourceCategory) else { continue }
-    let category = Unmanaged<CFString>.fromOpaque(raw).takeUnretainedValue() as String
-    if category == (kTISCategoryKeyboardInputSource as String) {
-        keyboardLayouts += 1
-    }
-    if category == (kTISCategoryInputMethod as String) {
-        inputMethods += 1
-    }
-}
-report("keyboard layouts", "\(keyboardLayouts)")
-report("input methods installed", "\(inputMethods)")
-
-// The interesting one: can an input source be *enabled*? Enabling is a GUI
-// session operation, so this is the question that decides whether CI can install
-// and activate an input method or only build one.
 var enabled = 0
+var selectable = 0
+var thirdParty: [String] = []
+
 for source in sources {
-    guard let raw = TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled) else { continue }
-    let value = Unmanaged<CFBoolean>.fromOpaque(raw).takeUnretainedValue()
-    if CFBooleanGetValue(value) { enabled += 1 }
+    if let value = property(source, kTISPropertyInputSourceIsEnabled) as? Bool, value {
+        enabled += 1
+    }
+    if let value = property(source, kTISPropertyInputSourceIsSelectCapable) as? Bool, value {
+        selectable += 1
+    }
+    // Anything not shipped by Apple: an input method someone installed.
+    if let bundle = string(source, kTISPropertyBundleID),
+       !bundle.hasPrefix("com.apple.") {
+        thirdParty.append("\(string(source, kTISPropertyLocalizedName) ?? "?") [\(bundle)]")
+    }
 }
-report("input sources currently enabled", "\(enabled)")
+report("enabled", "\(enabled)")
+report("selectable", "\(selectable)")
+report("third-party input sources", thirdParty.isEmpty ? "none" : thirdParty.joined(separator: ", "))
 
-// Where does the system look for third-party input methods? If this directory
-// exists and is writable, an input method can at least be installed.
-let home = FileManager.default.homeDirectoryForCurrentUser
-let inputMethodsDir = home.appendingPathComponent("Library/Input Methods")
+// Enabling is the operation that needs a GUI session. If this succeeds on a
+// runner, an input method can be installed and activated here — which is the
+// whole question.
+if let layout = sources.first(where: { string($0, kTISPropertyInputSourceID)?.contains("ABC") == true })
+    ?? sources.first {
+    let status = TISEnableInputSource(layout)
+    report("TISEnableInputSource on an existing source", status == noErr ? "ok" : "failed (\(status))")
+}
+
+// Where does the system look for third-party input methods?
+let inputMethodsDir = FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent("Library/Input Methods")
 let exists = FileManager.default.fileExists(atPath: inputMethodsDir.path)
-let writable = FileManager.default.isWritableFile(atPath: inputMethodsDir.path)
 report("~/Library/Input Methods exists", "\(exists)")
-report("~/Library/Input Methods writable", "\(writable)")
 
-// And the session type, which is the actual answer: `Aqua` means a person could
-// be sitting here.
-let session = ProcessInfo.processInfo.environment["SSH_CONNECTION"] == nil ? "not over ssh" : "over ssh"
-report("connection", session)
+// And where the app would land: installing is a copy, which needs no GUI.
+try? FileManager.default.createDirectory(at: inputMethodsDir, withIntermediateDirectories: true)
+let writable = FileManager.default.isWritableFile(atPath: inputMethodsDir.path)
+report("~/Library/Input Methods writable", "\(writable)")
 
 exit(0)
