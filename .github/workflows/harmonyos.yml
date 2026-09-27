@@ -175,22 +175,34 @@ jobs:
       # this needs no nightly and no build-std. The linker is the NDK's clang,
       # passed through the environment rather than .cargo/config.toml: that file
       # would need an absolute path to one machine's SDK checked into the repo.
+      # Rust, for the engine.
+      #
+      # Through an action rather than `curl | sh`: this container has no curl and
+      # no wget, which is how the first version of this step died. JavaScript
+      # actions run on the node GitHub brings with it, so they work in a
+      # container that has almost nothing.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-ohos
+
+      # The engine, cross-compiled for HarmonyOS.
+      #
+      # This has to run before hvigor: CMakeLists.txt links
+      # core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a and
+      # stops with a clear message if it is not there — rather than producing a
+      # .so that silently exports a stub.
+      #
+      # aarch64-unknown-linux-ohos is a rustup target with a prebuilt std, so
+      # this needs no nightly and no build-std. The linker is the NDK's clang,
+      # passed through the environment rather than .cargo/config.toml: that file
+      # would need an absolute path to one machine's SDK checked into the repo.
       - name: Cross-compile the Rust core for HarmonyOS
         shell: bash
         run: |
           set -e
-          export PATH="$HOME/.cargo/bin:$PATH"
-
-          if ! command -v rustc >/dev/null 2>&1; then
-            echo "installing Rust…"
-            curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-          fi
           rustc --version
-
-          TARGET=aarch64-unknown-linux-ohos
-          rustup target add "$TARGET"
-          rustup target list --installed | grep -q "$TARGET" || {
-            echo "::error::$TARGET is not available from rustup"; exit 1; }
+          rustup target list --installed | grep -q aarch64-unknown-linux-ohos || {
+            echo "::error::the OHOS target is missing"; exit 1; }
 
           NDK=$(find /opt -type d -path '*openharmony/native' 2>/dev/null | head -1)
           [ -n "$NDK" ] || { echo "::error::OHOS NDK not found"; exit 1; }
@@ -199,18 +211,21 @@ jobs:
           LINKER="$NDK/llvm/bin/aarch64-unknown-linux-ohos-clang"
           [ -x "$LINKER" ] || {
             echo "::error::linker not found: $LINKER"
-            ls "$NDK/llvm/bin" | grep -i clang | head -10
+            echo "--- what the NDK does have ---"
+            ls "$NDK/llvm/bin" 2>/dev/null | grep -i clang | head -20
             exit 1; }
+          echo "linker: $LINKER"
 
           env \
             CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER="$LINKER" \
             CC_aarch64_unknown_linux_ohos="$LINKER" \
             AR_aarch64_unknown_linux_ohos="$NDK/llvm/bin/llvm-ar" \
-            cargo build --release --manifest-path core-rs/Cargo.toml --target "$TARGET"
+            cargo build --release --manifest-path core-rs/Cargo.toml \
+              --target aarch64-unknown-linux-ohos
 
           echo "--- what was produced ---"
-          ls -la core-rs/target/$TARGET/release/libpingzhu_core.a
-          file core-rs/target/$TARGET/release/libpingzhu_core.a
+          ls -la core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
+          file core-rs/target/aarch64-unknown-linux-ohos/release/libpingzhu_core.a
 
       - name: Install dependencies
         run: |
