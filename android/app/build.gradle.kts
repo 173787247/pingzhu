@@ -1,3 +1,5 @@
+import java.util.Properties
+
 // 平注 PingZhu — Android IME shell.
 //
 // The keyboard, the decoder and the language model are shared with the desktop
@@ -7,6 +9,23 @@
 plugins {
     id("com.android.application") version "8.5.2"
     id("org.jetbrains.kotlin.android") version "2.0.20"
+}
+
+/*
+ * Release signing.
+ *
+ * Read from a gitignored properties file rather than written here: the keystore
+ * and its password are the one thing in an Android project that must not be
+ * committed, because anyone who has them can publish an update that every
+ * installed device will accept.
+ *
+ * Without the file the build still works — it produces an unsigned release,
+ * which is exactly what a CI machine that has no business signing anything
+ * should produce.
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
 }
 
 android {
@@ -39,12 +58,23 @@ android {
         }
     }
 
+    signingConfigs {
+        if (keystoreProperties.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Signed with the debug key so a release build can be produced
-            // without a keystore. Replace before publishing anywhere.
-            signingConfig = signingConfigs.getByName("debug")
+            if (keystoreProperties.getProperty("storeFile") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

@@ -7,3 +7,5 @@ app/src/main/jniLibs/
 build/
 app/build/
 local.properties
+keystore/
+keystore.properties
