@@ -60,6 +60,7 @@ cp "$ROOT/data/bopomofo-lm.tsv" "$ROOT/data/ts-conversion.tsv" "$RESOURCES/data/
 
 log "compiling Swift"
 SOURCES=("$HERE/Sources/main.swift"
+         "$HERE/Sources/Registration.swift"
          "$HERE/Sources/Engine.swift"
          "$HERE/Sources/Router.swift"
          "$HERE/Sources/CandidateWindow.swift"
