@@ -52,6 +52,17 @@ else
   codesign --verify "$APP" || fail "could not make the signature valid"
 fi
 
+# The quarantine attribute has to go before the system will load the bundle.
+#
+# `curl` does not set it, but a browser download does — and this script is also
+# the documented fallback for people who downloaded the zip by hand. A
+# quarantined bundle installs, signs, passes every check, and is never listed.
+# There is no error anywhere, which is why it went unnoticed until someone read
+# the instructions line by line and asked why they never mentioned it.
+say "removing the quarantine attribute"
+xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
+xattr -c "$APP" 2>/dev/null || true
+
 say "installing to ~/Library/Input Methods"
 DEST="$HOME/Library/Input Methods"
 mkdir -p "$DEST"

@@ -163,13 +163,56 @@ macOS 的输入法**不画键盘** ✗——使用者用实体键盘 ✓。所�
 
 ## 安装
 
+**两种人，两条路。** 之前这里只写了第一条，而下载 release 的人照着做会失败 ✗。
+
+### A. 你下载了 release（推荐）
+
 ```bash
-cp -R dist/PingZhu.app ~/Library/Input\ Methods/
-# 然后登出再登入，到
-# 系統設定 → 鍵盤 → 輸入方式 → 加入「平注」
+curl -fsSL https://raw.githubusercontent.com/173787247/pingzhu/main/macos/install.sh | bash
 ```
 
-**必须登出再登入** ✗——macOS 只在登入时扫描 `~/Library/Input Methods/` ✗。
+**它做完全部的事**：下载 → 校验 sha256 → 解压 → **解除隔离** →
+装到 `~/Library/Input Methods/` → 问系统看到没。
+
+**然后登出再登入** ✗——macOS 只在登入时扫描 `~/Library/Input Methods/` ✗。
+最后到 `系統設定 → 鍵盤 → 輸入方式 → 加入「平注」`。
+
+### B. 你手动下载了 zip
+
+```bash
+cd ~/Downloads
+unzip -o pingzhu-0.9.0-macos-UNVERIFIED.zip
+
+mkdir -p ~/Library/Input\ Methods
+rm -rf ~/Library/Input\ Methods/PingZhu.app
+cp -R PingZhu.app ~/Library/Input\ Methods/
+
+# ★ 这一步不能省
+xattr -dr com.apple.quarantine ~/Library/Input\ Methods/PingZhu.app
+```
+
+**`xattr` 那一行不能省** ✗✓ ——**浏览器下载的档案带隔离标记 ✓
+带隔离的 bundle 装得上 ✓ 签章有效 ✓ 每一个检查都过 ✓ 但系统永远不列它** ✗
+——**而且完全不会报错** ✓ 这份文件之前漏了它 ✓
+
+### C. 你自己从原始码建置
+
+```bash
+bash macos/build.sh
+cp -R dist/PingZhu.app ~/Library/Input\ Methods/
+xattr -dr com.apple.quarantine ~/Library/Input\ Methods/PingZhu.app
+```
+
+**自己建置的不会有隔离标记** ✓ 但写上无害 ✓
+
+---
+
+## 不要从 CI 的 artifact 下载
+
+**`macos/TESTING.md` 曾经指着一个具体的 CI run** ✗ ——artifact 会过期 ✓
+而且上传的档名改过 ✓ 旧的指令照着打会失败 ✓
+
+**要下载就从 [Releases](https://github.com/173787247/pingzhu/releases) 下** ✓
 
 ## 已知限制
 

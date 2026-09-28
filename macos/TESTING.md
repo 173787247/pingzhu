@@ -1,134 +1,77 @@
 # 在一台真的 Mac 上测试
 
-CI 能验证的已经全部验证过了（[README](README.md) 里有清单和那条边界）。
-**剩下这一步只能由人来做**，而这份清单的目的是让它花十分钟，而不是一小时。
-
-## 明天到公司时的顺序
-
-这台机器是透过向日葵连的，而**向日葵不会在登出后自动登入**，
-所以「登出再登入」等于断线到有人到现场为止。
-
-因此顺序是这样，**从风险最低的开始**：
-
-```
-1. 跑 install.sh                        （装好）
-2. 跑 probe.sh                          （先试零風險的代理重啟）
-3. 看第一段是 PINGZHU IS LISTED 還是 NOT listed
-4. 只有 3 是 NOT listed 時，才登出再登入，然後再跑一次 probe.sh
-5. 出現之後：系統設定 → 鍵盤 → 輸入方式 → 加入「平注」→ 打字
-```
-
-**第 4 步是唯一还没做过的测试。** 到目前为止六次检查都是「装完立刻看」，
-而每一次都不列——包括 CI、`~/Library`、`/Library`、
-以及把 `ComponentInputModeDict` 删掉之后。
-
-自然输入法是被安装程式装的，而机器从那之后一直登入著，
-**所以我们从来没看过「新装的输入法在登入之后会不会出现」**。
+CI 能验证的已经全部验证过了（[README](README.md) 有清单和那条边界）。
+**剩下这一步只能由人来做。**
 
 ---
 
-## 0. 一行装好（推荐）
-
-在这台 Mac 上打开「终端」，贴这一行：
+## 装
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/173787247/pingzhu/main/macos/install.sh | bash
 ```
 
-它会下载、检查签章、装进 `~/Library/Input Methods/`，
-**然后问系统看不看得到它**——那正是 CI 问不出来的那件事。
+然后 **登出再登入**，再到 `系統設定 → 鍵盤 → 輸入方式 → 加入「平注」`。
 
-跑完它会把还需要手动做的三件事印在最后。
+手动安装的正确步骤见 [README](README.md#安装)——**那份文件曾经漏了
+`xattr -dr com.apple.quarantine` ✗，也曾经教人从 CI artifact 下载** ✗
+（artifact 会过期 ✓ 而且档名改过 ✓）。两处都已修正 ✓
 
 ---
 
-## 1. 或者手动拿 `.app`
+## 这一段原本是一份「明天到公司」的清单
 
-**浏览器**（最简单）：打开下面这个网址，页面最下方下载 `PingZhu.app`
+**它写着「从 actions/runs/36299727585 下载」** ✗ ——**而那个 run 的
+artifact 叫 `PingZhu.app`** ✓ ——**现在的 CI 上传的叫
+`PingZhu-0.9.0-macos.zip`** ✗ ——**照着旧的指令打会失败** ✓
 
-```
-https://github.com/173787247/pingzhu/actions/runs/36299727585
-```
+**一份指向「某一次 CI run」的文件，从写下的那一刻就开始过期** ✗
+——**而且它不会报错 ✓ 只会让人照着做然后卡住** ✓
 
-**或者在这台 Mac 上**：
+要下载就从 [Releases](https://github.com/173787247/pingzhu/releases) 下 ✓
 
-```bash
-gh run download 36299727585 --repo 173787247/pingzhu --name PingZhu.app --dir ~/Downloads
-```
+---
 
-## 2. 装进去
-
-```bash
-cp -R ~/Downloads/PingZhu.app ~/Library/Input\ Methods/
-```
-
-**然后登出再登入。** 这一步不能省 ✗ ——CI 上试过四件事都无法让系统在
-同一个 session 里看到它 ✗，而**原因不明** ✓（见 README 里那段诚实的说明 ✗）。
-
-对**人**来说这只是一次登出登入 ✓，所以照做就好 ✓。
-
-## 3. 加进输入方式
-
-```
-系統設定 → 鍵盤 → 輸入方式 → 編輯… → ＋ → 繁體中文 → 平注
-```
-
-## 4. 打四个字
-
-在任何一个能打字的地方（TextEdit 就行）：
-
-```
-su3cl3      按空白      → 你應該看到「你好」
-ji394su3    按空白      → 我愛你
-w96j0       按空白      → 台灣
-```
-
-**组字过程中**应该看到候选视窗，里面有：
-
-```
-[su3cl3]
-你好
-1 你好   2 妳好   3 你   4 妳   5 擬
-```
-
-## 5. 四项检查
-
-| # | 看什么 | 预期 |
-|---|---|---|
-| 1 | 打字 | `su3cl3` → 你好 |
-| 2 | 候选视窗 | 出现在光标附近，不是萤幕角落 |
-| 3 | 繁简切换 | 右上角输入法图示 →「平注」→ 简体输出 → 再打 `w96j0` → 台湾 |
-| 4 | 没有当掉 | 切换 App、切换输入法之后还能继续打 |
-
-## 6. 回报什么
-
-**成功的部分直接说「第几项过了」就好。**
-
-**失败的话，这份记录最有用**：
+## 出问题时收集什么
 
 ```bash
-# 输入法有没有在跑
-pgrep -fl PingZhu
+# ① 系统到底看不看得到它
+curl -fsSL https://raw.githubusercontent.com/173787247/pingzhu/main/macos/probe.sh | bash
 
-# 系统日志里我们的讯息（引擎载入失败会写在这里）
-log show --last 5m --predicate 'process == "PingZhu"' --style compact
+# ② 直接跑那个执行档 —— 这一步最有用，而且一直没人做过
+~/Library/Input\ Methods/PingZhu.app/Contents/MacOS/PingZhu
+#   印出 "could not start the IMK server" → IMK 连不上
+#   什么都不印、一直挂着              → server 起来了，问题在注册
+#   崩                              → 崩在哪就是哪
 
-# 输入源有没有被登记
-# （这会印出所有非 Apple 的输入源）
-swift -e 'import Carbon; let s = TISCreateInputSourceList(nil,true)?.takeRetainedValue() as? [TISInputSource] ?? []; for x in s { if let r = TISGetInputSourceProperty(x, kTISPropertyBundleID) { let b = Unmanaged<CFString>.fromOpaque(r).takeUnretainedValue() as String; if !b.hasPrefix("com.apple.") { print(b) } } }'
+# ③ 隔离标记还在吗
+xattr -l ~/Library/Input\ Methods/PingZhu.app
+#   什么都不印 = 没有 ✓
+#   印 com.apple.quarantine = ★ 就是它
+
+# ④ 系统日志
+log show --last 5m --style compact 2>/dev/null \
+  | grep -iE "pingzhu|IMKServer|TextInputSource" | tail -30
+
+# ⑤ 跟这台机器上**正在运作**的输入法逐项比
+plutil -p "/Library/Input Methods/GOING13.app/Contents/Info.plist" 2>/dev/null
 ```
 
-## 已知会看到的东西
+**②和③是这份文件之前没有的** ✗ ——**而它们是最直接的两个问题** ✓：
+**执行档到底起不起得来** ✓ **隔离标记在不在** ✓
 
-| 现象 | 为什么 | 要不要紧 |
-|---|---|---|
-| 第一次打开警告「未识别的开发者」 | 没有 Developer ID 签章与公证 | 不要紧，右键 → 打开 |
-| 安装后要登出才看得到 | macOS 只在登入时扫描 | 不要紧，预期行为 |
-| 找不到图示 | 目前没有宣告图示键 | 不要紧，看得见名字 |
+---
 
-## 回报之后我会做的
+## 已经排除的
 
-- **全部通过** → 把 macOS 从 ⚠️ 改成 ✅，放进 release
-- **部分通过** → 照着你贴的日志修
-- **完全不行** → 大概率是 IMK 那一层，那需要重看 `PingZhuInputController`
-  跟 `main.swift` 的接线（CI 测不到那一段）
+六条，每一条都做过：
+
+| 假设 | 结果 |
+|---|---|
+| `tsInputModeScriptKey` 的值 | ✗ 排除（`smTradChinese` 和 `smUnicode` 都试过） |
+| `ComponentInputModeDict` 的位置与存在 | ✗ 排除（删掉也一样） |
+| `/Library` vs `~/Library` | ✗ 排除（两边都试过） |
+| 执行档崩溃 | ✗ 排除（跑得起来） |
+| LaunchServices 缓存 | ✗ 排除（四种强制重扫都试过） |
+| 别的输入法占了坑 | ✗ **排除（2026-09-27：把自然输入法完全移除后，318 个输入源、零个第三方，仍然不列）** |
+| **登出再登入** | ⏳ **还没做** ← 唯一剩下的 |

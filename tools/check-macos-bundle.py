@@ -188,3 +188,39 @@ if __name__ == "__main__":
         print("usage: check-macos-bundle.py <path to PingZhu.app>", file=sys.stderr)
         sys.exit(2)
     sys.exit(main(sys.argv[1]))
+
+def check_referenced_icons(app):
+    """Every icon Info.plist names must exist in the bundle.
+
+    The plist is allowed to reference a file that is not there. Nothing warns:
+    the bundle builds, signs, passes every structural check, installs — and the
+    input method does not appear in the menu.
+
+    vChewing (which works on macOS 26, and is also a Bopomofo input method)
+    names icons in three places this bundle named none. Whether the missing icons
+    are the reason it does not appear is not known yet; that the references and
+    the files disagree is worth failing on either way, because it is the same
+    shape as every other silent failure in this project.
+    """
+    failures = []
+    plist = app / "Contents" / "Info.plist"
+    if not plist.exists():
+        return ["Info.plist is missing"]
+
+    text = plist.read_text(encoding="utf-8")
+    resources = app / "Contents" / "Resources"
+
+    for key in ("tsInputMethodIconFileKey", "tsInputModeMenuIconFileKey",
+                "tsInputModePaletteIconFileKey", "CFBundleIconFile"):
+        for match in re.finditer(rf"<key>{key}</key>\s*<string>([^<]+)</string>", text):
+            name = match.group(1)
+            if not (resources / name).exists():
+                failures.append(f"{key} names {name}, which is not in the bundle")
+
+    # The inverse: an icon shipped but named nowhere is dead weight, and usually
+    # means a rename happened on one side only.
+    for icon in resources.glob("MenuIcon*.png"):
+        if icon.name not in text:
+            failures.append(f"{icon.name} is in the bundle but named nowhere in Info.plist")
+
+    return failures
