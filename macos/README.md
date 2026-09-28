@@ -214,6 +214,65 @@ xattr -dr com.apple.quarantine ~/Library/Input\ Methods/PingZhu.app
 
 **要下载就从 [Releases](https://github.com/173787247/pingzhu/releases) 下** ✓
 
+## 原因找到了（2026-09-28）
+
+**macOS 26 不接受 ad-hoc 签名的输入法。**
+
+```
+$ spctl -a -vvv -t exec ~/Library/Input\ Methods/PingZhu.app
+/Users/grandocean/Library/Input Methods/PingZhu.app: rejected
+
+$ codesign -dv ~/Library/Input\ Methods/PingZhu.app
+Signature=adhoc
+TeamIdentifier=not set
+```
+
+**系统于是完全不注册它** ✗ ——**不是「注册被拒」✗ 是「根本没进列表」** ✓：
+
+```
+$ python3 -c "…TISCreateInputSourceList(NULL, True)…"
+  the system has 318 input sources installed
+  ✗ NOT INSTALLED — the system does not have it at all
+```
+
+### 为什么查了这么久
+
+| 工具 | 它实际回答的问题 | 对本案的回答 |
+|---|---|---|
+| `codesign --verify` | 签章**内部一致**吗 | **valid** ✓ |
+| `defaults read com.apple.HIToolbox` | 有哪些**已启用**的输入源 | 没有它（废话，还没加）✗ |
+| `ls -la` | 档案在不在 | 在 ✓ |
+| **`spctl -a`** | **Gatekeeper 认不认这个身分** | **rejected** ✗ ← 从来没人跑过 |
+| **`TISCreateInputSourceList(NULL,True)`** | **系统装了哪些** | **NOT INSTALLED** ✗ ← 从来没人跑过 |
+
+**前三个问题都问得很像 ✗ 而答案全都是「看起来没问题」** ✓
+
+### 为什么 CI 一直是绿的
+
+```
+CI:   macos-14      ← ad-hoc 在這裡可以 ✓
+真機:  macOS 26.5.1  ← 不行 ✗
+```
+
+### 修法
+
+**免费 Apple ID 就能做 ✗ 不需要 Xcode ✗ 不需要 $99** ✓：
+
+```
+① 用 Apple ID 登入 https://developer.apple.com/account
+② Certificates, Identifiers & Profiles → Certificates → ＋
+③ 選 Apple Development
+④ 它會要一個 CSR：
+     Keychain Access → 憑證輔助程式 →
+     從憑證授權要求憑證…  → 存到磁碟
+⑤ 上傳 .certSigningRequest，下載 .cer，雙擊匯入
+⑥ security find-identity -v -p codesigning     ← 看有沒有
+⑦ codesign --force --deep --sign "Apple Development: …" PingZhu.app
+⑧ spctl -a -vvv -t exec PingZhu.app            ← 應該變成 accepted
+```
+
+**然后 `install.sh` 会自己把这一步检查出来** ✓ ——**它现在会印 `REJECTED` 和上面这段修法** ✓
+
 ## 已知限制
 
 - **没有在真机上打过字** ✗——编译、bundle 结构、路由规则都验证过 ✓，
