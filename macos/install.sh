@@ -76,7 +76,15 @@ else
     warn "  REJECTED — macOS will not register this input method"
     warn ""
     warn "  spctl said:"
-    spctl -a -vvv -t exec "$APP" 2>&1 | sed 's/^/    /'
+    # `|| true` matters: spctl exits non-zero when it rejects, and this script
+    # runs under `set -euo pipefail`. Without it the pipeline fails, `set -e`
+    # ends the script here, and the install never happens — while the output
+    # looks exactly like a warning that was printed and moved past.
+    #
+    # That is what happened: every run today downloaded 0.9.1, printed REJECTED,
+    # and exited, leaving 0.9.0 in place. The check was added this afternoon and
+    # the bug came with it.
+    spctl -a -vvv -t exec "$APP" 2>&1 | sed 's/^/    /' || true
     warn ""
     warn "  The signature is ad-hoc (no Team ID). CI builds on macOS 14, where"
     warn "  that is enough; macOS 26 requires a real signing identity."
