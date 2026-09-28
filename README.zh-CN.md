@@ -63,7 +63,7 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | **Android 8+** | `InputMethodService` | ✅ **可用，已发布** |
 | **HarmonyOS NEXT** | IME Kit `InputMethodExtensionAbility` | ✅ **真机打出「你好」**（Mate XT · HarmonyOS 6.1） |
 | **Linux** | fcitx5 addon | ⚠️ **引擎与载入已验证**，未在桌面打过字 |
-| **macOS 12+** | InputMethodKit | ⚠️ 能编能跑，**系统尚未接受**（见下） |
+| **macOS 12+** | InputMethodKit | ⚠️ 能编能跑；**原因已找到**：macOS 26 拒收 ad-hoc 签章 |
 
 **六个外壳共用同一个 Rust 核心**——所以同一串按键在每个平台上得到同样的词。
 这不是设计意图，是被 1,529 例差异化测试钉住的事实。
@@ -71,8 +71,10 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 ### 两个还没打勾的
 
 **macOS**：它在真机上编译、打包、签章、跑引擎全部通过，输入法选单里却始终
-没有它。六个假设已经排除，剩下的唯一变数是「登入」——细节在
-[macos/README.md](macos/README.md)。
+没有它。**原因已经找到**：macOS 26 不注册 ad-hoc 签名的输入法——`spctl` 返回
+`rejected`，而 `TISCreateInputSourceList` 报它「根本没安装」。
+CI 跑在 macOS 14 上，那里 ad-hoc 可以，所以每次建置都是绿的。
+修法是一张免费 Apple ID 的签章证书——细节在 [macos/README.md](macos/README.md)。
 
 **Linux**：引擎在 CI 上跑过同样三个词，addon 也真的被 fcitx5 载入、启动过
 引擎；**但「在桌面环境里打字」没有测成功**，因为 WSLg 不转发输入法——
