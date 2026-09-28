@@ -43,6 +43,23 @@ APP="$TMP/unpacked/PingZhu.app"
 # The bundle is ad-hoc signed. `lipo` invalidates a signature and this build
 # merges two architectures, so the build signs after that — but a download can
 # still lose the signature, and an unsigned input method is ignored silently.
+# ---------------------------------------------------------------------------
+# Gatekeeper's verdict, which is not the same question as codesign's.
+#
+# `codesign --verify` asks "is the signature internally consistent". It answers
+# yes for an ad-hoc signature. macOS asks a second question — "is this signed by
+# an identity I know" — and on macOS 26 the answer for an ad-hoc bundle is no.
+#
+# The system then does not register the input method at all. Nothing is logged
+# as an error, the bundle sits in the right directory with a valid signature,
+# and it never appears. This script reported "signature: valid" every time.
+#
+#   Signature=adhoc
+#   TeamIdentifier=not set
+#   spctl: rejected          ← the actual verdict, for days unread
+#
+# So it is checked here, loudly, and the fix is printed rather than described.
+# ---------------------------------------------------------------------------
 say "checking the signature"
 if codesign --verify "$APP" 2>/dev/null; then
   say "  valid"
@@ -50,6 +67,33 @@ else
   warn "  not valid — re-signing (ad-hoc)"
   codesign --force --deep --sign - "$APP"
   codesign --verify "$APP" || fail "could not make the signature valid"
+fi
+
+say "asking Gatekeeper"
+if spctl -a -vvv -t exec "$APP" 2>&1 | grep -q "accepted"; then
+    say "  accepted"
+else
+    warn "  REJECTED — macOS will not register this input method"
+    warn ""
+    warn "  spctl said:"
+    spctl -a -vvv -t exec "$APP" 2>&1 | sed 's/^/    /'
+    warn ""
+    warn "  The signature is ad-hoc (no Team ID). CI builds on macOS 14, where"
+    warn "  that is enough; macOS 26 requires a real signing identity."
+    warn ""
+    warn "  A free Apple ID can make one — no Xcode, no \$99:"
+    warn "    1. sign in at https://developer.apple.com/account"
+    warn "    2. Certificates, Identifiers & Profiles -> Certificates -> +"
+    warn "    3. choose Apple Development"
+    warn "    4. it asks for a CSR:"
+    warn "         Keychain Access -> Certificate Assistant ->"
+    warn "         Request a Certificate From a Certificate Authority..."
+    warn "       save it to disk"
+    warn "    5. upload the .certSigningRequest, download the .cer, double-click it"
+    warn "    6. security find-identity -v -p codesigning"
+    warn "    7. codesign --force --deep --sign \"Apple Development: ...\" \"$APP\""
+    warn ""
+    warn "  Continuing anyway — everything else may still work."
 fi
 
 # The quarantine attribute has to go before the system will load the bundle.

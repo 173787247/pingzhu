@@ -52,8 +52,11 @@ everywhere, held there by 1,529 differential cases rather than by intention.
 ### Two that are not ticked yet
 
 **macOS**: it compiles, bundles, signs and runs its engine on real hardware, and
-the input menu never lists it. Six hypotheses eliminated; the only untested
-variable left is the login — see [macos/README.md](macos/README.md).
+the input menu never lists it. **The cause is now known**: macOS 26 does not
+register an ad-hoc signed input method — `spctl` returns `rejected`, and
+`TISCreateInputSourceList` reports it as not installed at all. CI runs on
+macOS 14, where ad-hoc is accepted, which is why every build was green. The fix
+is a free Apple ID signing certificate — see [macos/README.md](macos/README.md).
 
 **Linux**: the engine passes the same three phrases in CI, and fcitx5 really does
 load the addon and start the engine; **typing on a desktop has not been made to
