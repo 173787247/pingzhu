@@ -214,6 +214,64 @@ xattr -dr com.apple.quarantine ~/Library/Input\ Methods/PingZhu.app
 
 **要下载就从 [Releases](https://github.com/173787247/pingzhu/releases) 下** ✓
 
+## 结论：两件事都必须做（2026-09-28 实测）
+
+**macOS 输入法要出现，需要同时满足两个条件。少一个都不会出现，而且都不会报错。**
+
+### ① 应用必须自己向系统登记
+
+放在 `~/Library/Input Methods` 不等于注册。每个能用的输入法都调用这个：
+
+```swift
+TISRegisterInputSource(Bundle.main.bundleURL as CFURL)   // 告訴系統這個 bundle 存在
+TISEnableInputSource(source)                             // 把每個 mode 放進清單
+```
+
+| 谁 | 谁调用 |
+|---|---|
+| vChewing | app 启动时 |
+| WeType | `WeTypeInstaller.app` |
+| 自然输入法 | 它的 installer |
+| **平注（0.9.0 及之前）** | **没有人** ← 一直缺的一半 |
+
+0.9.1 加上了 `Sources/Registration.swift`。
+
+### ② 签章必须是 Apple 签发的
+
+**这一条是实测出来的，不是推断的。** 0.9.1 从 app 内部调用注册 API：
+
+```
+PingZhu: declared modes: ["tw.pingzhu.ime.Bopomofo"]
+PingZhu: registering /Users/.../PingZhu.app with the system
+PingZhu: after registering, the system lists 0 of our inputs     ← ★
+```
+
+**`TISRegisterInputSource` 返回 `noErr`，而系统列出了 0 个。**
+
+所以 `noErr` 不代表成功——**系统接受了调用，然后在内部决定不登记**，
+而它唯一不合格的地方是 `spctl -a -vvv -t exec` 返回 `rejected`。
+
+### 两个变量都控制过了
+
+| 组合 | 结果 |
+|---|---|
+| ad-hoc，不呼叫注册 API | ✗ 不出现 |
+| 自签 ＋ 系统信任，不呼叫 API | ✗ 不出现 |
+| 自签，呼叫 API（从 Python） | ✗ `noErr` 但看不到 |
+| **ad-hoc，呼叫 API（从 app 内部）** | ✗ **`noErr`，列出 0 个** ← 0.9.1 |
+| Apple 签发 ＋ 公证 ＋ 呼叫 API | ← 还没测，这是 `notarize.sh` |
+
+### 所以
+
+**`spctl` 是判官，而它要的是 Apple 签发的 Developer ID。**
+免费 Apple ID 做不出 Developer ID——portal 对免费帐号不显示 Certificates
+（实测）。Xcode 的 Personal Team 能签，但发的是 Apple Development 凭证，
+`spctl` 对 `-t exec` 也不接受。
+
+**¥688／年是答案，不是变通。** 付完之后跑 `macos/notarize.sh`。
+
+---
+
 ## 原因找到了（2026-09-28）
 
 **macOS 26 不接受 ad-hoc 签名的输入法。**
