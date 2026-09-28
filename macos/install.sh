@@ -101,7 +101,16 @@ else
     warn "    6. security find-identity -v -p codesigning"
     warn "    7. codesign --force --deep --sign \"Apple Development: ...\" \"$APP\""
     warn ""
-    warn "  Continuing anyway — everything else may still work."
+    warn "  Once you have a Developer ID certificate, signing and notarizing is"
+    warn "  one command:"
+    warn ""
+    warn "     export PINGZHU_APPLE_ID=\"your@apple.id\""
+    warn "     export PINGZHU_TEAM_ID=\"ABCDE12345\""
+    warn "     export PINGZHU_NOTARY_PASSWORD=\"app-specific password\""
+    warn "     curl -fsSL https://raw.githubusercontent.com/173787247/pingzhu/main/macos/notarize.sh | bash"
+    warn ""
+    warn "  Continuing anyway — the install still completes, and the input method"
+    warn "  will not appear until the signature is one the system accepts."
 fi
 
 # The quarantine attribute has to go before the system will load the bundle.
