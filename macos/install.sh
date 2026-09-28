@@ -14,9 +14,9 @@
 # checksum of what arrives is printed so it can be compared against the release.
 set -euo pipefail
 
-VERSION="0.9.0"
+VERSION="0.9.1"
 ASSET="pingzhu-${VERSION}-macos-UNVERIFIED.zip"
-URL="https://github.com/173787247/pingzhu/releases/download/v0.8.0/${ASSET}"
+URL="https://github.com/173787247/pingzhu/releases/download/v0.9.1/${ASSET}"
 EXPECTED_BUNDLE_ID="tw.pingzhu.ime"
 EXPECTED_SOURCE_ID="tw.pingzhu.ime.Bopomofo"
 
