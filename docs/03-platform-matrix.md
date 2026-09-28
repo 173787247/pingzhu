@@ -62,6 +62,100 @@ executables."** —— 用词是 *should*，不是 *must*。
 **但这不等于不需要签章**：未签章的 DLL 会触发 SmartScreen 警告，实务上仍应签章。
 这是**使用者体验问题，不是平台限制**。
 
+### 真机实测到的（2026-09-27，HUAWEI Mate XT，HarmonyOS 6.1 / API 20）
+
+**这三条之前都是【需查证】，现在都是实测结果：**
+
+**① 侧载第三方输入法：可行。** 完整通路走通了，没有遇到任何审批：
+
+```
+hdc install -r keyboard-default-signed.hap     → install bundle successfully
+hdc shell ime -e tw.pingzhu.ime                → Succeeded, status: BASIC_MODE
+hdc shell ime -s tw.pingzhu.ime                → Succeeded
+hdc shell ime -l                               → tw.pingzhu.ime, BASIC_MODE
+```
+
+**② 签章材料：DevEco 的「自动签名」会全部办妥。** 只要帐号登录
++ 勾上 `Associate with registered application`，它就会生成并下载：
+
+```
+~/.ohos/config/default_harmonyos_<hash>.p12    金鑰庫
+~/.ohos/config/default_harmonyos_<hash>.cer    憑證
+~/.ohos/config/default_harmonyos_<hash>.p7b    Profile（AGC 發的）
+```
+
+**那个勾选框是关键**——第一次没勾，于是没有 `.p7b`，
+安装时报 `error: no signature file.`（code 9568320）。
+
+**③ 已有第三方鸿蒙输入法上架，而且是活的。** 同一台手机上：
+
+```
+com.iflytek.inputmethod.iFlytekInputIME    status: BASIC_MODE
+com.huawei.hmos.inputmethod                （系統內建）
+```
+
+**讯飞跑在 BASIC_MODE**——和我们完全一样。所以「第三方输入法能上架
+HarmonyOS NEXT、而且能在基础访问模式下正常工作」不是推测，是既有事实。
+
+### 先例：shunti Japanese IME——一个人做的跨平台输入法，已在 AppGallery
+
+**这是目前查到最贴近本专案的一个案例**，比讯飞有用得多——讯飞是大公司。
+
+```
+repo:   github.com/shuntilettuce/Japanese-IME-for-HarmonyOS-next
+```
+
+| | **shunti** | **平注** |
+|---|---|---|
+| 语言 | 日文 | **注音（Bopomofo）** |
+| 平台 | HarmonyOS ＋ Android ＋ Windows | HarmonyOS ＋ Android ＋ Windows ＋ macOS ＋ Linux |
+| 授权 | MIT | MIT |
+| 规模 | **一个人**（README 写「个人开発」） | 一个人 |
+| 连网 | 不连网（转换在装置上完成） | **不连网**（基础访问模式的要求） |
+| **AppGallery** | ✅ **已上架** | ← 目标 |
+
+**它证明了**：个人开发者、开源、**非中文**输入法，能上 AppGallery，
+而且用同样的启用路径：
+
+```
+設定 → システム → 入力方法 → 選 shunti Japanese IME
+```
+
+### 它的 repo 结构（可作参考）
+
+```
+AppScope/   entry/   hvigor/   android/   desktop/   docs/   .github/
+build-profile.json5   hvigorfile.ts   oh-package.json5
+NOTICE   THIRD_PARTY_NOTICES.md   DATA_SOURCES.md   CHANGELOG.md
+```
+
+**两个可以学的：**
+
+**① HarmonyOS 工程放在 repo 根目录。** 它在根目录直接有
+`build-profile.json5` / `hvigorfile.ts` / `entry/`，所以 DevEco 可以
+**直接开整个 repo**。本专案放在 `harmonyos/` 子目录，DevEco 必须开到
+那一层（而 `core-rs/` 还要是它的兄弟目录，CMake 才找得到）。
+
+**② `THIRD_PARTY_NOTICES.md` 逐项列出衍伸资料。** 本专案已有
+[NOTICE](../NOTICE)，且 [04-data-and-licensing.md](04-data-and-licensing.md)
+把每一份资料的授权都查证过；但它的写法更细——连「哪些文件是衍伸作品、
+受哪一条条款约束」都点名。
+
+### 上架 AppGallery 还缺什么【待办】
+
+**技术通路已经打通，剩下的是治理流程：**
+
+| 项 | 状态 |
+|---|---|
+| 企业开发者帐号 | ✅ 已有（`大洋晶典商业集团有限公司`） |
+| 测试签名与真机安装 | ✅ 今天完成 |
+| **软著（软件著作权登记）** | ⏳ 通常 1–3 个月，可加急 |
+| **AppGallery 的应用类别与资质要求** | ⏳ **待查**——输入法是否属特殊类别 |
+| 隐私政策与资料安全表单 | ⏳ 本专案不连网、不上传，表单极简 |
+
+**注意**：本专案的输入法**在基础访问模式下不连任何网络**，
+这既是框架的要求，也让它在上架的资料安全审查上非常简单。
+
 ### 风险评估
 
 仍是五平台里最重的一段。COM apartment 模型、TSF 的非同步编辑工作阶段
@@ -213,10 +307,11 @@ createPanel() + setUiContent() 載入 ArkUI 頁面（鍵盤 UI 必須是 ArkUI�
 
 | 项目 | 状态 |
 |---|---|
-| 签章材料（`.p12` / `.cer` / `.p7b`）与 AGC 凭证流程细节 | **【需查证】** |
-| **侧载（sideload）第三方输入法是否可行、有无装置数上限** | **【需查证】** |
-| AppGallery 上架审核、输入法类别是否需特殊资质 | **【需查证】** |
-| **是否已有第三方鸿蒙输入法上架**（搜狗／百度／讯飞鸿蒙版） | **【需查证】**——工具限制，不代表不存在 |
+| 签章材料（`.p12` / `.cer` / `.p7b`）与 AGC 凭证流程细节 | ✅ **已查证（2026-09-27，真机）** |
+| **侧载（sideload）第三方输入法是否可行、有无装置数上限** | ✅ **已查证：可行**（见下） |
+| AppGallery 上架审核、输入法类别是否需特殊资质 | ⏳ 待办（见下） |
+| **是否已有第三方鸿蒙输入法上架** | ✅ **已查证：有，而且是活的** |
+| ~~是否已有第三方鸿蒙输入法上架~~（搜狗／百度／讯飞鸿蒙版） | ~~**【需查证】**~~——工具限制，不代表不存在 |
 | 是否有 RIME／Trime 的鸿蒙移植 | **【已查证：查无】**，但同样受工具限制 |
 
 ### 难度评估【推测】
