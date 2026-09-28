@@ -101,8 +101,8 @@ jobs:
       - name: Package the app bundle
         run: |
           set -e
-          ditto -c -k --keepParent dist/PingZhu.app dist/PingZhu-0.9.0-macos.zip
-          ditto -x -k dist/PingZhu-0.9.0-macos.zip /tmp/roundtrip
+          ditto -c -k --keepParent dist/PingZhu.app dist/PingZhu-0.9.1-macos.zip
+          ditto -x -k dist/PingZhu-0.9.1-macos.zip /tmp/roundtrip
           test -x /tmp/roundtrip/PingZhu.app/Contents/MacOS/PingZhu
           codesign --verify /tmp/roundtrip/PingZhu.app
           echo "round-trip ok: unzipping gives back a runnable, signed bundle"
@@ -110,6 +110,6 @@ jobs:
       - name: Upload the app bundle
         uses: actions/upload-artifact@v4
         with:
-          name: PingZhu-0.9.0-macos.zip
-          path: dist/PingZhu-0.9.0-macos.zip
+          name: PingZhu-0.9.1-macos.zip
+          path: dist/PingZhu-0.9.1-macos.zip
           if-no-files-found: error
