@@ -1,5 +1,15 @@
 # 交接：数字键语义（Rust 核心 ↔ TS 规格）
 
+> **★ 已完成（2026-09-29，接手会话）。** 三节的命令跑完了，两侧全绿：
+> **TS 66/66 · Rust 29/29**。两份 fixture 都重录过（本文件原以为只有断言要改，
+> 实际漏了 `scenarios.tsv`）。五节那个待决问题已查清并结案，**六个实作不需要动**。
+> 提交：`git log --oneline c54f3e4..HEAD` 看到的三个 —— 行为改动、本文件落盘、
+> 以及本文件的更正。（原会话交接时 HEAD 是 `c54f3e4`。）
+>
+> 下面保留原会话的原始记录，以便回溯当时判断的依据；**已过时的地方逐处标注**。
+>
+> ---
+>
 > **为什么写这份**：原会话 `跨平台注音输入法Original`（session-651131d7）从 turn 222 起
 > 被 DeepSeek API 以 `Content Exists Risk` 拒绝，**此后每一轮都失败**，连「在?」两个字也发不出去。
 > 触发点没有定位到，但历史里带着它 —— 所以那个会话发不出任何消息。
@@ -71,15 +81,31 @@ cd engine && node --test 2>&1 | tail -14
 cd ../core-rs && cargo test --release 2>&1 | grep -E "test result|FAILED|panicked|assertion" | tail -8
 ```
 
-**预期会红两处**（原会话已经看到）：
+**★ 实际红了 3 处，不是 2 处**（接手会话实测）：
 
 ```
 tests/differential.rs:122
-  expected: '[4]'        actual: '[ˋ]'
-  expected: 'ㄋㄧˇ [c]'   actual: 'ㄋㄧˇ [ㄏ]'
+  su3c    expected: 'ㄋㄧˇ [c]'    actual: 'ㄋㄧˇ [ㄏ]'    ← 文档写了
+  4       expected: '[4]'          actual: '[ˋ]'          ← 文档写了
+  ne3cl3  expected: 'ㄋㄧˇ [cl3]'  actual: 'ㄋㄧˇ [ㄒㄌˇ]'  ← ★ 文档漏了
 ```
 
-**★ 这两处是**断言记录了旧行为**，不是新代码错了 —— 要把断言改成新行为。**
+**★ 但只改断言不可能全绿 —— 漏了一整份 fixture。**
+
+本文件说「两处待改的断言」，实际上 `core-rs/tests/` 下有**两份**录制的参考
+资料，都记着旧行为：
+
+| fixture | 受影响行数 | 重录命令 |
+|---|---|---|
+| `tests/fixture.tsv` | 3 | `node dump-fixture.mjs 1500` |
+| `tests/scenarios.tsv` | 13 | `node dump-scenarios.mjs` |
+
+（两份 harness 的表头都写了重录命令。**fixture 是 TypeScript 参考实作行为的
+录像，不是手写断言** —— 改实作之后要重录，不是改数字。）
+
+重录后逐字比对过：两份 diff **只出现在 `composing` 这一栏**，句子、分数、
+usedFallback、pathWords、候选页、是否开窗、已送出内容全部逐字节不变。
+这既证明改动只动显示，也证明产生器是确定性的。
 
 ---
 
@@ -97,7 +123,9 @@ tests/differential.rs:122
 
 ---
 
-## 五、原会话留下的一个待决问题（原话，被截断）
+## 五、原会话留下的待决问题 —— ★ 已查清，结案：不要动那 6 个库
+
+**原话（被截断）**：
 
 > 「我把 ① 的机制搞清楚了 ——**但它值得单独一天做**
 >
@@ -107,8 +135,57 @@ tests/differential.rs:122
 >
 > **但它要动 6 个代码库 ✗ ——而这条规则在 v0.6.0 已经弄…**」
 
-**★ 这段话没说完。新会话应该先把它读完（`git log --all --oneline | grep v0.6.0`），
-再决定要不要动那 6 个库。**
+### ★ 这条线索本身是错的
+
+原会话建议「先把它读完（`git log --all --oneline | grep v0.6.0`）」—— **那条命令
+返回空**：`v0.6.0` 是 tag，不在任何提交信息里。真相在**源码注释**里，
+`linux/fcitx5/src/pingzhuengine.cpp`：
+
+```
+// …which is the rule every shell follows and the one that v0.6.0 got wrong:
+// 倒 and every word beginning with ㄅㄉㄓㄚㄞㄢ stopped typing.
+```
+
+被截断的「在 v0.6.0 已经弄…」读起来像「v0.6.0 已经做好了」，**原意正好相反 ——
+v0.6.0 把它做错了**。v0.6.0（`a2a2095`）是「簡體輸出」，与数字键无关；
+数字键那个 bug 是 `4827465` 修的，同一提交把 TSF DLL 版本推到 0.6.1。
+
+### 六个实作早就是一致的
+
+```
+core-rs/src/engine.rs              engine/src/engine.ts
+windows/src/router.cpp             android/.../Router.kt
+macos/Sources/Router.swift         linux/fcitx5/src/pingzhuengine.cpp
+```
+
+六边同一条规则：**候选窗开着时数字选字，否则是注音键。**
+（HarmonyOS 走 C ABI，不自己实作。）
+
+### 那条替代规则实测是 no-op，别做
+
+「加进去之后消耗的键数有没有变多」与现行规则**不可能分歧**，原因是
+`press()` 每收一个键就把 `candidatesOpen` 置回 `false`：
+
+```ts
+press(key) {
+  if (!this.layout.keyToComponents.has(k)) return false;
+  this.candidatesOpen = false;   // ← 打字永远关窗
+  ...
+}
+```
+
+只有**明确的 ↓／space** 才开窗。所以组字途中视窗恒为闭，两条规则给出相同答案。
+
+用真引擎实测（不是推导）：
+
+```
+gj2      composing="ㄕㄨ [ㄉ]"   open=false  cands=10
+su3c     composing="ㄋㄧˇ [ㄏ]"  open=false  cands=10
+2l3      composing="ㄉㄠˇ"       open=false  cands=10
+```
+
+`cands=10` 是关键：**候选存在，但组字途中不可选**。把「消耗键数」那套机器
+建到 6 个库里，使用者看不到任何差别。
 
 ---
 
