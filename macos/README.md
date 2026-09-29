@@ -268,7 +268,24 @@ PingZhu: after registering, the system lists 0 of our inputs     ← ★
 （实测）。Xcode 的 Personal Team 能签，但发的是 Apple Development 凭证，
 `spctl` 对 `-t exec` 也不接受。
 
-**¥688／年是答案，不是变通。** 付完之后跑 `macos/notarize.sh`。
+**付费入会是答案，不是变通。** 官方定价 99 USD／会员年（各区域以当地货币
+在入会流程中显示）。付完之后跑 `macos/notarize.sh`。
+
+### 入会的两个硬性条件（官方页面，2026-09 查核）
+
+这两条不满足会**卡在审核** ✗，而它们和「写程式」完全无关 —— 所以值得先看：
+
+```
+· Apple Account 必须开启双重认证（two-factor authentication）
+· 姓名栏必须是【法定姓名】✗ 不能用别名、昵称或公司名 ✓
+    官方原文：Using an alias, nickname, or company name as your first or
+    last name will cause a delay in the approval of your enrollment.
+· 个人入会另需：电子邮件、电话、地址（★ 不接受 P.O. box 信箱）
+· 组织入会另需：D-U-N-S Number、与组织网域一致的工作信箱、公开可用的网站
+    个人自用不需要走组织这条路 ✗
+```
+
+来源：https://developer.apple.com/programs/enroll/
 
 ---
 
@@ -314,22 +331,62 @@ CI:   macos-14      ← ad-hoc 在這裡可以 ✓
 
 ### 修法
 
-**免费 Apple ID 就能做 ✗ 不需要 Xcode ✗ 不需要 $99** ✓：
+**★ 这一段原本写的是「免费 Apple ID 就能做 ✗ 不需要 Xcode ✗ 不需要 $99」✗
+—— 那是还没实测之前的猜想 ✓，而上面「结论」一节已经推翻了它 ✗。**
+
+推翻它的两件事，都是实测 ✓：
 
 ```
-① 用 Apple ID 登入 https://developer.apple.com/account
+· portal 对免费帐号不显示 Certificates     ← README 上一节记录的
+· Xcode Personal Team 发的是 Apple Development 凭证 ✓
+  而 spctl -a -vvv -t exec 对它一样是 rejected ✗
+```
+
+**判官是 `spctl -a -t exec` ✗ 而它只接受 Apple 签发的 `Developer ID Application` ✓
+—— Developer ID 只在付费会员的 portal 里 ✓ 所以绕不过入会 ✓**
+
+```
+① 入会（付费年费）
+     https://developer.apple.com/programs/ → 右上 Enroll
+     ★ 官方定价 99 USD／会员年，各区域以当地货币在入会流程中显示
+       （原文：99 USD per membership year. Prices may vary by region and
+        are listed in local currency during the enrollment process.）
+     ★ 走网页，不一定要用 Apple Developer app（见下）
 ② Certificates, Identifiers & Profiles → Certificates → ＋
-③ 選 Apple Development
-④ 它會要一個 CSR：
-     Keychain Access → 憑證輔助程式 →
-     從憑證授權要求憑證…  → 存到磁碟
-⑤ 上傳 .certSigningRequest，下載 .cer，雙擊匯入
-⑥ security find-identity -v -p codesigning     ← 看有沒有
-⑦ codesign --force --deep --sign "Apple Development: …" PingZhu.app
-⑧ spctl -a -vvv -t exec PingZhu.app            ← 應該變成 accepted
+③ 选 Developer ID Application          ← ★ 不是 Apple Development
+④ 它会要一个 CSR：
+     Keychain Access → 凭证辅助程式 →
+     从凭证授权要求凭证…  → 存到磁碟
+⑤ 上传 .certSigningRequest，下载 .cer，双击汇入
+⑥ security find-identity -v -p codesigning
+     ← 应该看到 "Developer ID Application: … (TEAMID)"
+     ★ 抄下括号里的 TEAMID，公证要用
+⑦ 签章 ＋ 公证：bash macos/notarize.sh
+     ← 一条命令走完，不要再手工 codesign
+⑧ spctl -a -vvv -t exec PingZhu.app       ← 应该变成 accepted
 ```
 
-**然后 `install.sh` 会自己把这一步检查出来** ✓ ——**它现在会印 `REJECTED` 和上面这段修法** ✓
+**★ 为什么不能停在 ⑦ 的「签完就好」：** 表格里那一列「Apple 签发 ＋ 公证 ＋
+呼叫 API」是**唯一还没测过的组合** ✗ —— 已知的三列（ad-hoc、自签、自签＋注册
+API）全都不出现 ✓。所以公证那一步不是可选的收尾，**它是那个还没被验证过的
+变量本身** ✓。
+
+**然后 `install.sh` 会自己把这一步检查出来** ✓ ——**它现在会印 `REJECTED`
+和这段修法** ✓（**★ 它印的内容跟着本节走 ✓ 所以这节写错，它就会把人指错 ✗**）
+
+### ★ 入会不一定要用 Apple Developer app
+
+iOS 上一个时刻只能有一个 App Store 帐号 ✗ —— 如果那个 app 当初是用另一个
+Apple ID 装的 ✓，**更新它会要求登入那个旧帐号** ✗，而你要入会的可能是另一个 ✓。
+两条途径是分开的：
+
+| 途径 | 说明 |
+|---|---|
+| **网页** | https://developer.apple.com/programs/ → Enroll —— 主途径 ✓ 不碰 app 更新 |
+| iOS app | Apple Developer app —— 会要求 app 所属的那个 Apple ID |
+
+**★ 入会用哪个 Apple ID，决定证书与 Team ID 归属谁 ✗ 事后换帐号很痛苦 ✓
+—— 先想清楚再用哪个登入 ✓**
 
 ## 已知限制
 
