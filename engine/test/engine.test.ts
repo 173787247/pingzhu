@@ -54,7 +54,7 @@ test("一聲 needs no tone key: ㄐㄧㄣ ㄊㄧㄢ -> 今天", () => {
 test("unfinished syllable stays pending instead of guessing", () => {
   const engine = type("su3c");
   assert.equal(engine.bestSentence, "你");
-  assert.equal(engine.composing, "ㄋㄧˇ [c]");
+  assert.equal(engine.composing, "ㄋㄧˇ [ㄏ]");
   assert.equal(engine.backspace(), true);
   assert.equal(engine.composing, "ㄋㄧˇ");
 });
@@ -130,5 +130,8 @@ test("˙ is accepted before its syllable, the traditional written order", () => 
 test("a bare tone key is not a syllable", () => {
   const engine = type("4");
   assert.equal(engine.bestSentence, "");
-  assert.equal(engine.composing, "[4]");
+  // The brackets render bopomofo, not the key that produced it. A digit sitting
+  // inside a syllable line meant nothing to anyone who had not read the decoder;
+  // `ㄕㄨ [ㄉ]` says the same thing in the alphabet the rest of the line uses.
+  assert.equal(engine.composing, "[ˋ]");
 });

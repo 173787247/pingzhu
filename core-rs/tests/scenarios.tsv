@@ -131,22 +131,22 @@ k:s k:u k:3 enter			0		你
 k:s k:u k:3 space space space space	你	ㄋㄧˇ	1	䛏|伱|伲|儞|埿|孴|拟|鉨|𢘝	
 k:s k:u k:3 open sel:10			0		祢
 k:s k:u k:3 open sel:11	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c sel:1	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c sel:3	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c space	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c sel:1	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c sel:3	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c space	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c space sel:1			0		你
-k:s k:u k:3 k:c space space	你	ㄋㄧˇ [c]	1	䦵|聻|𦗚|儗|坭|柅|苨|馜|隬|譺	
+k:s k:u k:3 k:c space space	你	ㄋㄧˇ [ㄏ]	1	䦵|聻|𦗚|儗|坭|柅|苨|馜|隬|譺	
 k:s k:u k:3 k:c space space sel:1			0		䦵
 k:s k:u k:3 k:c open sel:2			0		妳
-k:s k:u k:3 k:c open close sel:1	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c open k:g	你	ㄋㄧˇ [cg]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c open bs	你	ㄋㄧˇ [c]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c right	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c right left left	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
-k:s k:u k:3 k:c left	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open close sel:1	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open k:g	你	ㄋㄧˇ [ㄏㄕ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open bs	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c right	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c right left left	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c left	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c open right sel:1			0		你
 k:s k:u k:3 k:c enter			0		你
-k:s k:u k:3 k:c space space space space	你	ㄋㄧˇ [c]	1	䛏|伱|伲|儞|埿|孴|拟|鉨|𢘝	
+k:s k:u k:3 k:c space space space space	你	ㄋㄧˇ [ㄏ]	1	䛏|伱|伲|儞|埿|孴|拟|鉨|𢘝	
 k:s k:u k:3 k:c open sel:10			0		祢
-k:s k:u k:3 k:c open sel:11	你	ㄋㄧˇ [c]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c open sel:11	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
