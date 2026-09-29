@@ -89,7 +89,7 @@ test("a digit fed through press() still composes", () => {
   const engine = type("su3");
   assert.equal(engine.bestSentence, "你");
   assert.equal(engine.press("3"), true, "3 is a composing key");
-  assert.equal(engine.composing, "ㄋㄧˇ [3]");
+  assert.equal(engine.composing, "ㄋㄧˇ [ˇ]");
   assert.equal(engine.bestSentence, "你", "the buffer was not committed");
   assert.equal(engine.isComposing(), true);
 });

@@ -189,10 +189,27 @@ export class InputEngine {
 
   // --------------------------------------------------------------- output
 
-  /** What the user typed, as bopomofo, with unfinished keys in [brackets]. */
+  /**
+   * What the user typed, as bopomofo, with unfinished keys in [brackets].
+   *
+   * The pending keys are rendered as bopomofo, not as the keys that produced
+   * them. They used to be echoed raw, so typing `gj2` showed `ㄕㄨ [2]` — a
+   * digit the user pressed sitting next to a syllable, meaning nothing to
+   * anyone who had not read the decoder. It is `ㄕㄨ [ㄉ]`: the same alphabet
+   * as the rest of the line, and it says plainly that a ㄉ is waiting.
+   *
+   * A key with no bopomofo on this layout still shows as itself, so nothing
+   * disappears from the display.
+   */
   get composing(): string {
     const done = this.syllables.join(" ");
-    const pending = this.pendingKeys.length ? `[${this.pendingKeys.join("")}]` : "";
+    const rendered = this.pendingKeys
+      .map((k) => {
+        const comps = this.layout.keyToComponents.get(k);
+        return comps?.length ? comps.map(componentChar).join("") : k;
+      })
+      .join("");
+    const pending = rendered ? `[${rendered}]` : "";
     return [done, pending].filter(Boolean).join(" ");
   }
 
