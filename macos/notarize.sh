@@ -11,7 +11,8 @@
 #
 #   spctl -a -vvv -t exec PingZhu.app   →  accepted
 #
-# Which needs the paid programme (¥688/yr in China). A free Apple ID cannot
+# Which needs the paid programme (99 USD/membership year; Apple lists the
+# regional amount in local currency during enrolment). A free Apple ID cannot
 # make one — the portal does not offer Certificates to free accounts. Xcode's
 # Personal Team can, but it issues an *Apple Development* certificate, which
 # spctl does not accept for `exec` either, so the paid programme is the answer

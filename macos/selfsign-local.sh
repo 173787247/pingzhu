@@ -16,7 +16,9 @@
 # keychain identity, and whether the input method registration path accepts a
 # locally-trusted one is the thing being tested.
 #
-# It is worth five minutes before paying ¥688 and scanning a face.
+# It is worth five minutes before paying the annual fee and scanning a face.
+# (It cannot succeed on its own, though — see section 7. Only a Developer ID
+#  from the paid programme satisfies spctl for -t exec.)
 #
 # Everything it creates is named so it can be removed again:
 #
@@ -93,9 +95,16 @@ cat <<EOF
       → section 1 should say "★ FOUND"
 
   If it still says "rejected":
-      the registration path wants an Apple-issued chain, and the choices are
-        - Xcode + a free Apple ID (Personal Team certificate, no ¥688)
-        - the paid programme (¥688, face scan, iPhone)
+      the registration path wants an Apple-issued chain, and the only one
+      spctl accepts for -t exec is a Developer ID — which needs the paid
+      programme. The free route does NOT work (both halves tested):
+        ✗ a free Apple ID cannot get a Developer ID — the portal does not
+          offer Certificates to free accounts
+        ✗ Xcode's Personal Team issues an *Apple Development* certificate,
+          which spctl also rejects for -t exec
+      → https://developer.apple.com/programs/enroll/  then macos/notarize.sh
+        (identity verification needs the Apple Developer iOS app — a Mac
+         without a camera cannot do that part)
 
   To undo this script:
       security delete-identity -c "$CN"
