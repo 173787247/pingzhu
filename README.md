@@ -1,5 +1,7 @@
 # PingZhu 平注
 
+> **接手这个项目？先读 [`START-HERE.md`](START-HERE.md)** —— 当前进度、下一步、以及所有已有材料在哪。
+
 **English** ｜ [简体中文](README.zh-CN.md)
 
 **[▶ Try it in a browser](https://173787247.github.io/pingzhu/)** — nothing to install.
