@@ -70,10 +70,28 @@ TS 66/66 · Rust 29/29（26 单测 ＋ 差异 1529 例 ＋ 交互 152 例 ＋ fu
 **★ 结论已经写在文档里了：横竖都得要开发者签章 ✗
 不必再论证「免费能不能绕」✓ —— 那条路两个半边都实测过了（README 有）。**
 
-付款之后：
+### ★ 现在的实际卡点：等一台镜头能用的 iPhone（预计 10/8）
+
+入会要**扫脸身份验证** ✗，而这一步**只能在 iPhone 上用 Developer App 做** ✓
+—— **Mac mini 没有镜头** ✓。手边那台 iPhone **镜头坏了** ✗，所以要等换机。
+
+**★ 这不是能加速的等待 ✗ 但卡的位置很清楚 ✓：**
+
+```
+✅ 扫脸验证本身      —— 在一台正确的机器上成功过一次
+❌ 付款             —— 中国区 Apple ID ＋ 美版机
+                      ★ Developer App 才是微信／支付宝那条路 ✗
+                        网页端那条实测过不去 ✓
+⏸ 换一台好 iPhone    —— 预计 10/8 到公司
+→ 之后：Developer ID 证书 → notarize.sh → install.sh
+```
+
+**★ 这九天里这条线动不了 ✓ 但 1.1（引擎）已完成 ✓ 所以不必再碰 ✓**
+
+付款之后的命令（**帐号自己填** —— 公开仓库不写个人邮箱）：
 
 ```bash
-export PINGZHU_APPLE_ID="rchuang@gmail.com"
+export PINGZHU_APPLE_ID="you@example.com"   # 会员归属的那个 Apple ID
 export PINGZHU_TEAM_ID="…"                  # 证书括号里那 10 个字符
 export PINGZHU_NOTARY_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 bash macos/notarize.sh                      # 签章 ＋ 公证，一条命令

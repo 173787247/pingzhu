@@ -27,8 +27,8 @@
 #   3. An app-specific password for notarytool
 #        https://appleid.apple.com → Sign-In and Security → App-Specific Passwords
 #
-# Then:
-#   export PINGZHU_APPLE_ID="rchuang@gmail.com"
+# Then (use the Apple ID the Developer Program membership belongs to):
+#   export PINGZHU_APPLE_ID="you@example.com"
 #   export PINGZHU_TEAM_ID="ABCDE12345"
 #   export PINGZHU_NOTARY_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 #   bash macos/notarize.sh
