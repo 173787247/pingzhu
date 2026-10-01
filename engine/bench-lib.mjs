@@ -87,6 +87,7 @@ export function buildTestSet(sampleSize, seed) {
     if (t1 < 0 || t2 < 0) continue;
     const reading = line.slice(0, t1);
     const word = line.slice(t1 + 1, t2);
+    const score = Number(line.slice(t2 + 1));
     const syllables = splitReading(reading);
     // Single-syllable entries belong here too. They are where character
     // frequency decides the answer outright — the reading ㄐㄧㄢˋ offers 建, 見,
@@ -95,11 +96,25 @@ export function buildTestSet(sampleSize, seed) {
     // which is the one thing such a change is supposed to affect.
     if (syllables.length < 1 || syllables.length > 4) continue;
     if (!CJK.test(word) || word.length !== syllables.length) continue;
-    seen++;
-    if (picked.length < sampleSize) picked.push({ reading, word });
+    if (!Number.isFinite(score)) continue;
+
+    // Weighted by the entry's own frequency, not drawn uniformly.
+    //
+    // The model holds 21,786 single characters and a handful of them carry most
+    // of the text: the top decile accounts for 98% of occurrences. Drawing
+    // uniformly therefore samples the middle of the ranking — the median pick
+    // sat at rank 7,228 of 21,786, and exactly one of 447 fell inside the top
+    // hundred — so the resulting score described how well the engine names
+    // *obscure* characters, which is not a thing anyone asks it to do.
+    //
+    // The model's own log-probabilities are the weights. They are what produced
+    // the entries, so this needs no second corpus and no new file.
+    const w = 10 ** score;
+    seen += w;
+    if (picked.length < sampleSize) picked.push({ reading, word, w });
     else {
       const j = Math.floor(rnd() * seen);
-      if (j < sampleSize) picked[j] = { reading, word };
+      if (j < sampleSize) picked[j] = { reading, word, w };
     }
   }
   for (const c of picked) c.keystrokes = readingToKeys(c.reading);
