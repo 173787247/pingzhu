@@ -59,7 +59,7 @@ macOS IMK 以 MIT 的 McBopomofo 为参考，Android 以 Apache-2.0 的 AnySoftK
 | [CNS 11643 全字库](https://www.cns11643.gov.tw/) | **政府资料开放授权条款第 1 版（OGDL-1.0）** | ✅ | ✅ | 授权清单明列「字型属性档：注音」，可涵盖全字集 |
 | [OpenCC](https://github.com/BYVoid/OpenCC) 简繁转换 | **Apache-2.0** | ✅ | ✅ | 简繁转换的唯一选择 |
 | CWN 中文词汇网路 | **无授权档** | ❌ | ❌ | 无授权＝保留所有权利 |
-| g0v/moedict-data | **无授权档** | ❌ | ❌ | 同上 |
+| g0v/moedict-data | **分层：转换／编辑 CC0 ＋ 辞典本文 MOE CC BY-ND 3.0 TW** | ✅ | 见备注 | ★ 原记为「无授权档 ❌」是错的，见下 |
 | bpmfvs（注音 IVS 字型规格） | **无授权档** | ❌ | ❌ | 同上 |
 | 繁化姬 | 闭源服务，条款限制 | — | — | 不使用 |
 
@@ -81,6 +81,43 @@ libchewing 的 `dict/moe/` 就是走这条路（附完整的 ATTRIBUTE 声明）
 且它的授权链（MIT ← BSD）比 CC BY-ND 更干净。若未来需要更完整的词条覆盖，
 再依法务确认的范围接入。
 
+### ⚠️ moedict-data 是分层授权，不是「无授权」（2026-10-01 核实）
+
+**原表格记它为「无授权档 ❌」✗ 不准确 ✓** 实际是两层的：
+
+```
+转换格式、重新编排的编辑著作权（如果有的话）→ @kcwu 以 CC0 释出
+辞典本文的著作权                          → 仍为教育部所有（CC BY-ND 3.0 TW）
+```
+
+依据是它的 README 原文：「此处转换格式、重新编排的编辑著作权（如果有的
+话）由 @kcwu 以 CC0 释出」＋「辞典本文的著作权仍为教育部所有」。
+
+**所以判定要看取用哪一层**：只用它的**格式编排**是 CC0；一旦取用**释义文字**
+就回到 CC BY-ND 3.0 TW，受上面的 ND 边界约束 ✓
+
+★ 顺带：那份 README 同时**引述了教育部对 ND 边界的官方解释**（见上一节），
+是那个解释目前最接近原文的公开来源 ✓
+
+### ⚠️ libchewing-data 的授权声明在 repo 内部互相矛盾
+
+三方说法不一致，而且**没有一方能压过另一方**：
+
+| 位置 | 声明 | 覆盖范围 |
+|---|---|---|
+| `dict/chewing/*.csv` 档头（4 个档一致） | `# dc:license,LGPL-2.1-or-later,` | 逐档，最具体 |
+| repo 根 `LICENSES/` | 只有 `CC-BY-4.0.txt` | 唯一副本，但未说明覆盖什么 |
+| `dict/chewing_v4/README.md` | "licensed under CC BY 4.0" | v4 逐字自述 |
+
+而且 `dict/chewing/` 那四个档头日期新到 **2026.3.20**，比 v4 的 README 还新；
+repo 的 README **全文无任何授权字样**；Codeberg API 回报 `license: None`。
+
+**本专案的读法：只用 `dict/chewing_v4/`** ✓ 它的 CC BY 4.0 有逐字自述 ✓
+`dict/chewing/` 一律视为 LGPL ✗ 不取用 ✓ 理由是**逐档声明最具体**，
+且保守读法的代价只是少一份资料来源，激进的代价是可能把 LGPL 资料 commit
+进 MIT 仓库 ✓
+
+
 ### 一个法律效力不明的坑
 
 **LGPL 套用在纯资料档上的效力并不明确。** RIME 的 `essay.txt`（词频资料）
@@ -92,24 +129,18 @@ libchewing 的 `dict/moe/` 就是走这条路（附完整的 ATTRIBUTE 声明）
 是 **CC BY 4.0**，两者的授权都比「LGPL 用在资料档」清楚。**没有必要为了省一点事
 去踩一个没有判例的坑。**
 
-### ⚠️ libchewing-data 是逐目录多授权（2026-10-01 实测更正）
-
-**这份表格原本把整个仓库写成 CC BY 4.0 ✗ 那是错的 ✓** 实测各目录授权不同：
+**★ 而且这里还有一个更实际的坑：这份表格原本把整个 libchewing-data 写成
+CC BY 4.0 ✗ 那是错的 ✓** 实测各目录授权不同：
 
 | 目录 | 授权 | 依据 |
 |---|---|---|
-| `dict/chewing/*.csv`（tsi / word / mini / alt，5.2 MB 主词库） | **LGPL-2.1-or-later** | 档案档头逐字：`# dc:license,LGPL-2.1-or-later,` |
+| `dict/chewing/*.csv`（tsi / word / mini / alt，5.2 MB 主词库） | **LGPL-2.1-or-later** | 档案档头逐字，4 个档一致 |
 | `dict/moe/` | **CC BY-ND 3.0 TW** | `dict/moe/ATTRIBUTE.md`；且额外授权声明**明文禁止转为简体字** |
 | `dict/chewing_v4/` | **CC BY 4.0** ✅ | `dict/chewing_v4/README.md` 明写 "licensed under CC BY 4.0" |
 
-**为什么容易搞错**：仓库根有 `LICENSES/CC-BY-4.0.txt`（唯一一个授权档）、
-README 全文无授权字样、无 SPDX 档头、无 `REUSE.toml`、Codeberg API 回报
-`license: None`。**只有逐档看档头或逐目录读 README 才看得出来。**
-
-**★ 所以：要用就用 `dict/chewing_v4/`，不要用 `dict/chewing/`。**
-后者是 LGPL，commit 进本仓库（MIT）会踩到与「主程式 LGPL」同一类的、
-没有判例的问题 —— 本表格上面已经为此排除过 libchewing 本体，只是当时
-没发现资料层也是 LGPL。
+照原表格去接 `dict/chewing/tsi.csv`，就会把 LGPL 资料 commit 进本仓库 ✓
+—— 而上面已经为同样理由排除过 libchewing 本体，只是当时没发现资料层也是
+LGPL ✓
 
 
 ### 待复核项目
