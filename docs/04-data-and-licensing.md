@@ -97,8 +97,34 @@ libchewing 的 `dict/moe/` 就是走这条路（附完整的 ATTRIBUTE 声明）
 
 - 教育部辞典「额外授权声明」的**确切适用范围**（哪些改动不算「改作」）
 - CNS 11643「注音属性档」的**实际栏位与涵盖率**
-- libchewing-data v4 bigram 语言模型的**档案大小与实测准确率**
-  （桌面研究称 150 MB，可裁至 5.5 MB；准确率 92.57% → 96.11%）
+
+---
+
+### ✅ 已核实：libchewing-data v4 bigram（2026-10-01）
+
+桌面研究称「150 MB，可裁至 5.5 MB；准确率 92.57% → 96.11%」——
+逐项核对上游 `dict/chewing_v4/README.md` 与实测档案，**数字全部属实**：
+
+| 项 | 实测 |
+|---|---|
+| `bigram_p50.arpa` | 150,068,322 B = 150 MB ✓ |
+| `tsi_unigram.arpa` | 4,027,013 B |
+| 裁至 `keep_frac 0.1` | 5.5 MB ✓（上游实测该档 94.87%） |
+| 满档 | 34 MB，96.11% ✓ |
+| unigram 基线 | 92.57% ✓ |
+| ngram 数 | 111,601 unigram ＋ 7,109,312 bigram（**不含 trigram**） |
+
+那组准确率是**上游自己的评测**（16 GiB 语料、711,645 句留出集、他们的
+lattice），与本仓库 `bench.mjs` 的数字**不可直接比较**。
+
+**★ 更要紧的是：不能直接拿来用。** 实测见
+[research/tools/bigram-trial.mjs](../research/tools/bigram-trial.mjs)：
+libchewing 的语汇表 111,601 条，本仓库现用 169,604 条，差异过大 ——
+实验自检（unigram 基线须复现引擎选择）只过 159/257，因此任何被归因于
+bigram 的差异实际上来自词表差异，结论不成立。
+
+要用这份资料，前提是**连同它的 unigram 一起换**，或拿它当语料另行统计
+本仓库自己的 bigram。那是一次资料层迁移，不是接线。
 
 ## 为什么选择 McBopomofo 而不是 libchewing 当起点
 
