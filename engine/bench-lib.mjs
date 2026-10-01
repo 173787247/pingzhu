@@ -88,7 +88,12 @@ export function buildTestSet(sampleSize, seed) {
     const reading = line.slice(0, t1);
     const word = line.slice(t1 + 1, t2);
     const syllables = splitReading(reading);
-    if (syllables.length < 2 || syllables.length > 4) continue;
+    // Single-syllable entries belong here too. They are where character
+    // frequency decides the answer outright — the reading ㄐㄧㄢˋ offers 建, 見,
+    // 件 and 健 with nothing else to go on — and a sample that skipped them
+    // could not tell whether a change to character frequency helped or hurt,
+    // which is the one thing such a change is supposed to affect.
+    if (syllables.length < 1 || syllables.length > 4) continue;
     if (!CJK.test(word) || word.length !== syllables.length) continue;
     seen++;
     if (picked.length < sampleSize) picked.push({ reading, word });
