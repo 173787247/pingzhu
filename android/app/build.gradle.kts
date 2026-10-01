@@ -38,8 +38,8 @@ android {
         // dependencies, so there is nothing to gain from a higher floor.
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.8.0"
+        versionCode = 2
+        versionName = "0.10.0"
 
         ndk {
             // 64-bit only. Every device that can run an input method today is
