@@ -19,8 +19,12 @@ fetched from https://github.com/openvanilla/McBopomofoWeb (branch main):
   src/McBopomofo/WebDataPlain.ts
 
   McBopomofo
-  Copyright (c) 2022 and onwards The McBopomofo Authors.
-  Licensed under the MIT License.
+  ★ 版权行以 McBopomofo 仓库的 LICENSE.txt 原文为准（2026-10 核对）：
+    Copyright (c) 2011-2026 Mengjuei Hsieh et al.
+    （本档先前写的是 "Copyright (c) 2022 and onwards The McBopomofo Authors" ✗
+      那是 McBopomofo 自述页面的写法 ✓ 与它仓库里的 LICENSE.txt 不一致 ✓
+      两者指同一批人，但署名应以随附的许可档为准 ✓）
+  Licensed under the MIT License — 全文见 LICENSES/MIT.txt
   https://github.com/openvanilla/McBopomofo
 
 The McBopomofo phrase list descends from libtabe's tsi.src, which is distributed
@@ -46,7 +50,7 @@ carries a per-layout test suite. The Hsu (許氏) and ETen26 layouts are NOT
 included, precisely because transcribing them without an authoritative,
 tested source would introduce silent errors.
 
-  Copyright (c) 2022 and onwards The McBopomofo Authors. MIT License.
+  Copyright (c) 2011-2026 Mengjuei Hsieh et al. MIT License — 全文见 LICENSES/MIT.txt
 
 ===============================================================================
 3. Trademarks
@@ -68,5 +72,13 @@ identification only.
     https://github.com/BYVoid/OpenCC
     Copyright (c) 2010-2024 Carbo Kuo and contributors
     Licensed under the Apache License, Version 2.0
+
+  ★ 本仓库随附该许可的完整副本：LICENSES/Apache-2.0.txt
+    （Apache-2.0 第 4(a) 条要求散布时附上许可副本，不只是连结。）
     http://www.apache.org/licenses/LICENSE-2.0
+
   由 data/build-ts.mjs 從 TSCharacters.txt 與 TSPhrases.txt 產生。
+  ★ 上游那两个档的档头没有许可字样 ✗ 仓库 README 也没有 ✗
+    这条授权判断的依据是 OpenCC 专案本身的 Apache-2.0 ✓
+    若上游日后更改授权，这一条需要重新确认 ✓
+
