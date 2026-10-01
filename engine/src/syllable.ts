@@ -27,7 +27,15 @@ export interface KeyComponent {
   key: string;
 }
 
-export function componentChar(c: KeyComponent): string {
+/**
+ * The bopomofo (or tone mark) a component stands for.
+ *
+ * Takes the component's identity, not its provenance: `key` records which
+ * keystroke produced it, which is history this function has no use for. Saying
+ * so in the type is what lets a layout table — which maps keys to components
+ * and therefore never carries one — be rendered through it directly.
+ */
+export function componentChar(c: Omit<KeyComponent, "key">): string {
   switch (c.kind) {
     case "consonant": return CONSONANTS[c.index];
     case "medial": return MEDIALS[c.index];
