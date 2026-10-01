@@ -150,3 +150,22 @@ k:s k:u k:3 k:c enter			0		你
 k:s k:u k:3 k:c space space space space	你	ㄋㄧˇ [ㄏ]	1	䛏|伱|伲|儞|埿|孴|拟|鉨|𢘝	
 k:s k:u k:3 k:c open sel:10			0		祢
 k:s k:u k:3 k:c open sel:11	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:r k:u k:0 k:4 k:g k:k k:4	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 sel:1	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 sel:3	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 space	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 space sel:1			0		建設
+k:r k:u k:0 k:4 k:g k:k k:4 space space	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	踐|艦|箭|賤|鑒|濺|諫|荐|腱|澗	
+k:r k:u k:0 k:4 k:g k:k k:4 space space sel:1			0		踐社
+k:r k:u k:0 k:4 k:g k:k k:4 open sel:2			0		建社
+k:r k:u k:0 k:4 k:g k:k k:4 open close sel:1	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 open k:g	建設師	ㄐㄧㄢˋ ㄕㄜˋ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:r k:u k:0 k:4 k:g k:k k:4 open bs	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 right	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	社|設|攝|射|涉|舍|赦|麝|拾|葉	
+k:r k:u k:0 k:4 k:g k:k k:4 right left left	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 left	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 open right sel:1			0		建社
+k:r k:u k:0 k:4 k:g k:k k:4 enter			0		建設
+k:r k:u k:0 k:4 k:g k:k k:4 space space space space	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	覵|𠍴|䫡|悓|侟|㰄|譼|鍳|韀|倹	
+k:r k:u k:0 k:4 k:g k:k k:4 open sel:10			0		劍社
+k:r k:u k:0 k:4 k:g k:k k:4 open sel:11	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	建設|建|見|件|健|漸|鍵|鑑|薦|劍	

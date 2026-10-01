@@ -31,8 +31,24 @@ const DAY = 20_000;
 const dict = loadDictionary(LM);
 const inventory = loadSyllableInventory(LM);
 
-/** Key strings worth poking at, chosen for the behaviour they exercise. */
-const SUBJECTS = ["su3cl3", "ji394su3", "tj4g/", "u6tp6", "j0420", "g4", "su3", "su3c"];
+/**
+ * Key strings worth poking at, chosen for the behaviour they exercise.
+ *
+ * `ru04gk4` covers the shape the others miss: a word the *second* syllable
+ * creates. On its own, ru04 is ㄐㄧㄢˋ — 建, 見, 件 and 健 all read that way, and
+ * the model picks one of them without any way to know which was meant. Typing
+ * gk4 after it turns the two syllables into ㄐㄧㄢˋ-ㄕㄜˋ, which the language
+ * model holds as a single entry, so the buffer rereads itself as 建設.
+ *
+ * The failure this guards against is not a wrong pick — it is a decoder that
+ * commits early. If the first syllable were settled when it was completed,
+ * the second one could never reconsider it, and 建設 would be unreachable
+ * however good the candidate list looked.
+ */
+const SUBJECTS = [
+  "su3cl3", "ji394su3", "tj4g/", "u6tp6", "j0420", "g4", "su3", "su3c",
+  "ru04gk4",
+];
 
 /** Action scripts appended after typing the subject. */
 const SCRIPTS = [
