@@ -19,16 +19,16 @@ natural input: it describes what the thing does, and it is not a trademark anyon
 
 | Platform | File |
 |---|---|
-| **Windows 10/11** | **[⬇ pingzhu-0.7.6-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-setup.exe)**　·　[portable ZIP](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.7.6-win-x64.zip) |
-| **Android 8+** | **[⬇ pingzhu-0.8.0-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.8.0-android.apk)** |
-| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)** ([needs verifying on a Mac first](macos/TESTING.md)) |
+| **Windows 10/11** | **[⬇ pingzhu-0.10.0-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.0/pingzhu-0.10.0-setup.exe)**　·　[portable ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.0/pingzhu-0.10.0-win-x64.zip) |
+| **Android 8+** | **[⬇ pingzhu-0.10.0-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.0/pingzhu-0.10.0-android.apk)** |
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)** ([needs verifying on a Mac first](macos/TESTING.md))<br>**0.10.0 ships no macOS build** — the input method needs an Apple-issued Developer ID to register with the system, and that enrolment is still pending. |
 
 **HarmonyOS** and **Linux** ship no installer — what they produce is a project and an
 addon, built from source:
 
 | Platform | What to take | How to install |
 |---|---|---|
-| **HarmonyOS NEXT** | **[pingzhu-0.9.0-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-harmonyos-project.zip)** | Open `harmonyos/` in DevEco, sign, Run ([steps](harmonyos/README.md)) |
+| **HarmonyOS NEXT** | **[pingzhu-0.10.0-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.0/pingzhu-0.10.0-harmonyos-project.zip)** | Open `harmonyos/` in DevEco, sign, Run ([steps](harmonyos/README.md)) |
 | **Linux** | no binary published | `cmake -DCMAKE_INSTALL_PREFIX=/usr` builds the fcitx5 addon ([linux/](linux/README.md)) |
 
 **Windows** installs to `%LOCALAPPDATA%\Programs\PingZhu` with no administrator rights.
@@ -177,7 +177,7 @@ The engine stands alone, with zero runtime dependencies:
 **Option 1 — the tarball on the release page** (no account, no setup; recommended)
 
 ```bash
-npm install https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-engine-0.8.0.tgz
+npm install https://github.com/173787247/pingzhu/releases/download/v0.10.0/pingzhu-engine-0.10.0.tgz
 ```
 
 **Option 2 — GitHub Packages** (needs a GitHub token first)
