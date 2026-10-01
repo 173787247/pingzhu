@@ -117,6 +117,12 @@ bash macos/notarize.sh                      # 签章 ＋ 公证，一条命令
 | 按键代价 = **0.086 额外键/例**（空白送出 91.39%） | 见下「验收标准」 |
 | libchewing v4 bigram 数字属实，但**不能直接拿来用** | `research/tools/bigram-trial.mjs` ＋ `docs/04` |
 
+**★ 授权陷阱（务必注意）**：libchewing-data 是**逐目录多授权** ✗
+`dict/chewing/`（5.2 MB 主词库）是 **LGPL-2.1-or-later** ✓
+`dict/moe/` 是 **CC BY-ND 3.0 TW** ✓
+**只有 `dict/chewing_v4/` 才是 CC BY 4.0** ← 我们用的 bigram 在这个目录里 ✓
+详见 `docs/04-data-and-licensing.md` 的专节 ✓
+
 **★ 四位研究员的产出**（派出时各自独立、无写冲突）：
 
 ```

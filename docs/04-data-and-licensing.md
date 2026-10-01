@@ -54,7 +54,7 @@ macOS IMK 以 MIT 的 McBopomofo 为参考，Android 以 Apache-2.0 的 AnySoftK
 
 | 资料 | 授权 | 可否商用 | 可否改作 | 备注 |
 |---|---|---|---|---|
-| [libchewing-data](https://codeberg.org/chewing/libchewing-data) | **CC BY 4.0** | ✅ | ✅ | 本仓库实测：`LICENSES/CC-BY-4.0.txt`；v4 新增注音专用 bigram |
+| [libchewing-data](https://codeberg.org/chewing/libchewing-data) | ★ **逐目录多授权，不是单一授权** | 见下 | 见下 | ⚠️ 只有 `dict/chewing_v4/` 是 CC BY 4.0 —— 详见下方专节 |
 | 教育部《重编国语辞典修订本》等四部辞典 | **CC BY-ND 3.0 TW** | ✅ | ❌ **禁改作** | 《简编本》另有「额外授权声明」允许字码改换 |
 | [CNS 11643 全字库](https://www.cns11643.gov.tw/) | **政府资料开放授权条款第 1 版（OGDL-1.0）** | ✅ | ✅ | 授权清单明列「字型属性档：注音」，可涵盖全字集 |
 | [OpenCC](https://github.com/BYVoid/OpenCC) 简繁转换 | **Apache-2.0** | ✅ | ✅ | 简繁转换的唯一选择 |
@@ -88,8 +88,29 @@ libchewing 的 `dict/moe/` 就是走这条路（附完整的 ATTRIBUTE 声明）
 「衍生作品」如何认定没有定论。
 
 **本专案的对策**：避开它。同样的注音词频资料，McBopomofo 的
-`BPMFMappings.txt` + `phrase.occ` 是 **MIT**，libchewing-data 是 **CC BY 4.0**，
-两者的授权都比「LGPL 用在资料档」清楚。**没有必要为了省一点事去踩一个没有判例的坑。**
+`BPMFMappings.txt` + `phrase.occ` 是 **MIT**，libchewing-data 的 `dict/chewing_v4/`
+是 **CC BY 4.0**，两者的授权都比「LGPL 用在资料档」清楚。**没有必要为了省一点事
+去踩一个没有判例的坑。**
+
+### ⚠️ libchewing-data 是逐目录多授权（2026-10-01 实测更正）
+
+**这份表格原本把整个仓库写成 CC BY 4.0 ✗ 那是错的 ✓** 实测各目录授权不同：
+
+| 目录 | 授权 | 依据 |
+|---|---|---|
+| `dict/chewing/*.csv`（tsi / word / mini / alt，5.2 MB 主词库） | **LGPL-2.1-or-later** | 档案档头逐字：`# dc:license,LGPL-2.1-or-later,` |
+| `dict/moe/` | **CC BY-ND 3.0 TW** | `dict/moe/ATTRIBUTE.md`；且额外授权声明**明文禁止转为简体字** |
+| `dict/chewing_v4/` | **CC BY 4.0** ✅ | `dict/chewing_v4/README.md` 明写 "licensed under CC BY 4.0" |
+
+**为什么容易搞错**：仓库根有 `LICENSES/CC-BY-4.0.txt`（唯一一个授权档）、
+README 全文无授权字样、无 SPDX 档头、无 `REUSE.toml`、Codeberg API 回报
+`license: None`。**只有逐档看档头或逐目录读 README 才看得出来。**
+
+**★ 所以：要用就用 `dict/chewing_v4/`，不要用 `dict/chewing/`。**
+后者是 LGPL，commit 进本仓库（MIT）会踩到与「主程式 LGPL」同一类的、
+没有判例的问题 —— 本表格上面已经为此排除过 libchewing 本体，只是当时
+没发现资料层也是 LGPL。
+
 
 ### 待复核项目
 
@@ -138,9 +159,11 @@ bigram 的差异实际上来自词表差异，结论不成立。
 **现在的选择**：以 McBopomofo 的**资料**起步（MIT、立即可用、已验证），
 以自己的**引擎**为主体（见 [02-architecture.md](02-architecture.md)）。
 
-**未来的选择**：当需要 bigram 脉络模型时，评估接入 libchewing-data v4（CC BY 4.0，
-可商用可改作）。届时若考虑直接用 libchewing 的 Rust 核心，LGPL-2.1 的动态连结义务
-需要法务确认——这是一条**明确可行但需要决策**的路，不是阻碍。
+**未来的选择**：当需要 bigram 脉络模型时，评估接入 libchewing-data **`dict/chewing_v4/`**
+（CC BY 4.0，可商用可改作）。★ **注意是逐目录授权：同仓库的 `dict/chewing/` 是
+LGPL-2.1-or-later，不要拿错目录**（见上方专节）。届时若考虑直接用 libchewing 的
+Rust 核心，LGPL-2.1 的动态连结义务需要法务确认——这是一条**明确可行但需要决策**的
+路，不是阻碍。
 
 ## 上游资料的清理与再散布
 
