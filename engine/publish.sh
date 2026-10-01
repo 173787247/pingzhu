@@ -120,11 +120,15 @@ fi
 # ------------------------------------------------------------------- publish
 
 log "packing"
-npm pack --silent | tail -1 | sed 's/^/  /'
+TB="$(npm pack --silent | tail -1)"
+echo "  $TB"
 
 if [ "$DRY_RUN" = "1" ]; then
   log "dry run: inspecting the tarball, not publishing"
-  tar tzf pingzhu-engine-*.tgz | sed 's/^/  /'
+  # Use the name npm actually produced. A scoped package is packed as
+  # "<scope>-<name>-<version>.tgz", so a hard-coded "pingzhu-engine-*.tgz"
+  # glob matches nothing and the inspection silently becomes a tar error.
+  tar tzf "$TB" | sed 's/^/  /'
   log "would publish $(node -p "require('./package.json').version") to $REGISTRY"
   exit 0
 fi
