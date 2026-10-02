@@ -25,6 +25,7 @@ const outDir = join(here, "..", "demo", "engine");
 /** Pure modules only — anything importing node:fs would break in a browser. */
 const MODULES = [
   "syllable.ts",
+  "converter.ts",
   "keyboard.ts",
   "dictionary.ts",
   "grid.ts",
@@ -55,4 +56,29 @@ writeFileSync(
     `These are the exact modules the test suite runs against, with TypeScript\n` +
     `syntax stripped by Node's own parser.\n`,
 );
+
+// Every relative import in what was just written must resolve to a file that
+// was also just written.
+//
+// Without this the module list could silently fall behind the engine: a source
+// file that grows an import of a sibling not in MODULES produces a demo that
+// 404s in the browser on that one specifier and nowhere else, so nothing fails
+// — not the tests, not the build, not the "demo matches the engine" check,
+// which compares the files it produced against the files it produced. That is
+// how converter.js went missing for several releases.
+const produced = new Set(MODULES.map((n) => n.replace(/\.ts$/, ".js")));
+const unresolved = [];
+for (const name of produced) {
+  const src = readFileSync(join(outDir, name), "utf8");
+  for (const [, spec] of src.matchAll(/from\s+"\.\/([^"]+)"/g)) {
+    if (!produced.has(spec)) unresolved.push(`${name} imports ./${spec}`);
+  }
+}
+if (unresolved.length) {
+  throw new Error(
+    `the demo does not carry every module it imports:\n  ${unresolved.join("\n  ")}\n` +
+      `Add the missing source to MODULES above.`,
+  );
+}
+process.stdout.write(`  imports resolve: ${produced.size} modules\n`);
 process.stdout.write(`total ${total} B\n`);
