@@ -18,6 +18,7 @@ research/data/BPMFMappings.txt
 
 # Rust build output
 core-rs/target/
+android/rust/target/
 demo/engine/
 
 # Windows build staging lives outside the repo; nothing here to ignore
