@@ -90,8 +90,13 @@ int main(int argc, char **argv) {
 
     /* Default to the versioned build. The text service DLL carries a version in
      * its name (Windows locks a loaded DLL), so a fixed default silently tests
-     * a stale file and reports on code that is not the code being developed. */
-    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.7.6.dll";
+     * a stale file and reports on code that is not the code being developed.
+     *
+     * The packager always passes the name it just built (see windows/package.sh),
+     * so this default only applies to a hand-run from the staging directory —
+     * which is why it is spelled out rather than resolved. Keep it in step with
+     * TSFDLL in windows/build.bat. */
+    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.10.0.dll";
 
     HMODULE module = LoadLibraryA(path);
     if (!module) {
