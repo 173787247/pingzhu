@@ -1,7 +1,7 @@
 {
   "modelVersion": "5.0.1",
   "name": "entry",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "平注設定與啟用引導",
   "main": "",
   "author": "grandocean",
