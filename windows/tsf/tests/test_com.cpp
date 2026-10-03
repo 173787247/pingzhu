@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
      * so this default only applies to a hand-run from the staging directory —
      * which is why it is spelled out rather than resolved. Keep it in step with
      * TSFDLL in windows/build.bat. */
-    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.10.0.dll";
+    const char *path = (argc > 1) ? argv[1] : "pingzhu-tsf-0.10.1.dll";
 
     HMODULE module = LoadLibraryA(path);
     if (!module) {
