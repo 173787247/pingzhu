@@ -90,7 +90,7 @@ uint64_t engine_candidate_page_info(EngineHandle *handle); /* page | (count << 3
 bool engine_candidate_window_open(EngineHandle *handle);
 bool engine_open_candidate_window(EngineHandle *handle);   /* Down arrow */
 void engine_close_candidate_window(EngineHandle *handle);  /* Up arrow / Esc */
-bool engine_next_candidate_page(EngineHandle *handle);
+bool engine_next_candidate_page(EngineHandle *handle);     /* Down arrow */
 bool engine_prev_candidate_page(EngineHandle *handle);
 bool engine_move_candidate_cursor(EngineHandle *handle, int32_t delta);
 

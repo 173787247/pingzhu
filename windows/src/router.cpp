@@ -32,18 +32,19 @@ Decision route(const KeyEvent &key, const EngineState &state, bool chineseMode) 
 
     switch (key.kind) {
         case KeyKind::Space:
-            /* Space accepts what is being composed: type ㄋㄧˇ, press space, 你
-             * comes out. That is the flow every Taiwanese IME has and what
-             * people's fingers expect — making space page the candidate window
-             * instead means the most-pressed key in the input method does the
-             * one thing nobody asked for.
+            /* Space ends in an acceptance, but not on its first press.
              *
-             * While the window is open the digits are selecting, so space has
-             * nothing to accept and pages instead. Outside a composition it is
-             * an ordinary space. */
+             * Space is the key people press to accept what they typed, so a
+             * first press that committed would leave the second candidate
+             * unreachable unless the user already knew to press ↓ instead.
+             * The first press therefore opens the list; the second takes what
+             * is on it. Outside a composition it is an ordinary space, and with
+             * nothing to offer it accepts as before. */
             if (!state.composing) return {Action::Pass, 0};
-            return state.candidateWindowOpen ? Decision{Action::NextPage, 0}
-                                             : Decision{Action::Commit, 0};
+            if (!state.candidateWindowOpen && state.hasCandidates) {
+                return {Action::OpenCandidates, 0};
+            }
+            return {Action::Commit, 0};
 
         case KeyKind::Digit: {
             /* All ten digits are bopomofo keys — 1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ
@@ -63,8 +64,12 @@ Decision route(const KeyEvent &key, const EngineState &state, bool chineseMode) 
         }
 
         case KeyKind::ArrowDown:
-            return state.composing && state.hasCandidates ? Decision{Action::OpenCandidates, 0}
-                                                          : Decision{Action::Pass, 0};
+            /* One key for both halves of browsing: it opens the list, and once
+             * the list is open it moves on ten. Paging lives here rather than on
+             * space because space has to end in an acceptance. */
+            if (!state.composing || !state.hasCandidates) return {Action::Pass, 0};
+            return state.candidateWindowOpen ? Decision{Action::NextPage, 0}
+                                             : Decision{Action::OpenCandidates, 0};
         case KeyKind::ArrowUp:
             return state.composing && state.candidateWindowOpen
                        ? Decision{Action::CloseCandidates, 0}

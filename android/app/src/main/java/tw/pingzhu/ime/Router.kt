@@ -45,10 +45,15 @@ object Router {
         '\b', '\u007f' -> Action.Backspace // Backspace and Delete
         '\u000b' -> Action.OpenCandidates  // vertical tab: the down arrow
         '\u000c' -> Action.CloseCandidates // form feed: the up arrow
+        // Space ends in an acceptance, but not on its first press. A first press
+        // that committed would leave the second candidate unreachable unless the
+        // user already knew to press the down arrow instead, so the first press
+        // opens the list and the second takes what is on it. With nothing to
+        // offer it accepts as before; outside a composition it is a space.
         ' ' -> when {
-            composing && windowOpen -> Action.NextPage
-            composing -> Action.Commit
-            else -> Action.Pass
+            !composing -> Action.Pass
+            !windowOpen && hasCandidates -> Action.OpenCandidates
+            else -> Action.Commit
         }
         // The digits are Bopomofo keys — 1 is ㄅ, 2 is ㄉ, 5 is ㄓ — so they may
         // only select a candidate once the list is actually open. Requiring the

@@ -117,16 +117,22 @@ function runInteractive(layout, order) {
       } else if (ch === "\u007f" || ch === "\b") {
         engine.backspace();
       } else if (ch === " ") {
-        // Space accepts the composition; while the candidate window is open the
-        // digits are selecting, so space pages instead.
+        // Space ends in an acceptance, but not on its first press: it opens the
+        // list so the page can be read, and the next press takes what is on it.
+        // Accepting on the first press would leave the second candidate
+        // unreachable unless the user already knew to press ↓ instead.
         if (engine.candidateWindowOpen) {
-          engine.nextCandidatePage();
-        } else {
+          const out = engine.commit();
+          if (out) committed.push(out);
+        } else if (!engine.openCandidateWindow()) {
+          // Nothing to choose from — an incomplete syllable, or an empty buffer.
+          // Accept whatever is there; when that is also nothing, it is a space.
           const out = engine.commit();
           if (out) committed.push(out);
         }
       } else if (ch === "\u001b[B") {
-        engine.openCandidateWindow();
+        // ↓ opens and pages with one key — it is a browser, not a decision.
+        engine.nextCandidatePage();
       } else if (/[0-9]/.test(ch) && engine.candidateWindowOpen) {
         // Only once the window is open do the digits stop being bopomofo keys
         // (1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ).
