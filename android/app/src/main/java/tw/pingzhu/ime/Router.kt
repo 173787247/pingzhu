@@ -42,8 +42,12 @@ object Router {
     ): Action = when (key) {
         '\n', '\r' -> Action.Commit
         '\u001b' -> Action.Cancel          // Escape
-        '\b', '\u007f' -> Action.Backspace // Backspace and Delete
-        '\u000b' -> Action.OpenCandidates  // vertical tab: the down arrow
+        // Only while composing. Outside one, Backspace belongs to whatever the
+        // user is editing — a shell that swallows it makes the key stop
+        // deleting, which is how this was found (the shared vectors).
+        '\b', '\u007f' -> if (composing) Action.Backspace else Action.Pass
+        // Nothing to browse without a composition to resolve.
+        '\u000b' -> if (composing && hasCandidates) Action.OpenCandidates else Action.Pass
         '\u000c' -> Action.CloseCandidates // form feed: the up arrow
         // Space ends in an acceptance, but not on its first press. A first press
         // that committed would leave the second candidate unreachable unless the

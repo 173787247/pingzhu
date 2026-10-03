@@ -90,7 +90,10 @@ ls -la "$STAGE"/*.exe "$STAGE"/*.dll 2>/dev/null | awk '{printf "      %8s  %s\n
 
 if [ "$RUN_TESTS" = "--run" ]; then
   log "router tests"
-  ( cd "$STAGE" && ./pingzhu-router-test.exe ) | sed 's/^/      /'
+  # The shared vectors live in the checkout, not in the staging directory. A
+  # Windows path is handed over because the test runs on the Windows side.
+  VECTORS="$(wslpath -w "$ROOT/tools/routing-vectors.tsv")"
+  ( cd "$STAGE" && ./pingzhu-router-test.exe "$VECTORS" ) | sed 's/^/      /'
 fi
 
 cat <<EOF

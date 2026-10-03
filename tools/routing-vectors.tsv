@@ -40,8 +40,9 @@ u	0	0	0	Compose
 \n	1	0	0	Commit
 \e	1	0	0	Cancel
 \b	1	0	0	Backspace
-\b	0	0	0	Backspace
-\v	1	0	0	OpenCandidates
+\b	0	0	0	Pass
+\v	1	0	1	OpenCandidates
+\v	0	0	0	Pass
 \f	1	1	1	CloseCandidates
 space	1	0	0	Commit
 space	1	0	1	OpenCandidates

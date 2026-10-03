@@ -6,9 +6,19 @@
  * swallow one the IME needed, and the user sees characters appear in the wrong
  * place. Keeping them in a header without <windows.h> means they can be checked
  * without a keyboard hook, a tray icon or an interactive session.
+ *
+ * Beyond the expectations below, this reads tools/routing-vectors.tsv — the
+ * same file macOS, Android and the TypeScript reference are held to. The file
+ * exists so that a rule change turns all four shells red at once instead of
+ * each being noticed separately; before this it only did that for macOS.
  */
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <sstream>
 
 #include "../src/router.h"
 
@@ -50,7 +60,82 @@ static KeyEvent key(KeyKind kind, char ch = 0) {
     return e;
 }
 
-int main() {
+// The escape spellings the vector file uses, so it stays readable in a diff.
+// The same five are spelled out in macos/Tests/Router/main.swift.
+static bool key_from_field(const std::string &field, KeyEvent &out) {
+    if (field == "\\n") { out = key(KeyKind::Enter); return true; }
+    if (field == "\\b") { out = key(KeyKind::Backspace); return true; }
+    if (field == "\\e") { out = key(KeyKind::Escape); return true; }
+    if (field == "\\v") { out = key(KeyKind::ArrowDown); return true; }
+    if (field == "\\f") { out = key(KeyKind::ArrowUp); return true; }
+    if (field == "space") { out = key(KeyKind::Space); return true; }
+    if (field.size() != 1) return false;
+    char c = field[0];
+    if (c >= '0' && c <= '9') { out = key(KeyKind::Digit, c); return true; }
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+        out = key(KeyKind::Letter, c);
+        return true;
+    }
+    // The rest of the layout's keys — - ; / , . = — are Symbol, which the router
+    // treats exactly like Letter when deciding whether to compose.
+    out = key(KeyKind::Symbol, c);
+    return true;
+}
+
+/// Feed the shared vectors through the same `route()` the shell uses.
+///
+/// Returns false only when the file cannot be read: that is a setup problem the
+/// caller reports, not a routing failure.
+static bool run_shared_vectors(const char *path) {
+    std::ifstream in(path);
+    if (!in) return false;
+
+    std::printf("\nlayout key set → shared vectors (%s)\n", path);
+    int checked = 0, bad = 0;
+    std::string line;
+    int lineno = 0;
+    while (std::getline(in, line)) {
+        lineno++;
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty() || line[0] == '#' || line.rfind("key\t", 0) == 0) continue;
+
+        std::vector<std::string> f;
+        std::stringstream ss(line);
+        std::string field;
+        while (std::getline(ss, field, '\t')) f.push_back(field);
+        if (f.size() != 5) {
+            std::printf("  FAIL line %d: expected 5 fields, got %zu\n", lineno, f.size());
+            failures++;
+            bad++;
+            continue;
+        }
+
+        KeyEvent ev = {};
+        if (!key_from_field(f[0], ev)) {
+            std::printf("  FAIL line %d: unknown key field '%s'\n", lineno, f[0].c_str());
+            failures++;
+            bad++;
+            continue;
+        }
+        EngineState state = {f[1] == "1", f[2] == "1", f[3] == "1"};
+        const std::string want = f[4];
+        const Action got = route(ev, state, true).action;
+        checked++;
+
+        if (actionName(got) != want) {
+            std::printf("  FAIL line %d: key %s composing=%s window=%s candidates=%s "
+                        "→ expected %s, got %s\n",
+                        lineno, f[0].c_str(), f[1].c_str(), f[2].c_str(), f[3].c_str(),
+                        want.c_str(), actionName(got));
+            failures++;
+            bad++;
+        }
+    }
+    std::printf("  %d shared vectors, %d failed\n", checked, bad);
+    return checked > 0;
+}
+
+int main(int argc, char **argv) {
     const EngineState idle = {false, false, false};
     const EngineState composing = {true, false, true};
     const EngineState selecting = {true, true, true};
@@ -161,6 +246,19 @@ int main() {
         } else {
             std::printf("  ok   is_layout_key('%c') = %d\n", c.ch, got);
         }
+    }
+
+    // The shared vectors, if a path was given. Absent is not a failure — a hand
+    // run from the staging directory has no checkout nearby — but a path that
+    // was given and cannot be read is, because that is a CI wiring mistake that
+    // would otherwise look like a pass.
+    if (argc > 1) {
+        if (!run_shared_vectors(argv[1])) {
+            std::printf("  FAIL cannot read routing vectors at %s\n", argv[1]);
+            failures++;
+        }
+    } else {
+        std::printf("\n(no routing-vectors path given; ran the built-in expectations only)\n");
     }
 
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nall router checks passed\n", failures);
