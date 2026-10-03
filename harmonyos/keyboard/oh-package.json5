@@ -1,7 +1,7 @@
 {
   "modelVersion": "5.0.1",
   "name": "keyboard",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "平注輸入法鍵盤模組",
   "main": "",
   "author": "grandocean",

@@ -34,15 +34,15 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 
 | 平台 | 档案 |
 |---|---|
-| **Windows 10/11** | **[⬇ 安装包 pingzhu-0.10.1-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.1/pingzhu-0.10.1-setup.exe)**　·　[可携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.1/pingzhu-0.10.1-win-x64.zip) |
-| **Android 8+** | **[⬇ pingzhu-0.10.1-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.1/pingzhu-0.10.1-android.apk)** |
-| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)）<br>**0.10.1 不含 macOS 产物**——输入法要向系统登记，签章必须是 Apple 签发的 Developer ID，而该入会仍在等。
+| **Windows 10/11** | **[⬇ 安装包 pingzhu-0.10.2-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.2/pingzhu-0.10.2-setup.exe)**　·　[可携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.2/pingzhu-0.10.2-win-x64.zip) |
+| **Android 8+** | **[⬇ pingzhu-0.10.2-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.2/pingzhu-0.10.2-android.apk)** |
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)）<br>**0.10.2 不含 macOS 产物**——输入法要向系统登记，签章必须是 Apple 签发的 Developer ID，而该入会仍在等。
 
 **HarmonyOS** 和 **Linux** 没有安装包——它们的产物是专案与 addon，要从原始码建置：
 
 | 平台 | 拿什么 | 怎么装 |
 |---|---|---|
-| **HarmonyOS NEXT** | **[pingzhu-0.10.1-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.1/pingzhu-0.10.1-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](harmonyos/README.md)） |
+| **HarmonyOS NEXT** | **[pingzhu-0.10.2-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.2/pingzhu-0.10.2-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](harmonyos/README.md)） |
 | **Linux** | 不发布二进制 | `cmake -DCMAKE_INSTALL_PREFIX=/usr` 建置 fcitx5 addon（[linux/](linux/README.md)） |
 
 **Windows**：装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z`
@@ -258,7 +258,7 @@ node engine/bench-learn.mjs 5000 --recall   # 候選可達性
 **方式一：从 release 上的 tarball 装**（零帐号、零设定，**推荐**）
 
 ```bash
-npm install https://github.com/173787247/pingzhu/releases/download/v0.10.1/pingzhu-engine-0.10.1.tgz
+npm install https://github.com/173787247/pingzhu/releases/download/v0.10.2/pingzhu-engine-0.10.2.tgz
 ```
 
 **方式二：从 GitHub Packages 装**（要先配 GitHub token ✗）

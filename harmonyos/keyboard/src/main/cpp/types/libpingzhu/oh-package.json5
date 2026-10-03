@@ -1,6 +1,6 @@
 {
   "name": "libpingzhu.so",
   "types": "./index.d.ts",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "平注的共用引擎，透過 NAPI 進來"
 }
