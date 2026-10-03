@@ -47,9 +47,13 @@ enum Router {
         case "\u{1b}":                  // Escape
             return .cancel
         case "\u{8}", "\u{7f}":         // Delete (Backspace) and Forward Delete
-            return .backspace
+            // Only while composing. Outside one, Backspace belongs to whatever
+            // the user is editing — a shell that swallows it makes the key stop
+            // deleting, which is how this was found (the shared vectors).
+            return state.composing ? .backspace : .pass
         case "\u{0b}":                  // the down arrow, remapped by the shell
-            return .openCandidates
+            // Nothing to browse without a composition to resolve.
+            return state.composing && state.hasCandidates ? .openCandidates : .pass
         case "\u{0c}":                 // the up arrow, remapped by the shell
             return .closeCandidates
         case " ":

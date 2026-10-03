@@ -270,11 +270,32 @@ freq(k) = log10( 2.7^(len(k)-1) × occ(k) / norm )
 **已知代价**：最高频的动作——打完就送出——从一次空白变成两次。这是刻意的取舍，
 记在这里以便日后有人想再改时知道自己站在哪里。
 
-**★ 路由规则的测试覆盖有一个已记录的缺口**：`tools/routing-vectors.tsv` 的用意是
-「新增规则时改这里，四边一起红」，但目前**只有 macOS 的测试真的读它**
-（`macos/Tests/Router/main.swift`）。Windows 与 Android 是各自写死的断言，
-所以改了一条规则之后，另外两边**不会自己红**——2026-10 这次改动就是这样，
-两边的断言都是手动跟着改的。修法是让那两个测试也读同一份向量。
+**★ 共享向量的覆盖（2026-10 修好）**：`tools/routing-vectors.tsv` 的用意是
+「新增规则时改这里，四边一起红」。**原本只有 macOS 的测试真的读它** ——
+Windows 与 Android 是各自写死的断言，所以 2026-10 那次空白键改动，两边的
+断言都是手动跟着改的，**它们没有自己红**。
+
+现在三边都读同一份档：
+
+```
+macos/Tests/Router/main.swift          （本来就读）
+windows/tests/test_router.cpp          （2026-10 起，路径由 windows/build.sh 传入）
+android/.../RouterTest.kt              （2026-10 起）
+```
+
+**接上去的第一件事就是抓到两个既有缺陷**，正是这道保护存在的意义：
+
+| 缺陷 | 影响 | 修法 |
+|---|---|---|
+| `\b` 在未组字时被输入法吞掉 | macOS 与 Android 的退格在没打字时**不删字** | 加 `composing` 闸门 |
+| `↓` 在组字中但无候选时被吞掉 | 同上，无谓地吃掉一个键 | 加 `hasCandidates` 闸门 |
+
+**向量本身也错了两条**（把 `\b composing=0` 写成 `Backspace`、`\v composing=1`
+写成 `OpenCandidates`），一并更正为 `Pass`／加了候选条件。
+
+**★ 仍有一个缺口**：仓库**没有 Windows CI**（只有 harmonyos／linux／macos／
+pages 四个 workflow），所以 Windows 那份向量只在本机 `build.sh --run` 时跑。
+Android 也一样——它的 workflow 只建 APK，不跑单元测试。
 
 ### 候选排序
 

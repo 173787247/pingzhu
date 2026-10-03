@@ -40,6 +40,15 @@ class RouterTest {
         assertEquals(Action.Backspace, composing('\u007f'))
     }
 
+    // Only while composing. Outside one these belong to whatever the user is
+    // editing; swallowing them makes the key stop working. Found by the shared
+    // vectors in tools/routing-vectors.tsv, which is what they are for.
+    @Test
+    fun backspacePassesWhenNotComposing() {
+        assertEquals(Action.Pass, idle('\b'))
+        assertEquals(Action.Pass, idle('\u007f'))
+    }
+
     // ------------------------------------------------------- digits are ㄅㄉㄓ
 
     /**
@@ -130,7 +139,17 @@ class RouterTest {
 
     @Test
     fun theDownArrowOpensTheListAndUpClosesIt() {
-        assertEquals(Action.OpenCandidates, composing('\u000b'))
+        // There has to be something to browse: a composition to resolve.
+        assertEquals(
+            Action.OpenCandidates,
+            Router.route('\u000b', composing = true, windowOpen = false, hasCandidates = true),
+        )
         assertEquals(Action.CloseCandidates, choosing('\u000c'))
+    }
+
+    @Test
+    fun theDownArrowPassesWithNothingToBrowse() {
+        assertEquals(Action.Pass, composing('\u000b'))
+        assertEquals(Action.Pass, idle('\u000b'))
     }
 }
