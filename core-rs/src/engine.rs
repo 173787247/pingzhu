@@ -344,7 +344,7 @@ impl InputEngine {
         self.candidate_offset = 0;
     }
 
-    /// Space. Opens the window if it is closed; otherwise moves on ten.
+    /// ↓ — open the list if closed, otherwise move on ten.
     pub fn next_candidate_page(&mut self) -> bool {
         if self.all_candidates.is_empty() {
             return false;

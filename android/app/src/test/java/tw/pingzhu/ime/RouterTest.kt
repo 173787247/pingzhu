@@ -91,14 +91,33 @@ class RouterTest {
 
     // ------------------------------------------------------------ space is key
 
+    // Space ends in an acceptance, but not on its first press. A first press
+    // that committed would leave the second candidate reachable only by someone
+    // who already knew to press the down arrow; a first press that paged would
+    // make the most-pressed key in the input method scroll a list nobody asked
+    // to scroll. So: open, then accept.
+
     @Test
-    fun spaceCommitsWhenNoListIsOpen() {
+    fun spaceCommitsWhenThereIsNothingToOffer() {
         assertEquals(Action.Commit, composing(' '))
     }
 
     @Test
-    fun spacePagesWhenTheListIsOpen() {
-        assertEquals(Action.NextPage, choosing(' '))
+    fun spaceOpensTheListWhenThereAreCandidates() {
+        assertEquals(
+            Action.OpenCandidates,
+            Router.route(' ', composing = true, windowOpen = false, hasCandidates = true),
+        )
+    }
+
+    @Test
+    fun spaceAcceptsOnceTheListIsOpen() {
+        assertEquals(Action.Commit, choosing(' '))
+    }
+
+    @Test
+    fun spacePassesOutsideAComposition() {
+        assertEquals(Action.Pass, idle(' '))
     }
 
     @Test

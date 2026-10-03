@@ -71,6 +71,10 @@ const SCRIPTS = [
   ["space", "space", "space", "space"],
   ["open", "sel:10"],
   ["open", "sel:11"],
+  ["down"],
+  ["down", "down"],
+  ["down", "sel:1"],
+  ["space", "down"],
 ];
 
 const rows = [];
@@ -88,8 +92,20 @@ for (const subject of SUBJECTS) {
     for (const op of script) {
       ops.push(op);
       if (op.startsWith("k:")) engine.press(op.slice(2));
-      else if (op === "space") engine.nextCandidatePage();
-      else if (op === "open") engine.openCandidateWindow();
+      else if (op === "space") {
+        // Space as every shell now routes it: the first press opens the list,
+        // the next takes what is on it, and with nothing to offer it accepts.
+        // (It used to page while the list was open.)
+        //
+        // Only a non-empty commit is recorded, as with `sel:` below and as the
+        // shells do — an empty one still clears the buffer, and recording it
+        // would describe a commit that produced nothing.
+        const out = engine.candidateWindowOpen || !engine.openCandidateWindow()
+          ? engine.commit()
+          : "";
+        if (out) committed.push(out);
+      } else if (op === "open") engine.openCandidateWindow();
+      else if (op === "down") engine.nextCandidatePage();
       else if (op === "close") engine.closeCandidateWindow();
       else if (op === "left") engine.moveCandidateCursor(-1);
       else if (op === "right") engine.moveCandidateCursor(1);

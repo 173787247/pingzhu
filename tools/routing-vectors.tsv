@@ -19,6 +19,19 @@
 #   action     期望的動作
 #
 # 動作的定義見 windows/src/router.h、android/.../Router.kt、macos/.../Router.swift
+#
+# 空白鍵的三態（2026-10 改，原本是「關著就送出、開著就翻頁」）：
+#   組字中、沒有候選   → Commit          （打了一半，沒有東西可挑）
+#   組字中、有候選、未開 → OpenCandidates  （先開單讓人看，不送出）
+#   開著、有候選       → Commit          （第二次按＝接受目前那一個）
+#   沒組字            → Pass            （一般空白）
+#
+# 為什麼不是「關著就送出」：這樣第二個候選就再也到不了，除非使用者早就
+# 知道要按 ↓。空白是大家拿來「接受」的鍵，所以它必須以接受收尾——但不在
+# 第一次按下時。為什麼不是「開著就翻頁」：那樣最常按的鍵會去捲一張沒人
+# 要求捲的清單。翻頁交給 ↓（\v）。
+#
+# 代價（已知且接受）：最高頻的「打完就送出」從一次空白變成兩次。
 
 key	composing	window	candidates	action
 s	0	0	0	Compose
@@ -31,7 +44,8 @@ u	0	0	0	Compose
 \v	1	0	0	OpenCandidates
 \f	1	1	1	CloseCandidates
 space	1	0	0	Commit
-space	1	1	1	NextPage
+space	1	0	1	OpenCandidates
+space	1	1	1	Commit
 space	0	0	0	Pass
 1	0	0	0	Compose
 2	0	0	0	Compose

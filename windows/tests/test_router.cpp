@@ -96,8 +96,15 @@ int main() {
           route(key(KeyKind::Digit, '3'), composing, true), Action::Compose);
     check("1 composes (it is the ㄅ key)",
           route(key(KeyKind::Digit, '1'), composing, true), Action::Compose);
-    check("space accepts the composition",
-          route(key(KeyKind::Space), composing, true), Action::Commit);
+    // Space ends in an acceptance, but not on its first press: with candidates
+    // to show it opens them, so the second candidate is reachable without the
+    // user having to know about the down arrow. The next press accepts.
+    check("space opens the candidates when there are some",
+          route(key(KeyKind::Space), composing, true), Action::OpenCandidates);
+    check("space accepts once the list is open",
+          route(key(KeyKind::Space), selecting, true), Action::Commit);
+    check("space accepts when there is nothing to offer",
+          route(key(KeyKind::Space), EngineState{true, false, false}, true), Action::Commit);
     check("down opens the candidates",
           route(key(KeyKind::ArrowDown), composing, true), Action::OpenCandidates);
     check("enter commits", route(key(KeyKind::Enter), composing, true), Action::Commit);
@@ -118,8 +125,8 @@ int main() {
           Action::SelectCandidate, 9);
     check("0 selects the tenth", route(key(KeyKind::Digit, '0'), selecting, true),
           Action::SelectCandidate, 10);
-    check("space pages while selecting",
-          route(key(KeyKind::Space), selecting, true), Action::NextPage);
+    check("down pages while the list is open",
+          route(key(KeyKind::ArrowDown), selecting, true), Action::NextPage);
     check("up closes the list", route(key(KeyKind::ArrowUp), selecting, true),
           Action::CloseCandidates);
 

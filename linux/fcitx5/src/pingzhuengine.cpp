@@ -273,7 +273,12 @@ void PingZhuEngine::keyEvent(const fcitx::InputMethodEntry &,
         if (!composing) {
             return; // let the space through when nothing is being composed
         }
-        if (listOpen && engine_->nextPage()) {
+        // Space ends in an acceptance, but not on its first press: a first press
+        // that committed would leave the second candidate reachable only by
+        // someone who already knew to press ↓. So the first press opens the list
+        // and the second takes what is on it. With nothing to offer it accepts.
+        engine_->openCandidateWindow();
+        if (engine_->candidateWindowOpen()) {
             refresh(*keyEvent.inputContext());
         } else {
             commitAndClear(*keyEvent.inputContext());

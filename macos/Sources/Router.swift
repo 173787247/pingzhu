@@ -53,9 +53,15 @@ enum Router {
         case "\u{0c}":                 // the up arrow, remapped by the shell
             return .closeCandidates
         case " ":
-            if state.composing && state.windowOpen { return .nextPage }
-            if state.composing { return .commit }
-            return .pass
+            // Space ends in an acceptance, but not on its first press. A first
+            // press that committed would leave the second candidate reachable
+            // only by someone who already knew to press ↓ instead, so the first
+            // press opens the list and the second takes what is on it. With
+            // nothing to offer it accepts as before; outside a composition it is
+            // an ordinary space.
+            if !state.composing { return .pass }
+            if !state.windowOpen && state.hasCandidates { return .openCandidates }
+            return .commit
         case "0"..."9":
             // The digits are Bopomofo keys — 1 is ㄅ, 2 is ㄉ, 5 is ㄓ — so they
             // may only select a candidate once the list is actually open.

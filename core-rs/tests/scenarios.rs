@@ -77,7 +77,24 @@ fn rust_core_reproduces_the_reference_interaction_model() {
                 }
             } else {
                 match op {
+                    // Space as every shell routes it: the first press opens the
+                    // list, the next takes what is on it, and with nothing to
+                    // offer it accepts. It used to page while the list was open.
                     "space" => {
+                        if engine.candidate_window_open() {
+                            let out = engine.commit();
+                            if !out.is_empty() {
+                                committed.push(out);
+                            }
+                        } else if !engine.open_candidate_window() {
+                            let out = engine.commit();
+                            if !out.is_empty() {
+                                committed.push(out);
+                            }
+                        }
+                    }
+                    // ↓ opens and pages with one key.
+                    "down" => {
                         engine.next_candidate_page();
                     }
                     "open" => {

@@ -294,9 +294,12 @@ export class InputEngine {
    * untypeable: the `3` would pick a candidate instead of adding ˇ.
    *
    * Every Taiwanese IME resolves this the same way: the digits compose, and
-   * selection happens only once the list is open. ↓ or space opens it (space
-   * also pages, which is why 自然輸入法 users describe it as "space for the next
-   * ten"). Typing anything else closes it again.
+   * selection happens only once the list is open. Space is the key people press
+   * to accept, so it has to end in an acceptance — but not on its first press,
+   * which would leave the second candidate reachable only by someone who already
+   * knew to press ↓. The first press therefore opens the list; the second takes
+   * what is on it. ↓ opens and pages with one key. Typing anything else closes
+   * it again.
    */
   get candidateWindowOpen(): boolean {
     return this.candidatesOpen;
@@ -315,7 +318,7 @@ export class InputEngine {
     this.candidateOffset = 0;
   }
 
-  /** Space. Opens the window if it is closed; otherwise moves on ten. */
+  /** ↓ — open the list if closed, otherwise move on ten. */
   nextCandidatePage(): boolean {
     if (this.allCandidates.length === 0) return false;
     if (!this.candidatesOpen) {
