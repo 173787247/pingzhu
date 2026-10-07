@@ -20,8 +20,8 @@ engine data for fcitx5-based distributions (openEuler, UOS, Kylin, deepin, ...).
 
 %build
 cargo build --release --manifest-path core-rs/Cargo.toml
-cmake -S linux/fcitx5 -B build-rpm -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%{_prefix}
-cmake --build build-rpm -- -j%{?_smp_mflags}
+cmake -S linux/fcitx5 -B build-rpm -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_INSTALL_LIBDIR=%{_libdir} -DCMAKE_INSTALL_DATADIR=%{_datadir}
+cmake --build build-rpm --parallel
 
 %install
 DESTDIR=%{buildroot} cmake --install build-rpm
@@ -30,5 +30,5 @@ DESTDIR=%{buildroot} cmake --install build-rpm
 %{_libdir}/fcitx5/libpingzhu.so
 %{_datadir}/fcitx5/addon/pingzhu.conf
 %{_datadir}/fcitx5/inputmethod/pingzhu.conf
-%{_datadir}/fcitx5/pingzhu
+%{_datadir}/pingzhu
 %doc NOTICE LICENSES/MIT.txt LICENSES/Apache-2.0.txt
