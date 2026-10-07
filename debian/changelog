@@ -1,3 +1,12 @@
+fcitx5-pingzhu (0.10.3) unstable; urgency=medium
+
+  * New upstream release 0.10.3. The packaging definitions (debian/ and
+    fcitx5-pingzhu.spec) and the Linux install instructions are part of the
+    source tree as of this release; core-rs/Cargo.toml now declares
+    rust-version 1.77, which is what the crate actually needs.
+
+ -- PingZhu <173787247@qq.com>  Thu, 08 Oct 2026 00:40:00 +0800
+
 fcitx5-pingzhu (0.10.2) unstable; urgency=medium
 
   * Initial Debian packaging: fcitx5 addon, input method definition and data.

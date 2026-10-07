@@ -1,5 +1,5 @@
 Name:           fcitx5-pingzhu
-Version:        0.10.2
+Version:        0.10.3
 Release:        1%{?dist}
 Summary:        PingZhu (平注) Bopomofo input method engine for fcitx5
 License:        MIT and Apache-2.0

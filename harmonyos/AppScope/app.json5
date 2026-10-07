@@ -3,7 +3,7 @@
     "bundleName": "tw.pingzhu.ime",
     "vendor": "pingzhu",
     "versionCode": 1000000,
-    "versionName": "0.10.2",
+    "versionName": "0.10.3",
     "icon": "$media:app_icon",
     "label": "$string:app_name"
   }
