@@ -5,8 +5,27 @@
 
 ## 一句话状态
 
-v0.10.3 的**档案改动已落盘、产物已按核实过的路径重建**，发布主题是
+**已发布（2026-10-08）**：<https://github.com/173787247/pingzhu/releases/tag/v0.10.3>
+tag `v0.10.3`（annotated，`c1f0d48`）→ commit `ac7bb947375e`。发布主题是
 **Linux 新增 `.deb` 与 `.rpm` 两种安装方式**。
+
+七件资产（括号内为字节数）：
+
+```
+pingzhu-0.10.3-setup.exe              (1,802,240)
+pingzhu-0.10.3-win-x64.zip            (2,033,431)
+pingzhu-0.10.3-android.apk            (3,324,318)
+pingzhu-0.10.3-harmonyos-project.zip (10,374,285)
+pingzhu-engine-0.10.3.tgz             (1,745,246)
+fcitx5-pingzhu_0.10.3_amd64.deb       (1,975,608)
+fcitx5-pingzhu-0.10.3-1.x86_64.rpm    (2,455,275)
+```
+
+★ **HarmonyOS 那件与 v0.10.2 有一处结构差异**：本版直接来自 CI 产物（`ac7bb94` 那一轮，
+run 37655859100），因此**不含 `data/vendor/`** —— 那是 gitignore 的第三方来源
+（8.4 MB，只有 `data/build*.mjs` 会用到，HarmonyOS 建置不碰）；v0.10.2 那件是本机
+组装的所以含。CI 产物另带一个建置时生成的 `harmonyos/keyboard/oh-package-lock.json5`。
+两件的档案清单其余部分一致。
 
 ## 这一版是什么
 
