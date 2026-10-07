@@ -1,0 +1,13 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: PingZhu
+Source: https://gitcode.com/grandocean/pingzhu
+
+Files: *
+Copyright: PingZhu contributors
+License: MIT
+ See LICENSES/MIT.txt in the upstream source for the full text.
+
+Files: data/*
+Copyright: derived from McBopomofo (see NOTICE)
+License: Apache-2.0
+ See LICENSES/Apache-2.0.txt and NOTICE in the upstream source for the full text.

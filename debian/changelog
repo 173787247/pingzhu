@@ -1,0 +1,5 @@
+fcitx5-pingzhu (0.10.2) unstable; urgency=medium
+
+  * Initial Debian packaging: fcitx5 addon, input method definition and data.
+
+ -- PingZhu <173787247@qq.com>  Wed, 07 Oct 2026 11:20:00 +0800

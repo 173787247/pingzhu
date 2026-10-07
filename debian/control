@@ -1,0 +1,19 @@
+Source: fcitx5-pingzhu
+Section: utils
+Priority: optional
+Maintainer: PingZhu <173787247@qq.com>
+Build-Depends: debhelper-compat (= 13), cmake, pkg-config, cargo, rustc,
+ libfcitx5core-dev, fcitx5-modules-dev, extra-cmake-modules, gettext,
+ rustc (>= 1.77) | rustup
+Standards-Version: 4.6.2
+Homepage: https://gitcode.com/grandocean/pingzhu
+Rules-Requires-Root: no
+
+Package: fcitx5-pingzhu
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, fcitx5
+Description: PingZhu (平注) Bopomofo input method engine for fcitx5
+ PingZhu is an open-source cross-platform Bopomofo (Zhuyin) IME engine.
+ This package provides the fcitx5 addon, its input method definition and
+ the engine data, so the input method can be used on fcitx5-based
+ distributions (openEuler, UOS, Kylin, deepin, ...).
