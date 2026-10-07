@@ -2,7 +2,7 @@
 name = "pingzhu-core"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.77"
 description = "平注 PingZhu — cross-platform Bopomofo (Zhuyin) input method engine core"
 license = "MIT"
 repository = "https://github.com/173787247/pingzhu"

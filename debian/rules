@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cd core-rs && cargo build --release
+	cmake -S linux/fcitx5 -B build-deb -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+	cmake --build build-deb -j"$$(nproc)"
+
+override_dh_auto_install:
+	DESTDIR=$(CURDIR)/debian/fcitx5-pingzhu cmake --install build-deb
+
+override_dh_auto_test:
+	# upstream smoke test needs a running fcitx5, skip in the package build

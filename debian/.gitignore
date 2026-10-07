@@ -1,0 +1,6 @@
+# dpkg-buildpackage output — never commit these
+.debhelper/
+files
+*.substvars
+*-stamp
+fcitx5-pingzhu/
