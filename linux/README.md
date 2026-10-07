@@ -19,6 +19,54 @@ linux/fcitx5/
 
 ---
 
+## 安装
+
+三种方式，任选其一。
+
+### 1. 发行版包（推荐，国产 Linux 直接可用）
+
+仓库根目录带打包定义，构建出包后安装即可：
+
+```bash
+# Debian 系（统信 UOS / 麒麟 Kylin / deepin / Ubuntu）
+sudo apt-get install -y debhelper cmake pkg-config libfcitx5core-dev fcitx5-modules-dev extra-cmake-modules gettext
+dpkg-buildpackage -b -us -uc          # 在仓库根目录执行
+sudo dpkg -i ../fcitx5-pingzhu_*.deb
+
+# RPM 系（openEuler / 麒麟部分版本 / Fedora）
+sudo dnf install -y rpm-build cmake gcc-c++ fcitx5-devel extra-cmake-modules gettext rust cargo
+rpmbuild -bb fcitx5-pingzhu.spec      # 在仓库根目录执行
+sudo rpm -ivh ~/rpmbuild/RPMS/*/fcitx5-pingzhu-*.rpm
+```
+
+两个包都安装同样的内容：`fcitx5` 附加组件（`libpingzhu.so`）、输入法定义
+（`/usr/share/fcitx5/{addon,inputmethod}/pingzhu.conf`）与引擎数据（`/usr/share/pingzhu/*.tsv`）。
+
+### 2. 从源码构建
+
+```bash
+# 先构建 Rust 核心（需要 rustc >= 1.77）
+cargo build --release --manifest-path core-rs/Cargo.toml
+# 再构建 fcitx5 附加组件
+cmake -S linux/fcitx5 -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build
+sudo cmake --install build
+```
+
+### 3. 验证安装
+
+```bash
+# 组件是否就位
+ls /usr/lib/*/fcitx5/libpingzhu.so /usr/lib64/fcitx5/libpingzhu.so 2>/dev/null
+# 依赖是否都能解析（应无 "not found"）
+ldd /usr/lib/*/fcitx5/libpingzhu.so 2>/dev/null | grep -c 'not found'
+```
+
+然后在 fcitx5 的配置里添加「平注」输入法即可。
+
+> 打包定义位于仓库根的 `debian/` 与 `fcitx5-pingzhu.spec`；两者都在 CI 之外的本地环境实测
+> 构建出包（RPM 的 `BuildRequires` 依赖解析需在 openEuler 上跑一次 `dnf builddep`）。
+
 ## Linux 是五个平台里最好做的
 
 **因为开发机和目标机是同一台** ✓：
