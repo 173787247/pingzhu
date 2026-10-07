@@ -1,10 +1,11 @@
 {
   "source": "McBopomofo (openvanilla/McBopomofo, MIT) WebData/WebDataPlain",
-  "phrases": 169604,
+  "phrases": 170145,
   "distinct_readings": 131048,
   "syllables_with_chars": 1397,
   "total_chars": 26315,
   "skipped_entries": 0,
-  "dropped_low_probability": 699,
+  "dropped_low_probability": 36,
+  "duplicate_rows_collapsed": 122,
   "longest_word": 14
 }

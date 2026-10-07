@@ -33,7 +33,10 @@ pub struct DictionaryOptions {
 
 impl Default for DictionaryOptions {
     fn default() -> Self {
-        Self { max_word_syllables: 10, max_candidates_per_reading: 128 }
+        // 200 matches CANDIDATE_CAP in the engine, so the loader is not a
+        // second, lower ceiling than the candidate window. It was 128, which
+        // stayed invisible while data/build.mjs capped every reading at 100.
+        Self { max_word_syllables: 10, max_candidates_per_reading: 200 }
     }
 }
 

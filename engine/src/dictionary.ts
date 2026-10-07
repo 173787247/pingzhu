@@ -43,7 +43,13 @@ export class Dictionary {
    * this function pure is what lets the very same module run in a browser.
    */
   static fromText(text: string, source = "<text>", options: DictionaryOptions = {}): Dictionary {
-    const maxCandidates = options.maxCandidatesPerReading ?? 128;
+    // Defaults to 200, the same number as CANDIDATE_CAP — the most the engine
+    // will ever ask for — so the loader is never a second, lower ceiling than
+    // the candidate window. It used to be 128, which stayed invisible while the
+    // data was capped at 100 per reading: raising the data cap alone would have
+    // hit this and silently kept 128 of 200. Both sides of the boundary are the
+    // same number now.
+    const maxCandidates = options.maxCandidatesPerReading ?? 200;
     const dict = new Dictionary(source);
     let maxSpan = 1;
     for (const line of text.split("\n")) {

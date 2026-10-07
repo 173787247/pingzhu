@@ -98,10 +98,33 @@ function main() {
       }
       if (!parsed) skipped++;
     }
-    // Cap candidates per reading: a single-syllable reading can carry 3000+
-    // homophones (意 議 義 一 易 ...), which would dominate both file size and
-    // grid-search time for no practical benefit. Keep the most probable ones.
-    const MAX_PER_READING = Number(process.env.PINGZHU_MAX_CANDIDATES ?? 100);
+    // Cap candidates per reading. A single-syllable reading carries every
+    // character read that way, so this is where a character can be lost
+    // entirely: past the cap it is in no file the engine reads, and no
+    // keystroke will offer it.
+    //
+    // Two things about the number, both measured rather than assumed:
+    //
+    //   * The cap cuts inside a block of tied scores. 15 readings go over it
+    //     (deepest 236), and in every one the 100th and 101st entries carry the
+    //     same score (-7.904, the floor the upstream data gives a character it
+    //     has no frequency for). So the 100/101 line is arbitrary, not a
+    //     judgement that the first hundred are more common.
+    //   * The original justification was file size and grid-search time. Both
+    //     were measured: lifting the cap entirely adds 12,769 bytes (+0.20%),
+    //     and load time stays inside run-to-run noise.
+    //
+    // 200 matches CANDIDATE_CAP, the engine's own limit on how many candidates
+    // it will ever ask for, so the data now fills exactly what the engine can
+    // use. Going higher buys 38 more characters; the numbers are in
+    // research/tools/cap-raise-trial.mjs.
+    //
+    // The cap counts *distinct words*, not rows. Rows were the old unit and it
+    // mattered: ㄧˋ carries 236 rows but only 221 distinct characters, and with a
+    // row-counted cap fifteen of its hundred slots went to duplicates that the
+    // engine would have collapsed anyway — the characters they displaced (㑊 and
+    // 㔴, which rank 99th and 100th by score) were then in no file at all.
+    const MAX_PER_READING = Number(process.env.PINGZHU_MAX_CANDIDATES ?? 200);
     const byReading = new Map();
     for (const row of lm) {
       const list = byReading.get(row[0]);
@@ -109,10 +132,18 @@ function main() {
     }
     const kept = [];
     let dropped = 0;
+    let duplicates = 0;
     for (const list of byReading.values()) {
       list.sort((a, b) => b[2] - a[2]);
-      kept.push(...list.slice(0, MAX_PER_READING));
-      dropped += Math.max(0, list.length - MAX_PER_READING);
+      const seen = new Set();
+      const distinct = [];
+      for (const row of list) {
+        if (seen.has(row[1])) { duplicates++; continue; }
+        seen.add(row[1]);
+        distinct.push(row);
+      }
+      kept.push(...distinct.slice(0, MAX_PER_READING));
+      dropped += Math.max(0, distinct.length - MAX_PER_READING);
     }
     lm.length = 0;
     for (const row of kept) lm.push(row); // spread would blow the stack at ~100k rows
@@ -149,12 +180,18 @@ function main() {
       total_chars: chars.reduce((n, [, l]) => n + l.length, 0),
       skipped_entries: skipped,
       dropped_low_probability: dropped,
+      duplicate_rows_collapsed: duplicates,
       longest_word: lm.reduce((m, [, w]) => Math.max(m, w.length), 0),
     };
     writeFileSync(join(here, "stats.json"), JSON.stringify(stats, null, 2) + "\n");
     console.log(JSON.stringify(stats, null, 2));
 
-    // self-check: strings every Taiwanese IME user knows
+    // self-check: strings every Taiwanese IME user knows.
+    //
+    // These have to be words the upstream data actually carries. "台灣注音"
+    // does not (it is in neither WebData nor the phrase list it descends from),
+    // so it printed MISSING on every single build — a false alarm that reads as
+    // a broken build. Keep every entry checkable against the vendor source.
     const idx = new Map(lm.map(([r, w, s]) => [`${r}\t${w}`, s]));
     const check = (reading, word) =>
       console.log(`  ${reading} ${word} -> ${idx.has(`${reading}\t${word}`) ? idx.get(`${reading}\t${word}`) : "MISSING"}`);
@@ -162,7 +199,9 @@ function main() {
     check("ㄋㄧˇ-ㄏㄠˇ", "你好");
     check("ㄨㄛˇ-ㄞˋ-ㄋㄧˇ", "我愛你");
     check("ㄩㄥˋ-ㄗㄞˋ", "用在");
-    check("ㄊㄞˊ-ㄨㄢ-ㄓㄨˋ-ㄧㄣ", "台灣注音");
+    check("ㄊㄞˊ-ㄨㄢ", "台灣");
+    check("ㄊㄞˊ-ㄨㄢ-ㄆㄧˊ-ㄐㄧㄡˇ", "台灣啤酒");
+    check("ㄓㄨˋ-ㄧㄣ", "注音");
   })();
 }
 
