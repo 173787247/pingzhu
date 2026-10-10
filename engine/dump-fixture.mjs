@@ -34,6 +34,10 @@ const HAND_PICKED = [
   "jptjp6",           // ㄨㄣ-ㄔㄨㄣˊ: component reordering must be refused
   "j0420",            // ㄨㄢˋ-ㄉㄢ: a tone key must not migrate
   "2k7", "72k",       // 的, neutral tone in both orders
+  // ㄕㄨ-ㄖㄨˋ (輸入): the two-syllable word must outrank 書, the higher-frequency
+  // reading of the first syllable alone. Nothing started with "gj" before, so a
+  // port that resolved each syllable independently would have passed regardless.
+  "gjbj4", "gj", "gjbj",
   "su3c",             // half-typed syllable stays pending
   "su3", "g", "t", "4", "u", "u.", "",
   "ji394su3w96j0",    // longer buffer
