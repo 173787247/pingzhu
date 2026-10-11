@@ -50,6 +50,17 @@ reports what was loaded: 170,145 entries, 1,413 legal syllables.*
 the floating button in the corner). Type `su3cl3` and 你好 appears. Details in
 [windows/README.md](windows/README.md).
 
+![The portable Windows shell in a real window: the composition reads ㄋㄧˇ ㄏㄠˇ and the candidate window lists 你好 妳好 你 妳 擬 昵 旎 薿 禰 抳 under a → 你好 line](docs/images/windows-candidate.png)
+
+*The portable shell (`pingzhu-ime.exe`) running in a real window on Windows 11, with
+`su3cl3` typed and `↓` pressed. The composition line is ㄋㄧˇ ㄏㄠˇ — the keys never
+reached the application, because `s` and the rest are Bopomofo keys, not text. The
+candidate window shows the first of four pages (31 candidates) with `→ 你好` as what
+空格 would commit. Digits select only here, in 選字模式: with the window closed they
+are Bopomofo keys again (1 ㄅ 2 ㄉ 3 ˇ 4 ˋ 5 ㄓ 6 ˊ 7 ˙ 8 ㄚ 9 ㄞ 0 ㄢ). One cosmetic
+defect is visible and known: the status line below 選字模式 is taller than the window
+that holds it, so its lower half is cut off.*
+
 **Android** needs no permissions at all — no network, no storage, no contacts. Enable it
 under Settings → System → Languages & input → On-screen keyboard, then select it. Details in
 [android/README.md](android/README.md).
