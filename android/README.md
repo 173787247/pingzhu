@@ -97,6 +97,11 @@ w96j0         → 台灣
 ## 已知限制
 
 - **只在模拟器上验证过**（见下）。实机行为、各家 OEM 的输入法框架差异尚未确认。
+- **候选列永远不会显示。** `CandidateBar` 在 `onCreateCandidatesView()` 里建好、也接到了
+  点选回调，但**全仓没有一处调用 `setCandidatesViewShown(true)`** —— Android 的
+  candidates view 预设是隐藏的，不叫它就一直不出现。后果是：空白键按路由会
+  `Action.OpenCandidates` 打开选字单（`Router.kt:59`），使用者却看不到那张单，
+  也就无从用数字键选第二个候选。**尚未修。**
 - 尚未实作：手写、语音、表情符号、自订词库介面、主题。
 - 只做 64 位（`arm64-v8a`、`x86_64`）。32 位装置不支援。
 - 没有上架 Google Play，也没有签名金钥——release 用的是 debug 签名。

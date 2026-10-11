@@ -65,6 +65,15 @@ that holds it, so its lower half is cut off.*
 under Settings → System → Languages & input → On-screen keyboard, then select it. Details in
 [android/README.md](android/README.md).
 
+![The PingZhu keyboard on an Android 13 emulator: four rows of Bopomofo keys with 繁, 空白, backspace and enter below](docs/images/android-keyboard.png)
+
+*The keyboard on an Android 13 (API 33) emulator — a Pixel-5-sized x86_64 image running
+under KVM inside WSL, with the APK installed and the input method selected. The layout is
+not a hand-drawn asset: `Engine.keyboardRows()` derives every key from the same table the
+decoder reads, and a test (`the_drawn_keyboard_matches_the_decoder`) holds the two together.
+Note the digit row — `1` is ㄅ, `3` is ˇ, `6` is ˊ. They are Bopomofo keys, which is why
+selecting a candidate means opening the list first, exactly as on the desktop.*
+
 Every shell writes the same `pingzhu.ini`, so a setting means the same thing on every platform.
 
 ---
