@@ -18,6 +18,7 @@
  * the user dictionary buys.
  */
 import { buildTestSet, runCases, NOTE } from "./bench-lib.mjs";
+import { splitReading } from "./src/syllable.ts";
 
 const sampleSize = Number(process.argv[2] ?? 3000);
 const seedArg = process.argv.indexOf("--seed");
@@ -55,6 +56,36 @@ if (compare) {
   console.log(`    lost to decomposition ${r.lostToDecomposition}   (a word existed and lost to single characters)`);
   console.log(`  KSPC              ${r.ksPC.toFixed(3)} keys per character`);
   console.log(`  decode time       ${r.usPerCase.toFixed(1)} µs per case`);
+
+  // The same sample, split by how many syllables the reading spans.
+  //
+  // The two halves answer different questions and averaging them hides both. A
+  // one-syllable reading is dozens of homophones with nothing to choose between
+  // them — ㄕˋ is 是, 事, 市, 式 and eighty more — so a context-free decoder is
+  // expected to guess wrong; nobody types one character and expects it to be
+  // right without looking. Two to four syllables is where the model actually
+  // decides, and where a regression would show up.
+  const spans = [
+    { label: "1 syllable   ", test: (n) => n === 1 },
+    { label: "2–4 syllables", test: (n) => n > 1 },
+  ];
+  const buckets = spans.map(() => ({ n: 0, ok: 0 }));
+  let v = 0;
+  for (const c of cases) {
+    if (!c.keystrokes) continue;
+    const ok = r.verdicts[v++];
+    const i = spans.findIndex((s) => s.test(splitReading(c.reading).length));
+    if (i < 0) continue;
+    buckets[i].n++;
+    if (ok) buckets[i].ok++;
+  }
+  console.log(`  top-1 by span`);
+  spans.forEach((s, i) => {
+    const b = buckets[i];
+    const pct = b.n ? ((b.ok / b.n) * 100).toFixed(2) : "—";
+    console.log(`    ${s.label}  ${pct.padStart(6)}%   (${b.ok}/${b.n})`);
+  });
+
   console.log(`  corpus            ${r.evaluated} readings, seed ${seed}`);
   console.log("\n  'lost to decomposition' is the actionable number — those are scoring defects and");
   console.log("  promotion targets them. Homophone ties are the ceiling of a context-free decoder");

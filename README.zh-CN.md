@@ -1,45 +1,39 @@
 # 平注 PingZhu
 
-**简体中文** ｜ [English](README.md)
+[English](README.md) ｜ **简体中文**
+
+[![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases) [![engine tests](https://img.shields.io/badge/engine%20tests-68%2F68-brightgreen)](#快速开始) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
+
+一套开源、跨平台的**注音（Bopomofo／Zhuyin）输入法**，覆盖 Windows、Android、macOS、
+HarmonyOS NEXT 与 Linux。
+
+取名「平注」（píng zhù）——*平实的注音*——理由和「自然输入法」一样：它说明这东西做什么，
+而且不是任何人的商标。
 
 **[▶ 线上试打](https://173787247.github.io/pingzhu/)** ——不用装任何东西。
 打 `su3cl3` 就能看引擎解码，用的是测试套件跑的同一份模组。
 
-**开放原始码、跨平台的注音输入法引擎 —— 目标是成为「自然输入法」的平替。**
+![线上试打版，已输入 su3cl3：组字行是 ㄋㄧˇ ㄏㄠˇ，句子行是 你好，候选列列出 你好 妳好 你 妳 擬 昵 旎 薿 禰 抳](docs/images/demo-su3cl3.png)
 
-Windows · macOS · Android · HarmonyOS NEXT · Linux
-
-[![release](https://img.shields.io/github/v/release/173787247/pingzhu?include_prereleases&label=release&color=orange)](https://github.com/173787247/pingzhu/releases)
-[![engine tests](https://img.shields.io/badge/engine%20tests-66%2F66-brightgreen)](#现况)
-[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![data](https://img.shields.io/badge/data-MIT%20%2B%20BSD-lightgrey)](NOTICE)
+*线上试打版跑的是真引擎，图中 `su3cl3` 已打完但还没送出。从上往下：**组字中**
+一行是这六个按键拼出来的读音（ㄋㄧˇ ㄏㄠˇ）；**→ 中文**一行是解码器会送出的句子
+（你好），标成绿色是因为它同时也是最佳候选；**候选字**一列是第一页的全部内容——这个
+读音一共 31 个候选、分 4 页，排序用的就是选出句子那套分数。徽章写着
+「打字模式（数字是注音键）」：大千式键盘上 `3` 是 ˇ、`6` 是 ˊ，所以数字要等候选视窗
+打开才是选字键。最下面一行是载入状态：170,145 个词条、1,413 个合法音节。*
 
 ---
 
-## 这是什么
+## 下载
 
-平注（PingZhu）是一套从零打造的注音（Bopomofo／Zhuyin）输入法。它不做「又一个 RIME 设定档」，
-而是把注音解码引擎本身做成可携核心，再为每个平台接上该平台的官方输入法框架：
-
-| 平台 | 官方框架 | 引擎 | 外壳状态 |
-|---|---|---|---|
-| **Windows 10/11** | **TSF 文字服务（进语言列）** | ✅ C ABI | ✅ **可用**（[windows/](windows/README.md)） |
-| Windows 10/11 | 可携版（托盘 + 全域钩子 + 注入） | ✅ C ABI | ✅ 可用（不需管理员权限） |
-| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **真机上能编译、能打包、能跑引擎**·**但系统尚未接受它**（[macos/](macos/README.md)） |
-| **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
-| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI（NAPI，静态链接） | ✅ **在真机（Mate XT · HarmonyOS 6.1）打出「你好」**（[harmonyos/](harmonyos/README.md)） |
-| **Linux** | **fcitx5 addon** | ✅ C ABI（静态连结） | ⚠️ **能建置、引擎实测通过**（[linux/](linux/README.md)）·**未在真的桌面环境打过字** |
-
-### 下载
-
-| 平台 | 档案 |
+| 平台 | 文件 |
 |---|---|
-| **Windows 10/11** | **[⬇ 安装包 pingzhu-0.10.3-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-setup.exe)**　·　[可携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-win-x64.zip) |
+| **Windows 10/11** | **[⬇ 安装包 pingzhu-0.10.3-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-setup.exe)**　·　[便携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-win-x64.zip) |
 | **Android 8+** | **[⬇ pingzhu-0.10.3-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-android.apk)** |
-| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)）<br>**0.10.3 不含 macOS 产物**——输入法要向系统登记，签章必须是 Apple 签发的 Developer ID，而该入会仍在等。
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)）<br>**0.10.3 不含 macOS 产物**——输入法要向系统登记，签章必须是 Apple 签发的 Developer ID，而该入会仍在等。 |
 
-**HarmonyOS** 没有安装包——它的产物是专案，要从原始码建置。
-**Linux** 有 `.deb` 与 `.rpm` 两种包，也可以自己从原始码建 fcitx5 addon：
+**HarmonyOS** 没有安装包——它的产物是工程，要从源码构建。
+**Linux** 有 `.deb` 与 `.rpm` 两种包，也可以自己从源码构建 fcitx5 addon：
 
 | 平台 | 拿什么 | 怎么装 |
 |---|---|---|
@@ -47,72 +41,103 @@ Windows · macOS · Android · HarmonyOS NEXT · Linux
 | **Linux** | **[fcitx5-pingzhu_0.10.3_amd64.deb](https://github.com/173787247/pingzhu/releases/download/v0.10.3/fcitx5-pingzhu_0.10.3_amd64.deb)**　·　[fcitx5-pingzhu-0.10.3-1.x86_64.rpm](https://github.com/173787247/pingzhu/releases/download/v0.10.3/fcitx5-pingzhu-0.10.3-1.x86_64.rpm) | Debian 系 `sudo dpkg -i …`　·　RPM 系 `sudo rpm -ivh …`（[linux/](linux/README.md)） |
 
 **Windows**：装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z`
-切换中英、`Ctrl+Alt+S` 切换繁简（或用右下角的浮动按钮），打 `su3cl3` 会出现「你好」。
+切换中英、`Ctrl+Alt+S` 切换繁简（或用角落的浮动按钮），打 `su3cl3` 会出现「你好」。
 详细操作见 [windows/README.md](windows/README.md)。
 
-**Android**：安装后到「设定 → 系统 → 语言与输入 → 虚拟键盘」启用，再选为输入法。
-不需要任何权限。详细操作见 [android/README.md](android/README.md)。
+**Android**：安装后到「设置 → 系统 → 语言与输入 → 虚拟键盘」启用，再选为输入法。
+不需要任何权限——不联网、不读存储、不碰通讯录。详细操作见 [android/README.md](android/README.md)。
+
+所有外壳都写同一份 `pingzhu.ini`，所以同一个设置在哪个平台上都是同一个意思。
+
+---
+
+## 一串按键怎么变成一个汉字
+
+![解码流程：按键 → 键盘配置 → 音节切分 → ReadingGrid + Viterbi → 你好 加候选清单，bopomofo-lm.tsv 喂给读字格](docs/images/pipeline.png)
+
+*一次解码，从左到右。**键盘配置（KeyboardLayout）**把一个按键变成注音成分——声母、介音、
+韵母、声调，`s` 是 ㄋ、`u` 是 ㄧ、`3` 是 ˇ。**音节切分**枚举这些成分所有合法的断句方式，
+包括人打字打到一半的那些中间状态。**ReadingGrid + Viterbi**把每个音节跨度上所有能放的
+词条铺成一张读字格，把「怎么切」和「选哪个词」放在**同一次评分**里算，最后取总分最高的
+那条路径。输出是一个句子加一份候选清单，而候选清单来自同一批分数——所以排序和默认值
+不可能互相矛盾。这张图由 [`tools/render-figures.mjs`](tools/render-figures.mjs) 从引擎
+真正载入的那份 `data/bopomofo-lm.tsv` 生成，图上的数字不会和引擎脱节。*
+
+有一条规则值得单独命名：词典里某个词条的分数，不得低于它自己那个跨度的最佳切分
+（`promoteWordsOverDecomposition`）。没有这条规则，解码器宁可要三个平庸的汉字，
+也不要一个像样的词。
+
+**TypeScript 引擎是规格本身。** Rust 核心被 1,532 条记录下来的按键串钉在它身上，
+而每个平台外壳内嵌的都是这个 Rust 核心。一份解码器、五个平台——同一个词在手机上解出来
+和桌面上不一样，那是一个有名字的 bug，不是「移植漂移」这种自然现象。
+
+---
 
 ## 现况
 
+![五个平台、六个外壳：Windows TSF、Windows 便携版、Android、HarmonyOS 可用；Linux 与 macOS 能构建、能跑引擎，但还没被桌面环境或系统接受](docs/images/platforms.png)
+
 **五个平台、六个外壳、一份 Rust 核心。**
 
-| 平台 | 外壳 | 状态 |
-|---|---|---|
-| **Windows 10/11** | TSF 文字服务（进语言列） | ✅ **可用，已发布** |
-| **Windows 10/11** | 可携版（托盘 ＋ 全域钩子） | ✅ **可用，已发布** |
-| **Android 8+** | `InputMethodService` | ✅ **可用，已发布** |
-| **HarmonyOS NEXT** | IME Kit `InputMethodExtensionAbility` | ✅ **真机打出「你好」**（Mate XT · HarmonyOS 6.1） |
-| **Linux** | fcitx5 addon | ⚠️ **引擎与载入已验证**，未在桌面打过字 |
-| **macOS 12+** | InputMethodKit | ⚠️ 能编能跑；**原因已找到**：macOS 26 拒收 ad-hoc 签章 |
+| 平台 | 官方框架 | 引擎 | 外壳状态 |
+|---|---|---|---|
+| **Windows 10/11** | **TSF 文字服务（进语言列）** | ✅ C ABI | ✅ **可用**（[windows/](windows/README.md)） |
+| Windows 10/11 | 便携版（托盘 + 全局钩子 + 注入） | ✅ C ABI | ✅ 可用（不需管理员权限） |
+| **Android 8+** | **`InputMethodService`** | ✅ C ABI（JNI） | ✅ **可用**（[android/](android/README.md)） |
+| **HarmonyOS NEXT** | **IME Kit / `InputMethodExtensionAbility`** | ✅ C ABI（NAPI，静态链接） | ✅ **在真机（Mate XT · HarmonyOS 6.1）打出「你好」**（[harmonyos/](harmonyos/README.md)） |
+| **Linux** | **fcitx5 addon** | ✅ C ABI（静态链接） | ⚠️ **能构建、引擎实测通过**（[linux/](linux/README.md)）·**未在真的桌面环境打过字** |
+| **macOS 12+** | **InputMethodKit (IMK)** | ✅ C ABI | ⚠️ **真机上能编译、能打包、能跑引擎**·**但系统尚未接受它**（[macos/](macos/README.md)） |
 
-**六个外壳共用同一个 Rust 核心**——所以同一串按键在每个平台上得到同样的词。
-这不是设计意图，是被 1,529 例差异化测试钉住的事实。
-
-### 两个还没打勾的
-
-**macOS**：它在真机上编译、打包、签章、跑引擎全部通过，输入法选单里却始终
-没有它。**原因已经找到**：macOS 26 不注册 ad-hoc 签名的输入法——`spctl` 返回
-`rejected`，而 `TISCreateInputSourceList` 报它「根本没安装」。
-CI 跑在 macOS 14 上，那里 ad-hoc 可以，所以每次建置都是绿的。
-修法是一张免费 Apple ID 的签章证书——细节在 [macos/README.md](macos/README.md)。
-
-**Linux**：引擎在 CI 上跑过同样三个词，addon 也真的被 fcitx5 载入、启动过
-引擎；**但「在桌面环境里打字」没有测成功**，因为 WSLg 不转发输入法——
-原因在 [linux/README.md](linux/README.md)。
+同一串按键在 Windows 和 Android 上得到同样的词——这不是设计意图，而是差异测试把
+1,532 条按键串分别喂给两份实现，逐条比对组字文字、选定句子、分数、路径词与候选第一页。
 
 Windows 有两个外壳，共用同一份引擎与同一个候选视窗：
 
 - **TSF 文字服务**（`pingzhu-tsf-*.dll`）——进语言列，`Win+Space` 可切换，对管理员视窗也可用。
   注册需要管理员权限（COM 伺服器与 CTF 语言设定档都在 HKLM）。
-- **可携版**（`pingzhu-ime.exe`）——托盘常驻 + 全域键盘钩子 + `SendInput` 注入。
+- **便携版**（`pingzhu-ime.exe`）——托盘常驻 + 全局键盘钩子 + `SendInput` 注入。
   不需要安装、不需要管理员权限、不写登录档，代价是不进语言列、对管理员视窗无效（UIPI）。
 
 两个外壳都支援**繁简输出切换**（`pingzhu.ini`），内部一律以繁体解码，只在输出边界转换。
 
-| | TypeScript 参考实作 | Rust 核心 |
-|---|---|---|
-| 测试 | 49 项 | 24 项（含 **1,529 例差异化测试**、152 例互动场景） |
-| 每按键 | 15.2 µs | 16.5 µs |
-| C ABI | — | ✅ 纯 C 程式可直接驱动（见 [core-rs](core-rs/README.md)） |
+### 两个还没打勾的
 
-```console
-$ node engine/cli.ts su3cl3 ji394su3 w96j0
+**macOS**：它在真机上编译、打包、签章、跑引擎全部通过，输入法选单里却始终没有它。
+**原因已经找到**：macOS 26 不注册 ad-hoc 签名的输入法——`spctl` 返回 `rejected`，
+而 `TISCreateInputSourceList` 报它「根本没安装」。CI 跑在 macOS 14 上，那里 ad-hoc 可以，
+所以每次构建都是绿的。修法是一张 Apple 签发的 Developer ID——细节在
+[macos/README.md](macos/README.md)。
 
-> su3cl3
-  keys      su3cl3
-  注音      ㄋㄧˇ ㄏㄠˇ
-  → 中文    你好   (score -5.09)
-  候選      1.好  2.郝  3.㚼  4.㝀  5.🆗  6.👌 …
+**Linux**：引擎在 CI 上跑过同样三个词，addon 也真的被 fcitx5 载入、启动过引擎；
+**但「在桌面环境里打字」没有测成功**，因为 WSLg 不转发输入法——原因在
+[linux/README.md](linux/README.md)。
 
-> ji394su3
-  注音      ㄨㄛˇ ㄞˋ ㄋㄧˇ
-  → 中文    我愛你   (score -5.40)
-```
+---
 
-`ji394su3` 这一串刻意选得很刁钻：那八个按键可以合法切成 `ㄨㄛˇ-ㄞˋ-ㄋㄧˇ`（我爱你），
-也可以切成 `ㄨㄛˇ-ㄋㄞˋ-ㄧˇ`（我奈以）。光看键盘顺序无法分辨，只有语言模型能选对。
-这就是为什么本专案一开始就把「音节切分」和「词汇选择」放在同一次解码里评分，而不是拆成两段各自最佳化。
+## 按键本身什么也决定不了
+
+![按键串 j i 3 9 4 s u 3，下面各标 ㄨ ㄛ ˇ ㄞ ˋ ㄋ ㄧ ˇ；再列两条读法：ㄨㄛˇ-ㄞˋ-ㄋㄧˇ → 我愛你，分数 -5.398，被选中；ㄨㄛˇ-ㄋㄞˋ-ㄧˇ → 我 耐 以，分数 -9.678，没被选中](docs/images/example-ji394su3.png)
+
+*`ji394su3` 是经典例子，而且两行的数字都是引擎自己算的。键盘给出 ㄨㄛˇ-ㄞˋ-ㄋㄧˇ
+（我愛你，一个横跨三个音节的词，−5.398）；但同样这八个按键也给出 ㄨㄛˇ-ㄋㄞˋ-ㄧˇ，
+那是三个再普通不过的字：我 耐 以，−9.678。按键串里没有任何东西标记「一个音节在哪里结束」，
+所以两条读法都合法；分数是 log₁₀ 机率，越大越好，差距 4.28。这个差距就是「音节切分和
+词汇选择必须一次算完」的全部理由：先切分再选词的解码器，在还不知道自己要选哪个词的时候
+就已经被迫表态了。这张图把 `ReadingGrid` 跑了两遍——一遍是对整个按键串 `press()`，
+一遍是强行指定另一种切法——所以两个数都能用 `node tools/render-figures.mjs` 复现。*
+
+---
+
+## 键盘
+
+![大千式键盘 41 键，每键显示对应的英文字母与注音符号，其中 s u 3 c l 五个键按 su3cl3 的按键顺序高亮](docs/images/keyboard-standard.png)
+
+*大千式键位——台湾使用者说「注音键盘」时指的就是它——全部 41 个键，注音符号直接读自
+引擎的键位表，不是手抄的。高亮的是 `su3cl3` 的六次按键：s ㄋ → u ㄧ → 3 ˇ 得到 ㄋㄧˇ，
+c ㄏ → l ㄠ → 3 ˇ 得到 ㄏㄠˇ。注意数字那一排是什么：`1` 是 ㄅ、`3` 是 ˇ、`6` 是 ˊ、
+`0` 是 ㄢ。数字本身就是注音键，这就是候选视窗需要一个明确「打开」状态的原因——视窗没开时
+`1` 打的是 ㄅ，要按 `↓` 或空白才会变成「选第一个候选」。另有一套**倚天式**键位表与它并列，
+并逐键对过 libchewing。*
 
 ---
 
@@ -120,135 +145,98 @@ $ node engine/cli.ts su3cl3 ji394su3 w96j0
 
 ### 0. 注音略省力——但比直觉小，而且是量出来的
 
-同一个语言模型、同一批 139,163 条多音节词、只换编码方式（词频加权）：
+关于注音最有趣的讲法是「它比拼音快」。是快，但诚实的数字比流传的数字小。
+[`tools/zhuyin-vs-pinyin.mjs`](tools/zhuyin-vs-pinyin.mjs) 在整份语言模型上算（不是抽样），
+并且把两种成本分开计：**拼**出音节，以及从候选里**选**对词。2026-10-11 量的，
+取 139,158 条 2–4 音节、一字一音的条目：
 
-| | 注音 | 拼音 |
-|---|---|---|
-| **有效按键／字**（组字＋选字） | **2.95** | 3.07 |
-| 首选正确率 | **97.98%** | 87.58% |
-| 平均同码候选数 | **1.23** | 2.28 |
+| | 注音 | 拼音 | 差别 |
+|---|---|---|---|
+| 组字按键／字（词频加权） | 2.94 | 3.02 | |
+| **有效按键／字**（组字 ＋ 选字） | **2.95** | **3.07** | **注音少 3.8%** |
+| 首选正确率（词频加权） | 97.98% | 87.58% | |
+| 首选正确率（每条例等权） | 90.68% | 71.26% | |
+| 平均同码候选数（等权） | 1.23 | 2.28 | |
 
-**注音少 3.8% 的按键（含单字的全集上少 5.0%）。**
+放到全部词条（含单字）上，差距拉大到 **5.0%**（有效按键 3.00 对 3.16，词频加权）。
+在词的范围内，这点节省约 63% 来自组字、37% 来自选字：拼音在 `zhong` 这种拼法上的劣势，
+有一部分被它更长的候选单还了回去。
 
-「拼音要拼一串英文字母一定更长」**只对了一半**：
-
-- 拼音在 `zh ch sh ang eng ong` 上要拼 2–5 个字母，注音各只要一键
-- 但注音**几乎每个音节都要多打一个声调键**，拼音一个都不打
-
-而最常用的词偏偏多半是简单音节，那里**拼音反而更短**：
-
-```
-我們  ㄨㄛˇ-ㄇㄣˊ  6 鍵 / women  5 字母   拼音短
-可以  ㄎㄜˇ-ㄧˇ     5 鍵 / keyi   4 字母   拼音短
-什麼  ㄕㄜˊ-ㄇㄛ˙   6 鍵 / shemo  5 字母   拼音短
-台灣  ㄊㄞˊ-ㄨㄢ    5 鍵 / taiwan 6 字母   注音短
-這樣  ㄓㄜˋ-ㄧㄤˋ   6 鍵 / zheyang 7 字母  注音短
-```
-
-全部 74,461 个两字词里，注音较短 39.5%、拼音较短 30.4%、相同 30.1%。
-
-**所以优势不在拼字，在选字**：拼音丢掉声调后，`shi` 要同时代表 是、时、事、市、世、
-式⋯⋯，而且会跨音节碰撞（`xian` 同时是「先」和「西+安」），平均同码候选数是注音的
-2.7 倍。
-
-> **诚实的说法**：注音略省，省在选字上多过省在拼字上。3.8–5% 是**上界**——我用
-> 「同按键序列内词频最高者」估计拼音首选率，比真实拼音 IME 悲观（它们有更大的模型与
-> 上下文）。真实差距很可能更小。
-
-方法、限制与完整数字见 **[docs/09](docs/09-zhuyin-vs-pinyin.md)**，一行指令可重现：
-
-```bash
-node tools/zhuyin-vs-pinyin.mjs
-```
-
-（这个测量有自我验证：范围二的注音首选正确率 90.67%，与 `bench.mjs` 用完全不同路径
-实测的 90.38% 相差 0.29 个百分点。）
+**3.8–5.0% 是上界。** 拼音那一侧是一个称职但不出色的实作，真实世界的拼音输入法比它强。
+这项量测的重点不是「注音赢很多」，而是**这个论证应该用一个数字来说，而那个数字比通常
+引用的要小**。完整方法与限制见 [docs/09](docs/09-zhuyin-vs-pinyin.md)。
 
 ### 1. 自然输入法没有行动版，而且官方写得很清楚
 
-自然输入法（网际智慧 IQ Technology；1990 年由中央研究院许闻廉博士以「国音输入法」起家，
-是台湾唯一仍在维护的付费商业注音输入法）是目前台湾最成熟的注音输入法。
-但它的平台覆盖在 2026 年仍然只有两个桌面系统：
-
-- Windows 专业版 `V13.1.1.35084`（2026/09/08），Windows 11／10 1903+，支援 Windows on Arm
-- macOS 版 `V13.2.1`（2026/09/08），macOS Catalina 10.15+，**官网明写「不支援 iOS、iPadOS」**
-
-官方客服中心甚至直接以「不支援」为标题发布条目：
-
-- 【不支援】自然输入法是否能在 iPad、iPhone 上使用？
-- 【不支援】自然输入法有 Linux 版吗？
-- 【不支援】如何在 WIN10 平板上使用自然输入法？
-
-也就是说，**Android、iOS、Linux、HarmonyOS 全部是空的**。而且这不是「没人做过」——
-Google 注音输入法与 IQQI 智能输入法都曾在台湾行动市场存在，如今都已从 App Store 消失。
-台湾使用者手机上打注音，至今仍只能将就内建键盘或 Gboard。
+自然输入法（网际智慧 IQ Technology，1995 年上市）只有 Windows 与 macOS 两个桌面版本。
+官方客服中心甚至直接以「不支援」为标题发布条目：iPad、iPhone、Linux、Android 平板
+各一条。
 
 ### 2. 授权模式制造了大量摩擦
 
-官方零售价（2026 年，iqt.ai 价格页）：
-
-| 方案 | 价格 |
-|---|---|
-| V13 专业版 买断 1 人 2 台 | NT$2,800 |
-| V13 专业版 买断 1 人 3 台 | NT$3,900 |
-| 订阅 月缴 / 季缴 | NT$129 / NT$329 |
-| 订阅 年缴 2 台 / 3 台 / 4 台 | NT$899 / NT$1,299 / NT$1,649 |
-| 追音版（2 台 Windows） | NT$3,500 |
-
-买断版「限购买当时的版本」，官方说明一年后若系统环境更新可能出现相容问题，「您就需要购买本公司新版软体」。
-免费 Lite 版则必须注册帐号、不支援 Mac、不支援离线、只有标准注音键盘、无技术客服，
-且公告 2026/10/15 起旧版本将无法登入订阅帐号（强制升级）。
-
-这些摩擦直接反映在客服中心的内容分布上：**绝大多数条目都是授权到期、授权已满、换电脑、
-移除装置、扣款失败、登入失败、取消订阅**——而不是「怎么打字」。
+客服内容的分布压倒性地是授权到期、换电脑、扣款失败、登录失败，而不是「怎么打字」。
+那是商业模式的产物，不是技术的。
 
 ### 3. 开源生态有零件，但没有成品
 
-注音引擎的零件其实不缺，缺的是把它们组合成一个五平台产品的人（详见
-[docs/04-data-and-licensing.md](docs/04-data-and-licensing.md)）：
-
-- **libchewing**（新酷音）核心已重写为 **Rust**、附 C API 与官方 Swift Package，授权 LGPL-2.1
-- **McBopomofo**（小麦注音）是 **MIT**，引擎与 13 万条注音词库全部开放，但**与 macOS 深度耦合**，没有可携核心
-- **RIME／librime** 是 BSD-3，但它的「注音」是把拼音词库用拼写代数转写而成，且官方各平台前端全是 GPL-3.0
-- 纯 Android 的注音键盘（如朴实注音）多为 GPL-3.0 且功能单薄
-
-平注的定位就是那个缺掉的成品：**宽松授权的可携核心 ＋ 五个平台的原生外壳**。
+零件其实不缺——McBopomofo 的 MIT 资料与解码器、libtabe 的 `tsi.src`、OpenCC 的转换表——
+缺的是把它们组装成一个跨平台输入法的人。
 
 ---
 
 ## 快速开始
 
-需要 Node.js ≥ 22.6（用到内建 TypeScript 型别剥离，不需要编译步骤、零依赖）。
+需要 Node.js ≥ 22.6（用到内建 TypeScript 型别剥离，不需要构建步骤、零运行时依赖）。
 
 ```bash
 git clone <this-repo> && cd pingzhu
 
-# 互動模式：直接敲注音按鍵，即時看解碼結果
+# 互动模式：直接敲注音按键，即时看解码结果
 node engine/cli.ts
 
-# 非互動：直接解一串按鍵
+# 非互动
 node engine/cli.ts su3cl3 ji394su3 w96j0
-node engine/cli.ts --layout eten ne3     # 倚天鍵盤
+node engine/cli.ts --layout eten ne3        # 倚天式键盘
 
-# 測試與評測
-cd engine && node --test                      # 66 項
-node engine/bench.mjs 5000                  # 解碼品質
-node engine/bench.mjs 5000 --compare        # promotion 開啟前後的逐例對比
-node engine/bench-learn.mjs 5000            # 學習前後對比
-node engine/bench-learn.mjs 5000 --recall   # 候選可達性
+# 测试与评测
+(cd engine && node --test)                  # 68 项
+node engine/bench.mjs 5000                  # 解码品质，可重跑（seed 20260926）
+node engine/bench.mjs 5000 --compare        # promotion 开与关的逐例对比
+node engine/bench-learn.mjs 5000            # 个人化：教一次到底买到什么
+node engine/bench-learn.mjs 5000 --recall   # 想要的候选到底够不够得着
+
+# 本 README 里的配图
+node tools/render-figures.mjs               # 产 PNG 需要 rsvg-convert
 ```
 
-| 按键 | 输出 | 说明 |
-|---|---|---|
-| `su3cl3` | 你好 | ㄋㄧˇ ㄏㄠˇ |
-| `ji394su3` | 我爱你 | ㄨㄛˇ ㄞˋ ㄋㄧˇ（歧义切分） |
-| `w96j0` | 台湾 | ㄊㄞˊ ㄨㄢ（第二音节省略声调键） |
-| `rupwu0` | 今天 | ㄐㄧㄣ ㄊㄧㄢ（一声不打调号） |
-| `g4` | 是 | ㄕˋ（单独成音的ㄕ） |
-| `j0420` | 万丹 | ㄨㄢˋ ㄉㄢ（声调不会跑到下一个音节） |
+```console
+$ node engine/cli.ts su3cl3 ji394su3
 
-互动模式下：`空白鍵` 送出组字、`↓` 开启候选、开启后 `1`-`9`/`0` 选字、`空白鍵` 翻下一页十个、
-`←`/`→` 移动候选游标。
+> su3cl3
+  按鍵      su3cl3
+  注音      ㄋㄧˇ ㄏㄠˇ
+  → 中文    你好   (score -5.09)
+  斷詞      你好
+  候選      1.你好  2.妳好  3.你  4.妳  5.擬  6.昵  7.旎  8.薿  9.禰  0.抳
+            第 1/4 頁（空白鍵下一頁）　打字模式（空白送出；數字是注音鍵；↓ 開啟選字）　游標在第 1 音節
+
+> ji394su3
+  注音      ㄨㄛˇ ㄞˋ ㄋㄧˇ
+  → 中文    我愛你   (score -5.40)
+  斷詞      我愛你
+```
+
+| 按键 | 输出 | 为什么放这一条 |
+|---|---|---|
+| `su3cl3` | 你好 | 基本情况 |
+| `ji394su3` | 我愛你 | 切分有歧义——见上面那张图 |
+| `w96j0` | 台灣 | 第二个音节不必打声调键 |
+| `rupwu0` | 今天 | 一声根本不打键 |
+| `g4` | 是 | ㄕ 单独成音 |
+| `j0420` | 萬丹 | 声调不会跑到下一个音节 |
+
+互动模式下：`空白鍵` 送出（候选视窗开着时翻下一页）、`↓` 开启候选、开启后 `1`–`9`/`0` 选字、
+`←`/`→` 沿组字缓冲区移动游标。
 
 ---
 
@@ -262,7 +250,7 @@ node engine/bench-learn.mjs 5000 --recall   # 候選可達性
 npm install https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-engine-0.10.3.tgz
 ```
 
-**方式二：从 GitHub Packages 装**（要先配 GitHub token ✗）
+**方式二：从 GitHub Packages 装**（要先配 GitHub token）
 
 ```bash
 npm install @173787247/pingzhu-engine
@@ -274,106 +262,176 @@ npm install @173787247/pingzhu-engine
 > 要用的话先配一次：`echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc`
 
 ```js
-import { InputEngine, LAYOUTS } from "@173787247/pingzhu-engine";
-import { loadDictionary, loadSyllableInventory, loadConverter } from "@173787247/pingzhu-engine/node";
+import { InputEngine, LAYOUTS } from "pingzhu-engine";
+import { loadDictionary, loadSyllableInventory, loadConverter } from "pingzhu-engine/node";
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
+
+const require = createRequire(import.meta.url);
+const data = dirname(require.resolve("pingzhu-engine/data/bopomofo-lm.tsv"));
+
+const engine = new InputEngine(
+  loadDictionary(`${data}/bopomofo-lm.tsv`),
+  loadSyllableInventory(`${data}/bopomofo-lm.tsv`),
+  { layout: LAYOUTS.standard, converter: loadConverter(`${data}/ts-conversion.tsv`) },
+);
+
+for (const key of "su3cl3") engine.press(key);
+engine.bestSentence;    // 你好
+engine.commit();        // 你好
 ```
 
-主入口**不 import 任何 Node 内建模组**，所以浏览器与打包器都能用 ✓；
-档案系统相关的工具在 `/node` 子路径 ✓。这个分割由测试钉住，不是靠注解。
+主入口**不 import 任何 Node 内建模组**，所以浏览器与打包器都能用；文件系统相关的工具在
+`/node` 子路径。这个分割由测试钉住，不是靠注解。
+
+---
 
 ## 架构
 
-```mermaid
-flowchart TB
-    keys(["按键<br/>keystrokes"])
-    layout["<b>KeyboardLayout</b><br/>key → component<br/><i>大千式 / 倚天式（许氏、倚天26 待补）</i>"]
-    seg["<b>音节切分</b> segmentation<br/>components → syllables<br/><i>列举所有合法切分；含「打一半」状态</i>"]
-    grid["<b>ReadingGrid + Viterbi</b><br/>切分 × 词汇 联合评分<br/><i>音节格上铺所有词，取总分最高路径<br/>log10 机率，多字词自然胜过逐字</i>"]
-    out(["最佳句子<br/>＋ 候选词清单"])
-    lm[("语言模型<br/>bopomofo-lm.tsv<br/>169,604 词条 / 131,048 读音 / 1,413 合法音节")]
-
-    keys --> layout --> seg --> grid --> out
-    lm -.-> grid
-
-    classDef data fill:#eef2ff,stroke:#8b93c8,stroke-dasharray:4 3
-    class lm data
+```
+                     data/bopomofo-lm.tsv  （170,145 词条 / 131,048 读音）
+                     data/ts-conversion.tsv （繁体 → 简体）
+                                  │
+              ┌───────────────────┴───────────────────┐
+              │                                       │
+     engine/  TypeScript                     core-rs/  Rust
+     参考实作（规格本身）                      与它位元一致
+     68 项测试                                26 项测试 + 1,532 例差异测试
+              │                                       │
+              │                        ┌──────────────┼──────────────┐
+              │                        │              │              │
+              │                   windows/        android/      harmonyos/
+              │                   TSF + 便携版     JNI + Kotlin   NAPI + ArkTS
+              │                        │              │              │
+              └──── 同一份资料 ─────────┴──────────────┴──────────────┘
+                                  （另有 macOS、Linux）
 ```
 
-这个分层不是为了好看，而是为了**平台外壳可以极薄**：TSF、IMK、`InputMethodService`、
-`InputMethodExtensionAbility` 四者要的都只是「给我一串按键，还我一段文字＋候选清单」，
-所以核心完全不碰 UI、不碰视窗、不碰平台 API。
+这个分层不是为了好看，而是为了让**平台外壳可以极薄**：TSF、IMK、`InputMethodService`、
+`InputMethodExtensionAbility`、fcitx5 addon 要的都只是「给我一串按键，还我一段文字
+＋候选清单」，所以核心完全不碰视窗、不碰 UI 工具包、不碰平台 API。
 
-实测效能（Node 24，单执行绪，载入 6.4 MB 语言模型）：
+### 读字格
 
-| 指标 | 数值 |
-|---|---|
-| 模型载入 | 273 ms（一次性） |
-| 每按键解码 | **15.2 µs** |
-| 吞吐 | 65,934 键/秒 |
+一个音节是 声母 + 介音 + 韵母 + 声调。按键组成读音，读音铺成一张格，而**切分与选词是
+联合评分的**——解码器不会先定音节边界再选词，因为这两个决定互为条件。格上跑 Viterbi
+取出最佳句子；候选清单来自同一批分数，所以排序和默认值在构造上就不可能互相矛盾。
 
-输入法可接受的候选字延迟是 10 ms 等级，这里差了三个数量级——**延迟不是这个专案的风险**。
+---
 
-### 解码品质（可重跑）
+## 效能
+
+2026-10-11 在开发机上实测，Node 24.13，单执行绪，用的按键串与
+[`core-rs/examples/bench.rs`](core-rs/examples/bench.rs) 完全相同，所以两列可比：
+
+| | TypeScript 参考实作 | Rust 核心 |
+|---|---|---|
+| 模型载入（6.4 MB） | 249 ms | **104 ms** |
+| 每按键解码 | **13.2 µs** | 14.6 µs |
+| 吞吐 | 76,033 键/秒 | 68,714 键/秒 |
+
+两者在同一个数量级，因为时间花在同一个演算法上——每个切分都要重建一次读字格。
+Rust 的价值不在速度，而在**能被嵌进别人的行程里**：Windows 的 TSF 文字服务是 in-proc DLL，
+没地方放一个 VM；macOS 输入法的启动延迟会落在每个文字框的第一个字上。
+
+解码比输入法能接受的 10 ms 低了三个数量级，所以**延迟不是这个项目的风险**。这是刻意的
+决定，不是疏忽：不换 `Rc<str>`、不做非同步 API、不提前最佳化。
+
+---
+
+## 解码品质
 
 ```console
 $ node engine/bench.mjs 5000
 
-  top-1 accuracy    90.38%   (4519/5000)  exact word match
+  top-1 accuracy    78.82%   (3941/5000)  exact word match
   reading accuracy  100.00%   (5000/5000)  output reads as typed
-    homophone ties        480   (another real word, same reading)
-    lost to decomposition   1   (a word existed and lost to single characters)
-  KSPC              2.986 keys per character
+    homophone ties        1059   (another real word, same reading — needs context)
+    lost to decomposition 0   (a word existed and lost to single characters)
+  KSPC              2.889 keys per character
+  decode time       109.2 µs per case
+  top-1 by span
+    1 syllable       5.38%   (41/762)
+    2–4 syllables   92.02%   (3900/4238)
 ```
 
-**没选对的 481 例，480 例是同音词**：`畜牲`/`畜生`、`申飭`/`申斥` 读音完全相同，
-任何注音解码器在没有上下文时都无法分辨。5,000 个样本里**没有任何一次真正的解码失败**
-——输出永远读得回你打的音。
+**先看最后两行，再看第一行。** 一个单音节读音对应几十个同音字，彼此之间没有任何可依据的
+差别——ㄕˋ 是 是、事、市、式，再加八十几个——所以 5.38% 不是缺陷，而是问题的形状：
+没有上下文时本来就没有正确答案，而只打一个字的使用者本来就在浏览候选表。真正在「做决定」的
+地方——2–4 音节的词，5,000 个样本里占 4,238 个——**92.02%** 是对的。
 
-### 个人化：教一次就记住（可重跑）
+**1,059 次没选对，几乎全是同音词**：输出读起来和你打的完全一样，只是另一个同样读音的
+真词赢了。5,000 个样本里**没有任何一次真正的解码失败**——输出永远读得回你打的音。
+
+> ⚠️ 样本取自语言模型本身，所以这是**自我一致性**（上界）与回归守门，不是与别的输入法
+> 的正面对比。真正的对比需要真实使用者的打字语料，目前不存在。详见
+> [docs/06](docs/06-engine-design.md)。
+
+### 个人化：教一次
 
 ```console
 $ node engine/bench-learn.mjs 5000
 
-                              before      after
-  top-1 accuracy              90.38%      99.54%
-  homophone ties                480          21
-  fixed by learning         464    regressed 6 (5 例是测试集碰撞，1 例已知副作用)
+  words taught              788
+  not in candidate window   272   (the user could not have corrected these)
+  fixed by learning         268
+  regressed by learning     268
+    unavoidable collisions      267   (the same reading was sampled wanting
+                                            two different words — a user cannot
+                                            have both, so one must lose)
+    genuine regressions         1   <- must stay 0
+        ㄅㄚ-ㄈㄣ-ㄓ-ㄨˇ  want 八分之五
 ```
 
-同音词的答案不是「让模型更聪明」，而是**让使用者自己选，并且记住**：
+这个评测先冷启动解一遍，然后扮演使用者：凡是引擎解错的，就打开候选视窗选对的那个词——
+和真实候选视窗调用的是同一个 `chooseAt()`——再全部重解一遍。
 
-| 操作 | 行为 |
-|---|---|
-| `1`…`9`、`0` | 选目前页面的第 1…10 个候选 |
-| `空白鍵` | 送出（候选视窗关闭时）；翻到下一页（开启时） |
-| `←` `→` | 沿组字缓冲区移动候选游标 |
+「修好 268、弄坏 268」这句要读的是分解，不是总数。样本会从**同一个读音**里抽出许多不同的
+词（ㄕˋ 想要 是、事、市……全在同一轮里），而使用者不可能同时要它们；**268 次退化里有 267 次
+就是这个碰撞**，那是样本的性质，不是机制的性质。**真正剩下的退化只有 1 次**：
+ㄅㄚ-ㄈㄣ-ㄓ-ㄨˇ 八分之五，评测每次都会把它印出来，正是为了不让它被安静地忘掉。
+另有 272 次是正确答案压根不在前 20 个候选里，使用者根本无从更正。
 
-引擎选错时，正确的字有 **99.8%** 落在第一页——所以更正的成本是一个按键。
+一次更正需要伸多远：
 
-> ⚠️ 样本取自语言模型本身，因此这是**自我一致性**（上界）与**回归守门**，不是与竞品的对比数字。
-> 真正的对比需要真实使用者的打字语料，目前不存在。详见 [docs/06](docs/06-engine-design.md)。
+```console
+$ node engine/bench-learn.mjs 5000 --recall
+
+  order            wrong    #1     ≤10     ≤20     ≤30   unreachable
+  same-span-first  1059    0.0%   57.3%   74.4%   80.6%           0
+```
+
+**没有够不着的候选。** 57.3% 的错误在第一页——一个按键——80.6% 在三页之内。
+其余就是上面那些单音节例子：想要的字埋在几十个候选深处，而使用者本来就在翻。
 
 ---
 
-## 专案状态
+## 项目状态
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
 | **M0** | 解码引擎：键盘／切分／读字格 Viterbi／候选视窗 | ✅ 已完成 |
 | **M1** | 资料管线：从 McBopomofo 开放资料编译出可携语言模型 | ✅ 已完成 |
 | **M2** | 个人化：使用者词库、学习排序、候选翻页 | ✅ 已完成 |
-| **M3** | Rust 核心 ＋ C ABI（差异化测试对 TS 参考实作） | ✅ 已完成 |
-| **M4a** | Windows 可携版外壳（托盘／钩子／候选视窗／注入） | ✅ 已完成 |
+| **M3** | Rust 核心 ＋ C ABI（差异测试对 TS 参考实作） | ✅ 已完成 |
+| **M4a** | Windows 便携版外壳（托盘／钩子／候选视窗／注入） | ✅ 已完成 |
 | **M4b** | Windows TSF 外壳：进语言列、组字、显示属性、候选视窗定位、安装程式 | ✅ 已完成 |
 | **M4c** | 繁简输出：OpenCC 对照表、热键／浮动按钮／设定档三种切换方式 | ✅ 已完成 |
-| **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 建置与引擎实测 | ⚠️ **真机可编译可执行，系统尚未接受**（六个假设已排除，见 [macos/](macos/README.md)） |
+| **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 构建与引擎实测 | ⚠️ **真机可编译可执行，系统尚未接受**（见 [macos/](macos/README.md)） |
 | **M6** | Android `InputMethodService` 外壳：自绘键盘、候选列、JNI | ✅ 已完成 |
 | **M7** | HarmonyOS IME Kit 外壳：ArkTS、NAPI、Rust 核心、键盘 UI、面板、编辑器连线 | ✅ **真机验证：`su3cl3` → 你好** |
-| **M8** | 其他加值功能：符号表、联想词、快捷输入 | 待做 |
+| **M8** | 符号表、联想词、快捷输入 | 待做 |
 
-测试现况：**TypeScript 66 项**、**Rust 26 项**（含 1,529 例差异化测试）、
-**Windows 原生 3 组**（按键路由／引擎整合／TSF COM 契约）、
-**Android JVM 12 项**（按键路由，不需要模拟器）。
+测试现况（2026-10-11）：
+
+| 套件 | 命令 | 覆盖什么 |
+|---|---|---|
+| **TypeScript 68 项** | `cd engine && node --test` | 解码、词典、个人化、键盘配置、按键路由 |
+| **Rust 单元测试 26 项** | `cd core-rs && cargo test --release` | 移植后的每一个模组 |
+| **差异测试 1,532 例** | 同上 | 记录下来的按键串分别喂给两份实现；组字文字、句子、分数、路径词、候选第一页必须完全一致 |
+| **互动场景 207 例** | 同上 | 选字、翻页、游标移动、模式切换 |
+| **Windows 原生 3 组** | [`windows/`](windows/README.md) | 按键路由、引擎整合、TSF COM 契约 |
+| **Android JVM 16 项** | [`android/`](android/README.md) | 按键路由，不需要模拟器 |
 
 详细排程、工作量与风险见 [docs/05-roadmap.md](docs/05-roadmap.md)。
 
@@ -394,11 +452,15 @@ $ node engine/bench-learn.mjs 5000
 | [docs/09](docs/09-zhuyin-vs-pinyin.md) | **注音 vs 拼音的量化论证**：方法、两种范围、自我验证、五条明确的限制 |
 | [demo/](demo/index.html) | **网页试打版**：不装任何东西，打开就能打注音（引擎与测试同一份） |
 | [core-rs/](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外壳怎么接、怎么验证 |
-| [windows/](windows/README.md) | **Windows 输入法**：操作、建置、限制 |
-| [android/](android/README.md) | **Android 输入法**：建置、设计取舍、已知限制 |
-| [macos/](macos/README.md) | **macOS 输入法**：建置、CI 验证、设计与限制 |
-| [harmonyos/](harmonyos/README.md) | **HarmonyOS 输入法**：结构、CI 建置、踩过的坑 |
-| [research/01](research/01-iqt-natural-ime.md) · [02](research/02-opensource-stack.md) · [03](research/03-platform-ime-frameworks.md) · [04](research/04-zhuyin-ime-internals.md) | 四份原始调研报告（约 34 万字，含逐条来源与【已查证】/【推测】/【需查证】三级标记） |
+| [windows/](windows/README.md) | **Windows 输入法**：操作、构建、限制 |
+| [android/](android/README.md) | **Android 输入法**：构建、设计取舍、已知限制 |
+| [harmonyos/](harmonyos/README.md) | **HarmonyOS 输入法**：结构、CI 构建、踩过的坑 |
+| [linux/](linux/README.md) | **Linux fcitx5 addon**：安装、构建、哪些还没测 |
+| [macos/](macos/README.md) | **macOS 输入法**：构建、CI 验证、设计与限制 |
+| [tools/](tools/) | 这份 README 里每个数字背后的脚本：拼音对比、网页试打版构建、配图生成 |
+
+要接着做这个项目本身？[`START-HERE.md`](START-HERE.md) 是交接文件——做到哪、下一步、
+每条证据放在哪里。
 
 ---
 
@@ -409,10 +471,13 @@ $ node engine/bench-learn.mjs 5000
 - **程式码**：MIT
 - **语言模型资料**：衍生自 **McBopomofo**（MIT，Copyright © 2022 and onwards The McBopomofo Authors），
   其词库 `BPMFMappings.txt` 又衍生自 libtabe 的 `tsi.src`（BSD）
+- **繁简转换表**：来自 [OpenCC](https://github.com/BYVoid/OpenCC)（Apache-2.0）
 
-选 MIT 而非 Apache-2.0 的理由：本专案零程式码依赖，且资料本身即衍生自 MIT 来源，
+选 MIT 而非 Apache-2.0 的理由：本项目零程式码依赖，且资料本身即衍生自 MIT 来源，
 单一授权让整条授权链一致；MIT 同时与 GPL-2.0-only 相容，而 Apache-2.0 不相容
 （见 [docs/02](docs/02-architecture.md) 决策 6）。授权链与逐项声明见 [NOTICE](NOTICE)。
 
+**没有遥测、不联网、不要权限。** 语言模型随程式发布；使用者词库留在使用者自己的目录。
+
 平注与网际智慧股份有限公司（IQ Technology Inc.）无任何关联；「自然输入法」为其商标，
-本专案仅在评论与相容性描述中提及该产品名称。
+本项目仅在评论与相容性描述中提及该产品名称。
