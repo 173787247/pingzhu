@@ -62,8 +62,9 @@
 
 <h1>平注 PingZhu — 注音引擎試打</h1>
 <div class="sub">
-  這是 <b>引擎</b>，不是可安裝的輸入法。平台外殼（Windows TSF／macOS IMK／Android／HarmonyOS）尚未實作。
-  這裡跑的是與測試、評測、Rust 核心完全相同的那一份解碼邏輯。
+  這是 <b>引擎試打版</b>：跑的是與測試、評測、Rust 核心完全相同的那一份解碼邏輯。
+  平台外殼各自住在 <code>windows/</code>、<code>android/</code>、<code>harmonyos/</code>、<code>linux/</code>、<code>macos/</code>，
+  共用同一個核心；這裡只把引擎接到網頁上，方便不裝任何東西就能試。
 </div>
 
 <div class="panel">
@@ -123,9 +124,24 @@ const $ = (id) => document.getElementById(id);
 
 // ---------------------------------------------------------------- load model
 $("status").textContent = "載入語言模型（6.4 MB）…";
-const response = await fetch("../data/bopomofo-lm.tsv");
-if (!response.ok) {
-  $("status").textContent = `載入失敗：HTTP ${response.status}。請從倉庫根目錄啟動靜態伺服器。`;
+
+// Two deployments, two places the model can be:
+//
+//   ./data/…   the Pages site, where .github/workflows/pages.yml copies the
+//              model next to this page before uploading the artefact
+//   ../data/…  a checkout served from its root, which is how the README tells
+//              people to run it locally
+//
+// The first version only knew the second, so the deployed demo — the one the
+// README links as "nothing to install" — asked for a file one level above the
+// site root and got a 404.
+let response = null;
+for (const url of ["./data/bopomofo-lm.tsv", "../data/bopomofo-lm.tsv"]) {
+  const candidate = await fetch(url);
+  if (candidate.ok) { response = candidate; break; }
+}
+if (!response) {
+  $("status").textContent = "載入失敗：找不到 bopomofo-lm.tsv。請從倉庫根目錄啟動靜態伺服器（例：python3 -m http.server）。";
   throw new Error("language model unavailable");
 }
 const text = await response.text();

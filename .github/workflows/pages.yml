@@ -74,6 +74,16 @@ jobs:
           npm install --no-audit --no-fund 2>&1 | tail -2
           node --test 2>&1 | tail -5
 
+      # The model is 6.4 MB and is not committed under demo/, so the artefact
+      # has to carry it. Without this step the deployed page asks for a file
+      # above the site root, gets a 404, and prints "載入失敗" — which is what
+      # it did until this step existed.
+      - name: Put the language model next to the page
+        run: |
+          mkdir -p demo/data
+          cp data/bopomofo-lm.tsv demo/data/bopomofo-lm.tsv
+          ls -l demo/data/
+
       - uses: actions/configure-pages@v5
         with:
           enablement: true

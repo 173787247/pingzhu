@@ -20,6 +20,9 @@ research/data/BPMFMappings.txt
 core-rs/target/
 android/rust/target/
 demo/engine/
+# copied next to the demo page by .github/workflows/pages.yml for the Pages
+# deployment; the one copy that is committed lives in data/
+demo/data/
 
 # Windows build staging lives outside the repo; nothing here to ignore
 dist/
