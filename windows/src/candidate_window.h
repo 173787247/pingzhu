@@ -17,6 +17,27 @@
 
 namespace pingzhu {
 
+/* The window's geometry, shared by the painter, the layout, and the test that
+ * holds the two together.
+ *
+ * These numbers used to live inside the .cpp twice: once as line offsets in the
+ * painter and once as a sum in the layout. They drifted, and the page indicator
+ * — drawn 44 below the candidate row, inside a window sized for the 26-below
+ * line — had its lower half cut off on every screen it ever appeared on.
+ * Anything that needs them reads them from here. */
+namespace layout {
+constexpr int kPadX = 10;
+constexpr int kPadY = 8;
+constexpr int kLabelW = 18; /* room for "10" */
+constexpr int kItemGap = 14;
+/* Vertical offsets between the lines, top to bottom: the bopomofo being
+ * composed, the candidate row, → the preview with the mode, and 第 N/M 頁 —
+ * that last one only when there is more than one page. */
+constexpr int kLine1To2 = 22;
+constexpr int kLine2To3 = 26;
+constexpr int kLine2ToPage = 44;
+}  // namespace layout
+
 struct CandidateView {
     std::string composing;   /* the bopomofo being typed */
     std::string sentence;    /* what it would commit as */

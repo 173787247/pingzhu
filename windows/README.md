@@ -167,6 +167,7 @@ MSVC 以它为工作目录，而 `cmd.exe` 无法用 `\\wsl.localhost\...` 当�
 # Windows 原生，透過真實 DLL
 pingzhu-router-test.exe      # 按鍵路由：數字何時組字、何時選字
 pingzhu-engine-test.exe data # 引擎整合：你好／我愛你／萬丹／學習
+pingzhu-candidate-test.exe   # 候選視窗高度：它畫的每一行都要在視窗裡
 
 # Linux 端（引擎本體）
 cd ../engine && node --test "test/*.test.ts"    # 68 項
@@ -177,12 +178,26 @@ cd ../core-rs && cargo test                     # 26 單元 + 差異測試（1,5
 使用者词库，只有在词库档**已存在**时才装上——也就是说**全新安装的使用者永远学不了字**。
 现在 `engine_create` 一律附上一个空的词库。
 
+`pingzhu-candidate-test.exe` 抓到了另一个：候选视窗**画四行、只按三行的高度开窗**
+（见下面的已知限制）。它把视窗真的开起来、读回矩形，再拿 `candidate_window.h`
+里那份共用的行距算「最低那行应该落在哪」，两者一比就知道有没有被切掉：
+
+```
+small line height: 17 px
+one page  : 81 px tall; its lowest line ends at 73   ✓
+four pages: 99 px tall; its lowest line ends at 91   ✓
+```
+
+修好之前，多页时的高度也是 81 px（旧公式根本没看 `pageCount`），而那一行要到
+91 px——**正好差 10 px**，所以「第 N/M 頁」的下半截永远在视窗外。
+
 ## 已知限制
 
 1. 不是 TSF，不进语言列，管理员视窗无效。
 2. 注入是 `SendInput` 的 Unicode 字元，少数应用（游戏、部分终端机）可能收不到。
 3. 没有词库汇出汇入的介面（档案就在旁边，纯文字，可以直接编辑）。
 4. 仓颉／拼音等模式尚未接上（引擎目前只有注音）。
-5. **候选视窗比它的内容矮一行**：最下面那条状态列（「第 N/M 頁 共 K 個候選」）下半截
-   被视窗本身切掉。两次独立截图（`↓` 开启后的選字模式）都一样，是版面高度算错，
-   不是截图问题。**尚未修**。
+5. 候选视窗**曾经**比内容矮一行——已经修好（行距提成 `candidate_window.h` 里的
+   `layout::` 常量，画的地方和算高度的地方共用同一份；`pingzhu-candidate-test.exe`
+   盯着这件事）。README 首页那张 `docs/images/windows-candidate.png` 是**修正前**拍的，
+   所以图里最下面那行还是被切掉的样子。

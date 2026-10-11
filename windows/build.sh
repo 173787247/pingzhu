@@ -95,6 +95,12 @@ if [ "$RUN_TESTS" = "--run" ]; then
   # Windows path is handed over because the test runs on the Windows side.
   VECTORS="$(wslpath -w "$ROOT/tools/routing-vectors.tsv")"
   ( cd "$STAGE" && ./pingzhu-router-test.exe "$VECTORS" ) | sed 's/^/      /'
+
+  log "candidate window geometry"
+  # No vectors and no engine: it shows the window with the views the shell builds
+  # and checks that its height covers the lines it draws. Needs a desktop, so it
+  # is not part of the packaging self-check.
+  ( cd "$STAGE" && ./pingzhu-candidate-test.exe ) | sed 's/^/      /'
 fi
 
 cat <<EOF

@@ -53,6 +53,10 @@ echo [build] pingzhu-engine-test.exe
 cl %COMMON% tests\test_engine.cpp src\engine_api.cpp src\data_dir.cpp /Fe:pingzhu-engine-test.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:CONSOLE
 if errorlevel 1 exit /b 1
 
+echo [build] pingzhu-candidate-test.exe
+cl %COMMON% tests\test_candidate_layout.cpp src\candidate_window.cpp /Fe:pingzhu-candidate-test.exe /Fo:build\ /link %LIBS% /SUBSYSTEM:CONSOLE
+if errorlevel 1 exit /b 1
+
 rem --------------------------------------------------------------- TSF shell
 rem The text service is a second front end on the same engine. It shares
 rem router.cpp, engine_api.cpp and candidate_window.cpp with the portable shell;

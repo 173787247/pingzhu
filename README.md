@@ -57,9 +57,11 @@ the floating button in the corner). Type `su3cl3` and 你好 appears. Details in
 reached the application, because `s` and the rest are Bopomofo keys, not text. The
 candidate window shows the first of four pages (31 candidates) with `→ 你好` as what
 空格 would commit. Digits select only here, in 選字模式: with the window closed they
-are Bopomofo keys again (1 ㄅ 2 ㄉ 3 ˇ 4 ˋ 5 ㄓ 6 ˊ 7 ˙ 8 ㄚ 9 ㄞ 0 ㄢ). One cosmetic
-defect is visible and known: the status line below 選字模式 is taller than the window
-that holds it, so its lower half is cut off.*
+are Bopomofo keys again (1 ㄅ 2 ㄉ 3 ˇ 4 ˋ 5 ㄓ 6 ˊ 7 ˙ 8 ㄚ 9 ㄞ 0 ㄢ). The picture
+predates a fix: the status line below 選字模式 used to be drawn taller than the window
+holding it, so its lower half was cut off. The line offsets now live once, in
+`candidate_window.h` under `layout::`, shared by the painter and the layout, and
+`pingzhu-candidate-test.exe` holds them there.*
 
 **Android** needs no permissions at all — no network, no storage, no contacts. Enable it
 under Settings → System → Languages & input → On-screen keyboard, then select it. Details in
@@ -481,7 +483,7 @@ Tests, as of 2026-10-11:
 | **26 Rust unit tests** | `cd core-rs && cargo test --release` | the port, module by module |
 | **1,532 differential cases** | same command | recorded keystroke strings replayed through both implementations; composing text, sentence, score, path words and page 1 must match exactly |
 | **207 interaction scenarios** | same command | selection, paging, cursor movement, mode switches |
-| **3 Windows native suites** | [`windows/`](windows/README.md) | key routing, engine integration, TSF COM contract |
+| **4 Windows native suites** | [`windows/`](windows/README.md) | key routing, engine integration, TSF COM contract, candidate-window geometry |
 | **16 Android JVM tests** | [`android/`](android/README.md) | key routing — no emulator needed |
 
 Scheduling, effort and risk: [docs/05-roadmap.md](docs/05-roadmap.md).

@@ -6,11 +6,15 @@ namespace pingzhu {
 
 namespace {
 
+using layout::kItemGap;
+using layout::kLabelW;
+using layout::kLine1To2;
+using layout::kLine2To3;
+using layout::kLine2ToPage;
+using layout::kPadX;
+using layout::kPadY;
+
 constexpr wchar_t kClassName[] = L"PingZhuCandidateWindow";
-constexpr int kPadX = 10;
-constexpr int kPadY = 8;
-constexpr int kLabelW = 18;   /* room for "10" */
-constexpr int kItemGap = 14;
 
 std::wstring widen(const std::string &utf8) {
     if (utf8.empty()) return L"";
@@ -115,7 +119,6 @@ void CandidateWindow::reposition() {
     HGDIOBJ old = SelectObject(dc, fontCandidates_);
 
     int width = kPadX * 2;
-    int maxItemH = 0;
     for (size_t i = 0; i < view_.candidates.size(); ++i) {
         std::wstring label = std::to_wstring(i + 1 == 10 ? 0 : static_cast<int>(i + 1));
         std::wstring word = widen(view_.candidates[i]);
@@ -123,7 +126,6 @@ void CandidateWindow::reposition() {
         GetTextExtentPoint32W(dc, word.c_str(), static_cast<int>(word.size()), &sWord);
         GetTextExtentPoint32W(dc, label.c_str(), static_cast<int>(label.size()), &sLabel);
         width += kLabelW + sWord.cx + kItemGap;
-        maxItemH = std::max<int>(maxItemH, static_cast<int>(sWord.cy));
     }
     SelectObject(dc, fontComposing_);
     std::wstring composing = widen(view_.composing);
@@ -131,13 +133,27 @@ void CandidateWindow::reposition() {
     if (!composing.empty()) {
         GetTextExtentPoint32W(dc, composing.c_str(), static_cast<int>(composing.size()), &sComposing);
     }
+    /* The small font's line height, measured rather than assumed: the window is
+     * laid out on whatever DPI the user runs, so a literal would be right on
+     * exactly one display. */
+    SelectObject(dc, fontSmall_);
+    SIZE sSmall = {0};
+    {
+        const wchar_t *sample = L"第 0/0 頁";
+        GetTextExtentPoint32W(dc, sample, static_cast<int>(wcslen(sample)), &sSmall);
+    }
     SelectObject(dc, old);
     ReleaseDC(hwnd_, dc);
 
     width = std::max<int>(width, static_cast<int>(sComposing.cx) + kPadX * 2 + 120);
     width = std::min<int>(width, 1000);
-    /* composing line + candidate line + a thin status line */
-    int height = kPadY * 2 + sComposing.cy + maxItemH + 18;
+
+    /* Tall enough for the last line this window will actually draw. Deriving it
+     * from the offsets above, instead of adding up a second set of numbers, is
+     * the whole fix - see the comment on them. */
+    int lastLineTop = kPadY + kLine1To2 + kLine2To3;
+    if (view_.pageCount > 1) lastLineTop = kPadY + kLine1To2 + kLine2ToPage;
+    int height = lastLineTop + static_cast<int>(sSmall.cy) + kPadY;
 
     POINT at = view_.hasAnchor ? view_.anchor : caretAnchor();
     int screenW = GetSystemMetrics(SM_CXSCREEN);
@@ -186,7 +202,7 @@ void CandidateWindow::paint(HDC target) {
     /* line 2: the candidates, numbered the way the keys are */
     SelectObject(dc, fontCandidates_);
     int x = kPadX;
-    int y2 = y + 22;
+    int y2 = y + kLine1To2;
     for (size_t i = 0; i < view_.candidates.size(); ++i) {
         wchar_t label[4];
         int shown = (i == 9) ? 0 : static_cast<int>(i + 1);
@@ -207,7 +223,7 @@ void CandidateWindow::paint(HDC target) {
     SelectObject(dc, fontSmall_);
     SetTextColor(dc, view_.faithful ? RGB(78, 201, 160) : RGB(224, 164, 88));
     std::wstring preview = L"→ " + widen(view_.sentence);
-    TextOutW(dc, kPadX, y2 + 26, preview.c_str(), static_cast<int>(preview.size()));
+    TextOutW(dc, kPadX, y2 + kLine2To3, preview.c_str(), static_cast<int>(preview.size()));
 
     /* The script comes first in the status line, and in colour: it changes what
      * every character on screen will become, so it is the most important thing
@@ -221,16 +237,16 @@ void CandidateWindow::paint(HDC target) {
     GetTextExtentPoint32W(dc, hint.c_str(), static_cast<int>(hint.size()), &sHint);
     const int right = std::max<int>(kPadX, static_cast<int>(w - sHint.cx - sScript.cx - 14) - kPadX);
     SetTextColor(dc, view_.simplified ? RGB(120, 200, 255) : RGB(255, 190, 120));
-    TextOutW(dc, right, y2 + 26, script, static_cast<int>(wcslen(script)));
+    TextOutW(dc, right, y2 + kLine2To3, script, static_cast<int>(wcslen(script)));
     SetTextColor(dc, RGB(120, 128, 145));
-    TextOutW(dc, std::max<int>(kPadX, static_cast<int>(w - sHint.cx) - kPadX), y2 + 26, hint.c_str(),
+    TextOutW(dc, std::max<int>(kPadX, static_cast<int>(w - sHint.cx) - kPadX), y2 + kLine2To3, hint.c_str(),
              static_cast<int>(hint.size()));
 
     if (view_.pageCount > 1) {
         wchar_t page[64];
         wsprintfW(page, L"第 %d/%d 頁　空白鍵下一頁", view_.pageIndex + 1, view_.pageCount);
         SetTextColor(dc, RGB(120, 128, 145));
-        TextOutW(dc, kPadX, y2 + 44, page, static_cast<int>(wcslen(page)));
+        TextOutW(dc, kPadX, y2 + kLine2ToPage, page, static_cast<int>(wcslen(page)));
     }
 
     BitBlt(target, 0, 0, w, h, dc, 0, 0, SRCCOPY);
