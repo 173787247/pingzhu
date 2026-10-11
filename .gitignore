@@ -12,6 +12,12 @@ research/parts/
 # upstream file kept only for local cross-checking; reproducible from McBopomofo
 research/data/BPMFMappings.txt
 
+# Working notes for whoever picks this project up next — current state, next
+# steps, and the machine-specific details (paths, proxy, credentials setup) that
+# do not belong in a public repository. Written for an agent, not for a reader
+# of the project, so it stays on disk and out of the repo.
+START-HERE.md
+
 # editor
 .vscode/
 .idea/

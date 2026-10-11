@@ -490,9 +490,6 @@ Scheduling, effort and risk: [docs/05-roadmap.md](docs/05-roadmap.md).
 | [macos/](macos/README.md) | **macOS input method**: build, what CI verifies, design and limits |
 | [tools/](tools/) | Scripts behind every number here: the Pinyin comparison, the demo build, the figures |
 
-Working on the project itself? [`START-HERE.md`](START-HERE.md) is the handover note —
-current state, next steps, and where every piece of evidence lives (it is in Chinese).
-
 ---
 
 ## License

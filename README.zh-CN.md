@@ -459,9 +459,6 @@ $ node engine/bench-learn.mjs 5000 --recall
 | [macos/](macos/README.md) | **macOS 输入法**：构建、CI 验证、设计与限制 |
 | [tools/](tools/) | 这份 README 里每个数字背后的脚本：拼音对比、网页试打版构建、配图生成 |
 
-要接着做这个项目本身？[`START-HERE.md`](START-HERE.md) 是交接文件——做到哪、下一步、
-每条证据放在哪里。
-
 ---
 
 ## 授权与致谢
