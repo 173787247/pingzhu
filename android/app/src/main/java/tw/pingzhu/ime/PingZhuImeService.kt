@@ -13,6 +13,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 import java.io.File
 import java.util.concurrent.Executors
@@ -58,10 +59,12 @@ class PingZhuImeService : InputMethodService() {
         // `window` here is the input method's Dialog (a SoftInputWindow); the
         // layout parameters live on the Window inside it. Two "window"s because
         // they are two different things.
-        window?.window?.setLayout(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-        )
+        //
+        // Full screen, and everything the input method draws places itself at the
+        // bottom of it (see onCreateInputView): the candidate row, then the
+        // keyboard. Letting the window wrap instead moved the keyboard to the top
+        // of the display, because the framework's own candidate area sits above
+        // the input frame and a wrapped window is placed from that frame down.
         // Loading the 6 MB language model takes a moment; doing it here rather
         // than on the first keystroke means the first keystroke is not the one
         // that waits.
@@ -175,10 +178,43 @@ class PingZhuImeService : InputMethodService() {
         val board = KeyboardView(this)
         board.onKey = { key -> onKeyPressed(key) }
         keyboard = board
-        // Bottom-aligned: the window is the whole screen, so the keyboard has to
-        // say where in it the keyboard belongs.
-        root.addView(
+
+        /*
+         * The candidate row is part of this view, not of onCreateCandidatesView.
+         *
+         * The framework owns that other area and shows it only when it decides the
+         * window has room, which this one never did: the row measured correctly,
+         * stayed VISIBLE, and reported `isShown=false` (1080x551, `vis=VISIBLE`,
+         * attached, never displayed) for as long as it was the framework's to
+         * place. Here it is ours to place, and it goes where a candidate row
+         * belongs: directly above the keyboard. A column at the bottom of the
+         * window gives both of them their natural heights and no more.
+         */
+        val bar = CandidateBar(this)
+        bar.onSelect = { index -> selectCandidate(index) }
+        bar.visibility = View.GONE
+        candidates = bar
+
+        val column = LinearLayout(this)
+        column.orientation = LinearLayout.VERTICAL
+        column.addView(
+            bar,
+            LinearLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+        column.addView(
             board,
+            LinearLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+        // Bottom-aligned: the window is the whole screen, so the column has to
+        // say where in it the input method belongs.
+        root.addView(
+            column,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -199,13 +235,6 @@ class PingZhuImeService : InputMethodService() {
             )
         }
         return root
-    }
-
-    override fun onCreateCandidatesView(): View {
-        val bar = CandidateBar(this)
-        bar.onSelect = { index -> selectCandidate(index) }
-        candidates = bar
-        return bar
     }
 
     /** All rows are [row][column]. */
@@ -278,7 +307,16 @@ class PingZhuImeService : InputMethodService() {
         val engine = this.engine ?: return
         val composing = engine.isComposing()
         val windowOpen = engine.windowOpen()
-        val hasCandidates = windowOpen && engine.candidates().isNotEmpty()
+        // Whether there is something to open, not whether it is already open.
+        // The router's rule for opening the list is `!windowOpen &&
+        // hasCandidates` (Router.kt), and computing the flag as
+        // `windowOpen && …` made that rule impossible to reach: 空白 committed
+        // the sentence instead of opening the list, on every keystroke, on every
+        // device. Windows and macOS both hand the router a plain candidate count
+        // (main.cpp `candidateCount() > 0`,
+        // PingZhuInputController.swift `candidateCount > 0`) — the count does not
+        // depend on the window, and neither does the engine's page.
+        val hasCandidates = engine.candidates().isNotEmpty()
 
         when (Router.route(ch, composing, windowOpen, hasCandidates)) {
             Action.Pass -> sendKeyToApplication(ch)
@@ -356,6 +394,10 @@ class PingZhuImeService : InputMethodService() {
         val list = if (windowOpen) engine.candidates() else emptyList()
 
         candidates?.show(composing, sentence, list, engine.outputIsFaithful())
+        // The row shows itself from the engine's state (CandidateBar.show sets
+        // GONE when there is neither a composition nor a candidate), which is why
+        // no framework call is needed here any more: it is a child of the input
+        // view now, not a view the framework decides to display.
 
         // The letters being typed stay in the field, underlined by the
         // application — the standard Android behaviour, and the reason the user

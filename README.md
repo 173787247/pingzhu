@@ -67,14 +67,16 @@ holding it, so its lower half was cut off. The line offsets now live once, in
 under Settings → System → Languages & input → On-screen keyboard, then select it. Details in
 [android/README.md](android/README.md).
 
-![The PingZhu keyboard on an Android 13 emulator: four rows of Bopomofo keys with 繁, 空白, backspace and enter below](docs/images/android-keyboard.png)
+![PingZhu on an Android 13 emulator: a candidate row above the keyboard showing the composition ㄋㄧˇ, the sentence 你, and numbered candidates 1 你 2 妳 3 擬 4 昵 5 旋…](docs/images/android-candidates.png)
 
-*The keyboard on an Android 13 (API 33) emulator — a Pixel-5-sized x86_64 image running
-under KVM inside WSL, with the APK installed and the input method selected. The layout is
-not a hand-drawn asset: `Engine.keyboardRows()` derives every key from the same table the
-decoder reads, and a test (`the_drawn_keyboard_matches_the_decoder`) holds the two together.
-Note the digit row — `1` is ㄅ, `3` is ˇ, `6` is ˊ. They are Bopomofo keys, which is why
-selecting a candidate means opening the list first, exactly as on the desktop.*
+*Running on an Android 13 (API 33) emulator — a Pixel-5-sized x86_64 image under KVM inside
+WSL, with the APK installed and the input method selected; `su3` was typed and 空白 pressed.
+The band above the keyboard is the candidate row: the composition being typed, the word
+空白 would commit, and the numbered candidates a digit key picks from. The keyboard is not a
+hand-drawn asset: `Engine.keyboardRows()` derives every key from the same table the decoder
+reads, and a test (`the_drawn_keyboard_matches_the_decoder`) holds the two together. Note the
+digit row — `1` is ㄅ, `3` is ˇ, `6` is ˊ. Those are Bopomofo keys, and they only select while
+the candidate row is open, exactly as on the desktop.*
 
 Every shell writes the same `pingzhu.ini`, so a setting means the same thing on every platform.
 

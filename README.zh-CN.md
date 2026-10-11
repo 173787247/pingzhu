@@ -58,13 +58,14 @@ HarmonyOS NEXT 与 Linux。
 **Android**：安装后到「设置 → 系统 → 语言与输入 → 虚拟键盘」启用，再选为输入法。
 不需要任何权限——不联网、不读存储、不碰通讯录。详细操作见 [android/README.md](android/README.md)。
 
-![平注键盘在 Android 13 模拟器上：四排注音键，下面一排是 繁、空白、退格、回车](docs/images/android-keyboard.png)
+![平注在 Android 13 模拟器上：键盘上方一条候选列显示组字 ㄋㄧˇ、句子 你，以及编号的候选 1 你 2 妳 3 擬 4 昵 5 旋…](docs/images/android-candidates.png)
 
-*键盘跑在 Android 13（API 33）模拟器上——Pixel 5 尺寸的 x86_64 镜像，在 WSL 里用 KVM 启动，
-APK 已安装、输入法已选中。这个键面不是手画的素材：`Engine.keyboardRows()` 从**解码器读的同一张表**
-推出每个键，而且有一个测试（`the_drawn_keyboard_matches_the_decoder`）把两者钉在一起。
-注意数字那一排——`1` 是 ㄅ、`3` 是 ˇ、`6` 是 ˊ，它们是注音键，所以在手机上选字同样要先开候选单，
-和桌面版一致。*
+*跑在 Android 13（API 33）模拟器上——Pixel 5 尺寸的 x86_64 镜像，在 WSL 里用 KVM 启动，
+APK 已安装、输入法已选中，图上打了 `su3` 再按空白。键盘上方那条是候选列：左边是正在组字的
+`ㄋㄧˇ`，接着是按空白会送出的词，右边是**编号的候选**，按数字键取用。这个键面不是手画的素材：
+`Engine.keyboardRows()` 从**解码器读的同一张表**推出每个键，而且有一个测试
+（`the_drawn_keyboard_matches_the_decoder`）把两者钉在一起。注意数字那一排——`1` 是 ㄅ、
+`3` 是 ˇ、`6` 是 ˊ，它们是注音键，只有在候选列开着的时候才是选字键，和桌面版一致。*
 
 所有外壳都写同一份 `pingzhu.ini`，所以同一个设置在哪个平台上都是同一个意思。
 
