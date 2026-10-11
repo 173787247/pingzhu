@@ -38,3 +38,7 @@ demo/data/
 
 # Windows build staging lives outside the repo; nothing here to ignore
 dist/
+
+# Python bytecode from the tooling in tools/ and research/tools/
+__pycache__/
+*.pyc

@@ -135,9 +135,15 @@ output = simplified
 ## 从 WSL 重新建置
 
 ```bash
-bash windows/build.sh                    # 建置到 /mnt/c/Users/$USER/pingzhu-build
+bash windows/build.sh                    # 建置到 %LOCALAPPDATA%\pingzhu-build
 bash windows/build.sh <staging> --run    # 順便跑路由測試
+bash windows/package.sh 0.10.3           # 產出 dist/ 的 zip 與 setup.exe
 ```
+
+**`<staging>` 必须是 Windows 看得到的路径**（`/mnt/c/...`），不能放在 Linux 家目录：
+MSVC 以它为工作目录，而 `cmd.exe` 无法用 `\\wsl.localhost\...` 当工作目录。
+不指定时由 `%LOCALAPPDATA%` 问出来，用 `PINGZHU_STAGE` 可以覆写——WSL 与 Windows
+不保证同名使用者，所以默认值不能写成某个人家目录里的固定路径。
 
 建置流程有两个工具链，理由很具体：
 
@@ -163,8 +169,8 @@ pingzhu-router-test.exe      # 按鍵路由：數字何時組字、何時選字
 pingzhu-engine-test.exe data # 引擎整合：你好／我愛你／萬丹／學習
 
 # Linux 端（引擎本體）
-cd ../engine && node --test "test/*.test.ts"    # 40 項
-cd ../core-rs && cargo test                     # 16 單元 + 2 差異化
+cd ../engine && node --test "test/*.test.ts"    # 68 項
+cd ../core-rs && cargo test                     # 26 單元 + 差異測試（1,532 例）+ 互動（207 例）
 ```
 
 `pingzhu-engine-test.exe` 在开发过程中抓到一个真实缺陷：`engine_create` 原本不附带

@@ -18,7 +18,7 @@
 
 ### 本次研究的工具限制（重要）
 
-本次执行环境的 `web_search` 工具故障（DeepSeek 搜寻端点回传未解压的二进位 body，JSON 解析失败；根因是本机 undici 大版本错配，已在 `/home/rchua/GO/dsh-websearch-修复记录.md` 有完整诊断，需重启 dsh 才会生效）。因此本报告改用：
+本次执行环境的 `web_search` 工具故障（DeepSeek 搜寻端点回传未解压的二进位 body，JSON 解析失败；根因是执行环境里 undici 的大版本错配，诊断记录留在本机、不在本仓库，需重启 dsh 才会生效）。因此本报告改用：
 
 - `web_fetch` / `curl`：抓取 Microsoft Learn、Apple Developer、Android Developers、Google Play Help、GitHub raw 等静态站。
 - **OpenHarmony 官方 docs repo（`raw.githubusercontent.com/openharmony/docs`）**：这是本次最重大的方法论突破 —— OpenHarmony 的 IME Kit 文件以纯 Markdown 形式提供，内容与华为 `@kit.IMEKit` API 几乎一致，且**可完整下载与本地检索**。

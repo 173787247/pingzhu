@@ -21,7 +21,7 @@
 |---|---|---|
 | `obscura_fetch` | `https://html.duckduckgo.com/html/?q=<urlencoded>`，`dump=links`/`text`，**务必带 `timeoutSec: 60~120`** | 中（连线不稳，需重试） |
 | `web_fetch` | 一般公开 https 页面 | 高 |
-| `curl`（走 proxy `127.0.0.1:16006`） | GitHub raw、API、PDF、大批档案 | 高 |
+| `curl`（走 `$HTTPS_PROXY`） | GitHub raw、API、PDF、大批档案 | 高 |
 | `pdftotext` | 论文 PDF 取文 | 高 |
 
 **已确认无效**：Bing（HTML 无结果、RSS 对中文查询回传无关广告）、Mojeek（captcha）、

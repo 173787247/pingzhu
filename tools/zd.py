@@ -2,7 +2,7 @@
 """Dump a Zendesk Help Center to plain text files.
 
 usage: zd.py <base> <locale> <outdir>
-e.g.   zd.py https://support.iqt.ai zh-tw /home/rchua/GO/raw/zendesk
+e.g.   zd.py https://support.iqt.ai zh-tw ~/raw/zendesk
 """
 import sys, os, json, re, html, urllib.request
 
