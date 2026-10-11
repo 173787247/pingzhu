@@ -16,8 +16,13 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-VERSION="${1:-0.6.0}"
-STAGE="${PINGZHU_STAGE:-/mnt/c/Users/rchua/pingzhu-build}"
+. "$HERE/stage.sh"
+# The version defaults to the one the rest of the project carries, so a bare
+# `package.sh` cannot label a download with a release that never existed. It
+# used to default to a literal that stopped being true several releases ago, and
+# the file names it produces are what a downloader sees.
+VERSION="${1:-$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$ROOT/engine/package.json")}"
+STAGE="$(resolve_stage "")"
 DIST="$ROOT/dist"
 PKG="$DIST/pingzhu-$VERSION-win-x64"
 

@@ -11,7 +11,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-STAGE="${1:-/mnt/c/Users/rchua/pingzhu-build}"
+. "$HERE/stage.sh"
+STAGE="$(resolve_stage "${1:-}")"
 RUN_TESTS="${2:-}"
 
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
