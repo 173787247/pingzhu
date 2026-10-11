@@ -78,7 +78,7 @@ filesystem helpers are the only thing that needs a filesystem.
 
 Both files ship in the package under `data/`:
 
-- `bopomofo-lm.tsv` — 169,604 entries over 131,048 readings
+- `bopomofo-lm.tsv` — 170,145 entries over 131,048 readings
 - `ts-conversion.tsv` — the Traditional/Simplified table
 
 The language model is derived from [McBopomofo](https://github.com/openvanilla/McBopomofo)

@@ -279,7 +279,7 @@ from wordfreq import zipf_frequency as z
 他们的 lattice），与本专案 `bench.mjs` 的数字不可直接比较。**
 
 **★ 使用前必读**：`docs/04-data-and-licensing.md` 已记录本仓库的实验结论——
-libchewing 的语汇表 111,601 条 vs 本仓库 169,604 条，**差异过大**，
+libchewing 的语汇表 111,601 条 vs 本仓库 170,145 条，**差异过大**，
 `research/tools/bigram-trial.mjs` 的自检只过 159/257，
 因此**不能只换 bigram，必须连同 unigram 一起换**，或拿它当语料另行统计。
 **但单字频次（unigram 中的单字条目）可以独立取用**——本次实测即证明这一点。
@@ -290,7 +290,7 @@ libchewing 的语汇表 111,601 条 vs 本仓库 169,604 条，**差异过大**�
 |---|---|
 | **授权** | **MIT**。本仓库实测 `LICENSE.txt`：「MIT License / Copyright (c) **2011-2026 Mengjuei Hsieh et al.**」 |
 | **上游链** | 片语清单衍生自 **libtabe `tsi.src`（BSD）** |
-| **规模（本仓库 `data/stats.json`）** | 片语 169,604；相异读音 131,048；含字音节 1,397；总字数 26,315 |
+| **规模（本仓库 `data/stats.json`）** | 片语 170,145；相异读音 131,048；含字音节 1,397；总字数 26,315 |
 | **★ 台湾适用性** | 高（台湾团队维护、原生注音），**但字频资料陈旧**（见 §1.3） |
 | **URL** | <https://github.com/openvanilla/McBopomofo> |
 
@@ -561,7 +561,7 @@ libchewing 的语汇表 111,601 条 vs 本仓库 169,604 条，**差异过大**�
 
 **风险（必须一起读）：**
 
-- **词表差异极大**：libchewing 语汇表 111,601 条 vs 本仓库 169,604 条。
+- **词表差异极大**：libchewing 语汇表 111,601 条 vs 本仓库 170,145 条。
   `docs/04-data-and-licensing.md` 已实测：`bigram-trial.mjs` 的自检只过 159/257，
   **只换 bigram 而保留原词表，任何差异都无法归因。**
   → **本次建议只针对「单字频次」的取用**（unigram 中的单字条目，实测有 18,769 条），

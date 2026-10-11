@@ -171,7 +171,7 @@ lattice），与本仓库 `bench.mjs` 的数字**不可直接比较**。
 
 **★ 更要紧的是：不能直接拿来用。** 实测见
 [research/tools/bigram-trial.mjs](../research/tools/bigram-trial.mjs)：
-libchewing 的语汇表 111,601 条，本仓库现用 169,604 条，差异过大 ——
+libchewing 的语汇表 111,601 条，本仓库现用 170,145 条，差异过大 ——
 实验自检（unigram 基线须复现引擎选择）只过 159/257，因此任何被归因于
 bigram 的差异实际上来自词表差异，结论不成立。
 

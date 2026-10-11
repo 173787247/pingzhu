@@ -101,7 +101,7 @@
 
     pingzhu-ime.exe        输入法本体（托盘程式）
     pingzhu_core.dll       Rust 引擎：注音解码、词库、学习（C ABI）
-    bopomofo-lm.tsv        语言模型：169,604 条词、131,048 个读音
+    bopomofo-lm.tsv        语言模型：170,145 条词、131,048 个读音
     pingzhu-userdict.txt   你的学习纪录（第一次教过字之后才会出现）
     install.cmd            / install.ps1      安装
     uninstall.cmd          / uninstall.ps1    解除安装

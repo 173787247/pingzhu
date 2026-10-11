@@ -165,7 +165,7 @@ data/vendor/WebDataPlain.ts   # 單音節候選字表，2,012 條
         ▼
 data/build.mjs                # 解開 McBopomofo 的 packed key 編碼
         ▼
-data/bopomofo-lm.tsv          # 169,604 詞條 / 131,048 讀音  (6.4 MB)
+data/bopomofo-lm.tsv          # 170,145 詞條 / 131,048 讀音  (6.4 MB)
 data/bopomofo-chars.tsv       # 1,397 音節的候選字（頻率序）
 data/stats.json
 ```
@@ -231,9 +231,9 @@ freq(k) = log10( 2.7^(len(k)-1) × occ(k) / norm )
 
 | 指标 | 实测值 | 说明 |
 |---|---|---|
-| 模型载入 | 273 ms | 一次性，6.4 MB TSV，169,604 条 |
-| 每按键解码 | **15.2 µs** | 含切分列举 + 读字格 + Viterbi |
-| 吞吐 | 65,934 键/秒 | 单执行绪 Node 24 |
+| 模型载入 | 249 ms | 一次性，6.4 MB TSV，170,145 条 |
+| 每按键解码 | **13.2 µs** | 含切分列举 + 读字格 + Viterbi |
+| 吞吐 | 76,033 键/秒 | 单执行绪 Node 24（2026-10-11 实测；重复跑会差几个百分点） |
 | 记忆体 | 约 60 MB | 主要为 Map 形式的词库 |
 
 输入法的体验门槛是候选字必须在 10 ms 内出现（否则打字会有黏滞感）。
