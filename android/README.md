@@ -16,10 +16,14 @@ android/
 ```bash
 bash android/setup-sdk.sh          # 只需一次
 bash android/build-rust.sh --release
-cd android && gradle assembleDebug
+cd android && ./gradlew assembleDebug   # 版本由 wrapper 钉住，不用先装 gradle
 ```
 
 产物：`android/app/build/outputs/apk/debug/app-debug.apk`
+
+`gradlew` 会自己下 Gradle 8.9（AGP 8.5.2 要求 8.7 以上）。用 wrapper 而不是系统的
+`gradle`，是因为「先装一个恰好对版本的 Gradle」是这台机器上的巧合，不是别人的机器上
+也成立的前提。
 
 ## 为什么是这些选择
 
