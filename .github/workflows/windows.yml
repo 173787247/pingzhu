@@ -1,0 +1,133 @@
+name: Windows
+
+# The portable shell and the text service are the two halves of this project
+# that no other workflow builds: Linux, macOS and HarmonyOS each have their own
+# file, and the Windows one was missing. Everything under windows/ has therefore
+# only ever been compiled on the machines of whoever was working on it — which
+# is how a hard-coded path to one installation of Visual Studio survived in
+# build.bat, and how a candidate window one line too short survived in
+# candidate_window.cpp.
+#
+# The staging directory is built here rather than by windows/build.sh, because
+# that script is deliberately a WSL script: it reads the Windows local app data
+# path through /mnt and moves locked DLLs aside with tasklist.exe. A runner has
+# no WSL, so the same files are put in one flat directory with PowerShell, and
+# build.bat — which is ordinary cmd.exe — does the rest.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'windows/**'
+      - 'core-rs/**'
+      - 'data/**'
+      - 'tools/routing-vectors.tsv'
+      - '.github/workflows/windows.yml'
+  pull_request:
+    paths:
+      - 'windows/**'
+      - 'core-rs/**'
+      - 'tools/routing-vectors.tsv'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build the shared core
+        run: |
+          cargo build --release --manifest-path core-rs/Cargo.toml --target x86_64-pc-windows-msvc
+          Get-Item core-rs\target\x86_64-pc-windows-msvc\release\pingzhu_core.dll | Format-List Length, FullName
+        shell: pwsh
+
+      - name: Stage what build.bat expects next to itself
+        shell: pwsh
+        run: |
+          # build.bat links pingzhu_core.dll by name from its own directory, and
+          # the engine test reads the language model from data\ beside it.
+          $stage = Join-Path $env:RUNNER_TEMP 'pingzhu-stage'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item windows\build.bat $stage
+          Copy-Item -Recurse windows\src $stage\src
+          Copy-Item -Recurse windows\tests $stage\tests
+          Copy-Item -Recurse windows\tsf $stage\tsf
+          Copy-Item core-rs\target\x86_64-pc-windows-msvc\release\pingzhu_core.dll $stage
+          New-Item -ItemType Directory -Force -Path (Join-Path $stage 'data') | Out-Null
+          Copy-Item data\bopomofo-lm.tsv (Join-Path $stage 'data')
+          "PINGZHU_STAGE=$stage" | Out-File -Append $env:GITHUB_ENV
+
+      - name: Build the shell and the text service
+        working-directory: ${{ env.PINGZHU_STAGE }}
+        run: |
+          # This is also the test of the MSVC discovery in build.bat: it asks
+          # vswhere first, then falls back to known installations, and the runner
+          # is not the machine the first version of that path was written on.
+          cmd /c build.bat
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem *.exe, *.dll | Format-Table Name, Length
+        shell: pwsh
+
+      - name: Routing rules, against the shared vectors
+        working-directory: ${{ env.PINGZHU_STAGE }}
+        run: |
+          .\pingzhu-router-test.exe "${{ github.workspace }}\tools\routing-vectors.tsv"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
+
+      - name: Engine, through the real DLL
+        working-directory: ${{ env.PINGZHU_STAGE }}
+        run: |
+          .\pingzhu-engine-test.exe data
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
+
+      - name: TSF COM contract
+        working-directory: ${{ env.PINGZHU_STAGE }}
+        run: |
+          .\pingzhu-tsf-test.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
+
+      - name: Candidate window geometry
+        working-directory: ${{ env.PINGZHU_STAGE }}
+        run: |
+          # Opens a real window, so it needs a desktop. A runner has one; a
+          # headless build machine would not, which is why the packaging
+          # self-check runs the engine and COM tests only.
+          .\pingzhu-candidate-test.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pingzhu-windows-portable
+          path: |
+            ${{ env.PINGZHU_STAGE }}/pingzhu-ime.exe
+            ${{ env.PINGZHU_STAGE }}/pingzhu_core.dll
+            ${{ env.PINGZHU_STAGE }}/pingzhu-tsf-*.dll
+            ${{ env.PINGZHU_STAGE }}/pingzhu-regtool.exe
+          if-no-files-found: error
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### Windows"
+            echo ""
+            echo "- built: portable shell, text service DLL, registration tool"
+            echo "- routing: \`pingzhu-router-test.exe\` against \`tools/routing-vectors.tsv\`"
+            echo "- engine: \`pingzhu-engine-test.exe\` through the real \`pingzhu_core.dll\`"
+            echo "- candidate window: \`pingzhu-candidate-test.exe\` (opens the window and"
+            echo "  checks its height covers the lines it draws)"
+            echo "- **not covered**: installing the text service into the language bar,"
+            echo "  and typing into a real application — both need an interactive desktop"
+          } >> $env:GITHUB_STEP_SUMMARY
+        shell: pwsh

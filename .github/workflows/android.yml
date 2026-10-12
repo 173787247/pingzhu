@@ -1,0 +1,94 @@
+name: Android
+
+# The Android shell is the one whose bugs are invisible from a desk: the
+# candidate row never appeared at all, and the list could not be paged past its
+# first ten entries. Both were found by hand, on an emulator, and neither would
+# have been caught here — this workflow cannot type on a keyboard, and does not
+# pretend to.
+#
+# What it can hold is the two halves that are checkable without a device: the
+# routing rules (pure logic, on the JVM) and the fact that the APK still builds
+# against the shared engine, for both ABIs, with the NDK version the project
+# pins.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'core-rs/**'
+      - 'data/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths: ['android/**', 'core-rs/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install the NDK the project pins
+        run: |
+          # The runner image ships an SDK, but not necessarily this NDK — and
+          # build-rust.sh deliberately refuses to guess: it looks for
+          # $ANDROID_HOME/ndk/26.1.10909125 and stops if it is not there. The
+          # version is a decision, not a side effect of what happens to be
+          # installed.
+          SDKMANAGER="$(command -v sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "ndk;26.1.10909125" > /dev/null
+          ls -d "$ANDROID_HOME/ndk/26.1.10909125"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cross-compile the shared engine for both ABIs
+        run: |
+          # arm64-v8a and x86_64, the two the Gradle file keeps. The script adds
+          # the rustup targets itself and uses the NDK's own clang rather than a
+          # .cargo/config.toml, because that file would need one machine's
+          # absolute NDK path checked in.
+          bash android/build-rust.sh --release
+          file android/app/src/main/jniLibs/*/libpingzhu_android.so
+
+      - name: The routing rules, on the JVM
+        working-directory: android
+        run: ./gradlew test --no-daemon --console=plain
+
+      - name: Build the APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --console=plain
+
+      - name: What came out
+        run: |
+          ls -la android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l android/app/build/outputs/apk/debug/app-debug.apk \
+            | grep -E "lib/|bopomofo" | head -8
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pingzhu-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### Android"
+            echo ""
+            echo "- routing: \`./gradlew test\` — pure JVM, no emulator, no device"
+            echo "- APK: \`pingzhu-android-debug\` (debug-signed; the release keystore is"
+            echo "  deliberately not in the repository)"
+            echo "- **not covered**: everything that needs a device or an emulator — the"
+            echo "  keyboard drawing, the candidate row, the input-method lifecycle, and"
+            echo "  whether a key press reaches the engine at all"
+          } >> $GITHUB_STEP_SUMMARY

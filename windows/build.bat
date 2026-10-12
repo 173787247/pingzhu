@@ -18,11 +18,37 @@ rem Work from this script's own directory; cmd.exe may be started anywhere and
 rem refuses to run at all from a UNC working directory.
 cd /d "%~dp0"
 
+rem Find the MSVC environment instead of assuming one path. It differs by edition
+rem (BuildTools, Community, Professional, Enterprise) and by where the user put
+rem it; the single path that used to be here was the one on the machine this was
+rem first written on, and it is wrong on every other.
+rem
+rem vswhere ships with every Visual Studio 2017 and later installer, so it is
+rem asked first. The explicit list below is the fallback, and the first entry is
+rem the one this project has actually been built on.
+rem
+rem Note the goto-based flow rather than `if ( ... )` blocks: the installation
+rem path contains "(x86)", and a closing parenthesis inside an expanded block
+rem terminates it.
+set "VCVARS="
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+if not exist "%VSWHERE%" goto try_known_paths
+for /f "usebackq delims=" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat"
+if defined VCVARS goto have_vcvars
+
+:try_known_paths
 set "VCVARS=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 if exist "%VCVARS%" goto have_vcvars
-echo [build] Visual Studio Build Tools not found at:
-echo         %VCVARS%
-echo         Edit VCVARS in this script, or install "Desktop development with C++".
+set "VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+if exist "%VCVARS%" goto have_vcvars
+set "VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
+if exist "%VCVARS%" goto have_vcvars
+set "VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+if exist "%VCVARS%" goto have_vcvars
+
+echo [build] Visual Studio with the C++ tools was not found.
+echo         Install "Desktop development with C++", or point VCVARS at your
+echo         vcvars64.bat.
 exit /b 1
 :have_vcvars
 
