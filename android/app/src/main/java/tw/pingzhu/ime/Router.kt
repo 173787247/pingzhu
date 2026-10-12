@@ -46,8 +46,20 @@ object Router {
         // user is editing — a shell that swallows it makes the key stop
         // deleting, which is how this was found (the shared vectors).
         '\b', '\u007f' -> if (composing) Action.Backspace else Action.Pass
-        // Nothing to browse without a composition to resolve.
-        '\u000b' -> if (composing && hasCandidates) Action.OpenCandidates else Action.Pass
+        // The browsing key, and one key for both halves of browsing: press it
+        // with the list closed and it opens; press it with the list open and it
+        // moves on ten. Nothing to browse without a composition to resolve.
+        //
+        // This mirrors the desktop shells' down arrow exactly (windows/src/
+        // router.cpp, `case KeyKind::ArrowDown`). It used to only open, which
+        // left every candidate past the first ten unreachable on a phone: the
+        // keyboard has no arrow keys, so this key is the only way to ask for
+        // page two.
+        '\u000b' -> when {
+            !composing || !hasCandidates -> Action.Pass
+            windowOpen -> Action.NextPage
+            else -> Action.OpenCandidates
+        }
         '\u000c' -> Action.CloseCandidates // form feed: the up arrow
         // Space ends in an acceptance, but not on its first press. A first press
         // that committed would leave the second candidate unreachable unless the

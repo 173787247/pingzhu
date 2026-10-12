@@ -152,4 +152,13 @@ class RouterTest {
         assertEquals(Action.Pass, composing('\u000b'))
         assertEquals(Action.Pass, idle('\u000b'))
     }
+
+    @Test
+    fun theDownArrowPagesOnceTheListIsOpen() {
+        // One key for both halves of browsing, as on the desktop: with the list
+        // already open the same press moves on ten instead of reopening the
+        // first page. On a phone this is the only way to reach candidate eleven
+        // — the board has no arrow keys to do it with.
+        assertEquals(Action.NextPage, choosing('\u000b'))
+    }
 }

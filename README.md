@@ -70,9 +70,10 @@ under Settings → System → Languages & input → On-screen keyboard, then sel
 ![PingZhu on an Android 13 emulator: a candidate row above the keyboard showing the composition ㄋㄧˇ, the sentence 你, and numbered candidates 1 你 2 妳 3 擬 4 昵 5 旋…](docs/images/android-candidates.png)
 
 *Running on an Android 13 (API 33) emulator — a Pixel-5-sized x86_64 image under KVM inside
-WSL, with the APK installed and the input method selected; `su3` was typed and 空白 pressed.
-The band above the keyboard is the candidate row: the composition being typed, the word
-空白 would commit, and the numbered candidates a digit key picks from. The keyboard is not a
+WSL, with the APK installed and the input method selected; `su3` was typed, 空白 opened the
+list and ▼ paged twice. The band above the keyboard is the candidate row: the composition
+being typed, the word 空白 would commit, and the numbered candidates a digit key picks from.
+▼ is the browsing key — the only one a phone board has, where the desktop shells have ↓. The keyboard is not a
 hand-drawn asset: `Engine.keyboardRows()` derives every key from the same table the decoder
 reads, and a test (`the_drawn_keyboard_matches_the_decoder`) holds the two together. Note the
 digit row — `1` is ㄅ, `3` is ˇ, `6` is ˊ. Those are Bopomofo keys, and they only select while
@@ -486,7 +487,7 @@ Tests, as of 2026-10-11:
 | **1,532 differential cases** | same command | recorded keystroke strings replayed through both implementations; composing text, sentence, score, path words and page 1 must match exactly |
 | **207 interaction scenarios** | same command | selection, paging, cursor movement, mode switches |
 | **4 Windows native suites** | [`windows/`](windows/README.md) | key routing, engine integration, TSF COM contract, candidate-window geometry |
-| **16 Android JVM tests** | [`android/`](android/README.md) | key routing — no emulator needed |
+| **17 Android JVM tests** | [`android/`](android/README.md) | key routing — no emulator needed |
 
 Scheduling, effort and risk: [docs/05-roadmap.md](docs/05-roadmap.md).
 

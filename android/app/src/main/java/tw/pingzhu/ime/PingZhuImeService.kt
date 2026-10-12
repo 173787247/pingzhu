@@ -264,6 +264,14 @@ class PingZhuImeService : InputMethodService() {
         val bottom = listOf(
             scriptKey,
             KeyboardView.Key(' ', "空白", weight = 4f, function = KeyboardView.Key.Function.Space),
+            /*
+             * The browsing key. A phone board has no arrow keys, so the job the
+             * desktop shells give the down arrow — open the list, then move on
+             * ten — needs a key of its own, or nothing past the first ten
+             * candidates can be reached. The character is the one the router has
+             * always read as a down arrow (Router.kt).
+             */
+            KeyboardView.Key('\u000b', "▼", weight = 1.2f),
             KeyboardView.Key(
                 '\b', "⌫", weight = 1.4f,
                 function = KeyboardView.Key.Function.Backspace,
