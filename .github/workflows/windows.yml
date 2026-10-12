@@ -52,16 +52,27 @@ jobs:
         shell: pwsh
         run: |
           # build.bat links pingzhu_core.dll by name from its own directory, and
-          # the engine test reads the language model from data\ beside it.
+          # the engine reads its data from the directory it is handed.
+          #
+          # This mirrors windows/build.sh, file for file: that script is the
+          # reference for what a staging directory contains, and the first
+          # version of this step left out ts-conversion.tsv — the 繁/簡 table —
+          # which the engine tolerates at run time (it simply cannot convert) but
+          # the engine test does not.
           $stage = Join-Path $env:RUNNER_TEMP 'pingzhu-stage'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item windows\build.bat $stage
           Copy-Item -Recurse windows\src $stage\src
           Copy-Item -Recurse windows\tests $stage\tests
           Copy-Item -Recurse windows\tsf $stage\tsf
+          # MSVC's batch parser wants CRLF, and the file in the repository is
+          # LF like everything else. build.sh does this conversion too.
+          $bat = (Get-Content windows\build.bat -Raw) -replace "`r?`n", "`r`n"
+          Set-Content -NoNewline -Path (Join-Path $stage 'build.bat') -Value $bat
           Copy-Item core-rs\target\x86_64-pc-windows-msvc\release\pingzhu_core.dll $stage
           New-Item -ItemType Directory -Force -Path (Join-Path $stage 'data') | Out-Null
           Copy-Item data\bopomofo-lm.tsv (Join-Path $stage 'data')
+          Copy-Item data\ts-conversion.tsv (Join-Path $stage 'data')
+          Get-ChildItem $stage, (Join-Path $stage 'data') | Format-Table Name, Length
           "PINGZHU_STAGE=$stage" | Out-File -Append $env:GITHUB_ENV
 
       - name: Build the shell and the text service
