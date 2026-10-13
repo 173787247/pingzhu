@@ -52,10 +52,16 @@ enum Router {
             // deleting, which is how this was found (the shared vectors).
             return state.composing ? .backspace : .pass
         case "\u{0b}":                  // the down arrow, remapped by the shell
-            // Nothing to browse without a composition to resolve.
-            return state.composing && state.hasCandidates ? .openCandidates : .pass
+            // One key for both halves of browsing: it opens the list, and with
+            // the list already open it moves on ten. Nothing to browse without a
+            // composition to resolve.
+            if !state.composing || !state.hasCandidates { return .pass }
+            return state.windowOpen ? .nextPage : .openCandidates
         case "\u{0c}":                 // the up arrow, remapped by the shell
-            return .closeCandidates
+            // Only while the list is open. With nothing to close the key belongs
+            // to the application, and swallowing it there is how a shell stops a
+            // key from doing what the user pressed it for.
+            return (state.composing && state.windowOpen) ? .closeCandidates : .pass
         case " ":
             // Space ends in an acceptance, but not on its first press. A first
             // press that committed would leave the second candidate reachable

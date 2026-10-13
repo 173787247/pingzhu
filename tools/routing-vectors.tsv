@@ -12,7 +12,7 @@
 #   key        按鍵。跳脫寫法：
 #                \n   Return / Enter        \b   Delete (Backspace)
 #                \e   Escape                 space 空白鍵
-#                \v   下箭頭（開啟候選單）    \f   上箭頭（關閉候選單）
+#                \v   下箭頭（開啟候選單／翻頁）  \f  上箭頭（關閉候選單）
 #   composing  引擎目前是否持有未完成的讀音
 #   window     候選單是否開著
 #   candidates 候選單裡是否有東西
@@ -32,6 +32,15 @@
 # 要求捲的清單。翻頁交給 ↓（\v）。
 #
 # 代價（已知且接受）：最高頻的「打完就送出」從一次空白變成兩次。
+#
+# ↓ 一鍵兩用：單沒開就開，開著就翻十筆。這一半原本沒有寫進向量——只寫了
+# 「開」——於是四個外殼裡有三個的 router 只會開、不會翻，而它們照樣通過測試：
+# macOS 的 .nextPage 從來沒被回傳過、Linux 的 nextPage() 沒有呼叫點、
+# HarmonyOS 只顯示前八個候選，手機上則是第 11 個之後永遠到不了。規則寫四遍
+# 就會有四份走樣，這一條就是證據；所以翻頁那半也寫進來，四邊一起紅。
+#
+# ↑ 只在「組字中且單開著」時關單，其餘一律 Pass：沒有東西可關的時候不該吃掉
+# 使用者要給應用程式的鍵。
 
 key	composing	window	candidates	action
 s	0	0	0	Compose
@@ -42,8 +51,11 @@ u	0	0	0	Compose
 \b	1	0	0	Backspace
 \b	0	0	0	Pass
 \v	1	0	1	OpenCandidates
+\v	1	1	1	NextPage
 \v	0	0	0	Pass
 \f	1	1	1	CloseCandidates
+\f	1	0	1	Pass
+\f	0	0	0	Pass
 space	1	0	0	Commit
 space	1	0	1	OpenCandidates
 space	1	1	1	Commit

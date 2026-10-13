@@ -1,13 +1,21 @@
 package tw.pingzhu.ime
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
+import java.io.File
 
 /**
  * The routing rules that the Windows version got wrong once already.
  *
  * These run on the JVM: routing has no Android dependencies precisely so that
  * the rules can be pinned without an emulator, an APK, or a device.
+ *
+ * The list of rules lives in `tools/routing-vectors.tsv`, shared with the
+ * Windows and macOS suites, and [theSharedVectorsHold] reads it: a rule written
+ * out once per shell will drift, and the down arrow's second half is the proof
+ * — this file used to mention the vectors in a comment while testing its own
+ * copy of the rules.
  */
 class RouterTest {
 
@@ -18,6 +26,59 @@ class RouterTest {
 
     private fun choosing(key: Char) =
         Router.route(key, composing = true, windowOpen = true, hasCandidates = true)
+
+    // ------------------------------------------------------ the shared vectors
+
+    @Test
+    fun theSharedVectorsHold() {
+        // Gradle runs tests with the module directory as the working directory,
+        // so the repository root is two levels up; the other candidates are
+        // there for anyone running the class from somewhere else.
+        val path = listOf(
+            "../../tools/routing-vectors.tsv",
+            "../tools/routing-vectors.tsv",
+            "tools/routing-vectors.tsv",
+        ).map(::File).firstOrNull { it.isFile }
+        assertNotNull("cannot find tools/routing-vectors.tsv from ${File(".").absolutePath}", path)
+        if (path == null) return
+
+        val failures = mutableListOf<String>()
+        var checked = 0
+        path.readLines().forEachIndexed { number, line ->
+            val text = line.trim()
+            if (text.isEmpty() || text.startsWith("#") || text.startsWith("key\t")) return@forEachIndexed
+            val fields = text.split('\t')
+            if (fields.size != 5) {
+                failures += "line ${number + 1}: expected five fields, found ${fields.size}"
+                return@forEachIndexed
+            }
+            val actual = Router.route(
+                key = unescape(fields[0]),
+                composing = fields[1] == "1",
+                windowOpen = fields[2] == "1",
+                hasCandidates = fields[3] == "1",
+            )
+            checked++
+            if (actual.name != fields[4]) {
+                failures += "line ${number + 1}: ${fields[0]} ${fields[1]}/${fields[2]}/${fields[3]}" +
+                    " → $actual, expected ${fields[4]}"
+            }
+        }
+
+        assertEquals("no vectors were read from $path", true, checked > 0)
+        assertEquals(failures.joinToString("\n"), 0, failures.size)
+    }
+
+    /** The escape spellings the vectors file uses, so it stays readable in a diff. */
+    private fun unescape(field: String): Char = when (field) {
+        "\\n" -> '\n'
+        "\\e" -> '\u001b'
+        "\\b" -> '\b'
+        "\\v" -> '\u000b'
+        "\\f" -> '\u000c'
+        "space" -> ' '
+        else -> field[0]
+    }
 
     // ------------------------------------------------------------- the basics
 

@@ -60,7 +60,9 @@ object Router {
             windowOpen -> Action.NextPage
             else -> Action.OpenCandidates
         }
-        '\u000c' -> Action.CloseCandidates // form feed: the up arrow
+        // The up arrow, and only while there is something to close: with the
+        // list shut the key belongs to the application.
+        '\u000c' -> if (composing && windowOpen) Action.CloseCandidates else Action.Pass
         // Space ends in an acceptance, but not on its first press. A first press
         // that committed would leave the second candidate unreachable unless the
         // user already knew to press the down arrow instead, so the first press
