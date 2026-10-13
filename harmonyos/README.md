@@ -111,7 +111,7 @@ find /opt -name '@kit.IMEKit.d.ts' | head -1 | xargs grep -E "^export"
 | **把字送进编辑器** | ✅ **完成**——`InputClient.insertTextSync` |
 | **语言模型** | ✅ **在 HAP 里**（6.4 MB 的 `bopomofo-lm.tsv`） |
 | **在真机打字** | ✅ **完成**——`su3cl3` → 你好 |
-| 候选翻页、组字上屏显示 | ⚠️ 可用但不完整 |
+| 候选翻页 | ✅ 候选列上有 ▼ 键（2026-10 補：此前只画得出第一頁的前八個） |
 | 符号表、联想词 | ❌ 尚未实作 |
 | 签名与上架（AGC） | ❌ 治理问题 |
 | 签章与上架（AGC） | ❌ 治理问题，不是 API 问题（见 [docs/03](../docs/03-platform-matrix.md)） |

@@ -91,24 +91,54 @@ export struct KeyboardPanel {
   private CandidateBar() {
     if (this.candidates.length > 0) {
       Row({ space: 6 }) {
-        ForEach(this.candidates.slice(0, 8), (item: string, index: number) => {
-          Text(`${index + 1} ${item}`)
-            .fontSize(15)
-            .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-            .backgroundColor('#FFFFFF')
-            .borderRadius(4)
-            // Picks the candidate that was tapped, not the default.
-            //
-            // The first version called commit() here, which commits the best
-            // candidate — so tapping 妳好 gave 你好. Selecting by index is the
-            // whole point of showing a list.
-            .onClick(() => { this.pickCandidate(index + 1); })
-        }, (item: string, index: number) => `${index}-${item}`)
+        // The whole page of candidates, scrollable, plus a key for the next one.
+        //
+        // This row used to draw `slice(0, 8)` of the engine's ten and nothing ever
+        // asked for page two: the ninth and tenth candidates of every page could
+        // not be tapped at all, and everything past the first page could not be
+        // reached by any means. `pingzhu.nextPage` was exported and had no caller.
+        Scroll() {
+          Row({ space: 6 }) {
+            ForEach(this.candidates, (item: string, index: number) => {
+              Text(`${index + 1} ${item}`)
+                .fontSize(15)
+                .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+                .backgroundColor('#FFFFFF')
+                .borderRadius(4)
+                // Picks the candidate that was tapped, not the default.
+                //
+                // The first version called commit() here, which commits the best
+                // candidate — so tapping 妳好 gave 你好. Selecting by index is the
+                // whole point of showing a list.
+                .onClick(() => { this.pickCandidate(index + 1); })
+            }, (item: string, index: number) => `${index}-${item}`)
+          }
+        }
+        .scrollable(ScrollDirection.Horizontal)
+        .layoutWeight(1)
+
+        Text('▼')
+          .fontSize(15)
+          .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+          .backgroundColor('#FFFFFF')
+          .borderRadius(4)
+          .onClick(() => { this.nextPage(); })
       }
       .width('100%')
       .height(40)
       .padding({ left: 8, right: 8 })
       .backgroundColor('#E8E8E8')
+    }
+  }
+
+  /// Moves on ten candidates. Silent on the last page: a key that reports success
+  /// it did not have is worse than one that does nothing.
+  private nextPage(): void {
+    try {
+      if (!pingzhu.nextPage()) return;
+      this.candidates = pingzhu.candidates();
+    } catch (error) {
+      this.failure = `${error}`;
     }
   }
 

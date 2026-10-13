@@ -277,8 +277,16 @@ void PingZhuEngine::keyEvent(const fcitx::InputMethodEntry &,
         // that committed would leave the second candidate reachable only by
         // someone who already knew to press ↓. So the first press opens the list
         // and the second takes what is on it. With nothing to offer it accepts.
-        engine_->openCandidateWindow();
-        if (engine_->candidateWindowOpen()) {
+        //
+        // "Already open" has to be read *before* the call that opens it. Asking
+        // afterwards makes the first press and the second look identical — the
+        // window is open either way — so the second press refreshed a list
+        // nobody asked to see and never accepted anything. The shared vectors
+        // say `space 1 1 1 → Commit`, and this is the line that disagreed.
+        const bool wasOpen = engine_->candidateWindowOpen();
+        const bool hasCandidates = !engine_->candidates().empty();
+        if (!wasOpen && hasCandidates) {
+            engine_->openCandidateWindow();
             refresh(*keyEvent.inputContext());
         } else {
             commitAndClear(*keyEvent.inputContext());
@@ -315,6 +323,21 @@ void PingZhuEngine::keyEvent(const fcitx::InputMethodEntry &,
     }
 
     if (listOpen) {
+        if (key.check(FcitxKey_Page_Down) || key.check(FcitxKey_Page_Up)) {
+            // Paging needs a key of its own on this shell: ↓/↑ are the highlight
+            // here (unlike the desktop shells, where ↓ opens the list and then
+            // pages), so nothing was asking the engine for the next page and
+            // every candidate past the first ten was unreachable. `Engine::
+            // nextPage` had no caller at all.
+            const bool forward = key.check(FcitxKey_Page_Down);
+            const bool moved = forward ? engine_->nextPage() : engine_->previousPage();
+            if (moved) {
+                cursor_ = 0;
+                refresh(*keyEvent.inputContext());
+            }
+            keyEvent.filterAndAccept();
+            return;
+        }
         if (key.check(FcitxKey_Down)) {
             cursor_ = std::min(cursor_ + 1, static_cast<int>(engine_->candidates().size()) - 1);
             refresh(*keyEvent.inputContext());
