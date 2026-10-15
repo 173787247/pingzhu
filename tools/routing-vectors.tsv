@@ -39,6 +39,12 @@
 # HarmonyOS 只顯示前八個候選，手機上則是第 11 個之後永遠到不了。規則寫四遍
 # 就會有四份走樣，這一條就是證據；所以翻頁那半也寫進來，四邊一起紅。
 #
+# 讀這份檔案的目前是四個：Windows（tests/test_router.cpp）、macOS
+# （Tests/Router）、Android（RouterTest）與 Linux（tests/router_vectors）。
+# **HarmonyOS 還沒有 router**：它的按鍵直接餵給引擎，數字鍵永遠是注音鍵、
+# 選字只能點候選列 —— 那是刻意的手机設計，要不要跟這份清單對齊得先決定它算不算
+# 同一個模型。
+#
 # ↑ 只在「組字中且單開著」時關單，其餘一律 Pass：沒有東西可關的時候不該吃掉
 # 使用者要給應用程式的鍵。
 

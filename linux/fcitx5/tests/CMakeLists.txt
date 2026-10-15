@@ -6,3 +6,14 @@ target_link_libraries(engine_smoke PRIVATE ${PINGZHU_CORE_LIB})
 
 add_test(NAME engine_smoke
          COMMAND engine_smoke ${CMAKE_INSTALL_FULL_DATADIR}/pingzhu)
+
+# The routing table, against the vectors the Windows, macOS and Android suites
+# read. Deliberately not linked against fcitx5: routing is plain C++, so a rule
+# change is caught by a compiler and a text file rather than by a desktop.
+#
+# The vectors live in the checkout, not next to the installed addon, so the path
+# goes in as an argument — the same arrangement windows/build.sh uses.
+add_executable(router_vectors router_vectors.cpp ../src/router.cpp)
+
+add_test(NAME router_vectors
+         COMMAND router_vectors ${PINGZHU_REPO_ROOT}/tools/routing-vectors.tsv)

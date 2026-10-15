@@ -15,6 +15,9 @@ on:
       - 'linux/**'
       - 'core-rs/**'
       - 'data/**'
+      # The addon's routing table is checked against these, so a change to the
+      # vectors is a change to what this shell has to do.
+      - 'tools/routing-vectors.tsv'
       - '.github/workflows/linux.yml'
   workflow_dispatch:
 
@@ -73,6 +76,15 @@ jobs:
         run: |
           cd linux/fcitx5/build
           ./tests/engine_smoke /usr/share/pingzhu
+
+      - name: The routing table, against the shared vectors
+        run: |
+          # Plain C++ with no fcitx5 in it, so this is a compiler and a text file
+          # rather than a desktop. Before router.cpp existed these rules were
+          # inline in keyEvent(), where nothing could reach them — and three of
+          # them had drifted from the other shells without anything going red.
+          cd linux/fcitx5/build
+          ./tests/router_vectors "$GITHUB_WORKSPACE/tools/routing-vectors.tsv"
 
       - name: fcitx5 recognises the addon
         run: |

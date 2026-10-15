@@ -71,6 +71,10 @@ private:
 
 class PingZhuEngine : public fcitx::InputMethodEngine {
 public:
+    /// Picks a candidate by its one-based index within the page and commits it.
+    /// Shared by the digit keys and by a click on the panel.
+    void pickCandidate(fcitx::InputContext &ic, int oneBased);
+
     void keyEvent(const fcitx::InputMethodEntry &entry,
                   fcitx::KeyEvent &keyEvent) override;
     // The real signatures take an InputContextEvent, not an InputContext.
@@ -90,7 +94,6 @@ private:
     std::unique_ptr<Engine> engine_;
 
     /// Which candidate the arrow keys have moved to, if any.
-    int cursor_ = 0;
 
     void refresh(fcitx::InputContext &ic);
     void commitAndClear(fcitx::InputContext &ic);

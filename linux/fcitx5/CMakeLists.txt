@@ -71,7 +71,10 @@ message(STATUS "pingzhu core: ${PINGZHU_CORE_LIB}")
 # Where the addon looks for the language model at runtime.
 set(PINGZHU_DATA_DIR_DEFAULT "${CMAKE_INSTALL_FULL_DATADIR}/pingzhu")
 
-add_library(pingzhu MODULE src/pingzhuengine.cpp)
+# router.cpp is plain C++ with no fcitx5 in it: the rules are a table, and the
+# test in tests/ runs that table against tools/routing-vectors.tsv without a
+# desktop, a panel or an input context.
+add_library(pingzhu MODULE src/pingzhuengine.cpp src/router.cpp)
 target_include_directories(pingzhu PRIVATE
   ${PINGZHU_REPO_ROOT}/core-rs/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src)

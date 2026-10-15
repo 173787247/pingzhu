@@ -7,6 +7,7 @@
 #include <fcitx-utils/utf8.h>
 
 #include "pingzhu.h"
+#include "router.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -163,7 +164,6 @@ void PingZhuEngine::activate(const fcitx::InputMethodEntry &,
     } else {
         engine_->reset();
     }
-    cursor_ = 0;
     refresh(*event.inputContext());
 }
 
@@ -172,14 +172,40 @@ void PingZhuEngine::deactivate(const fcitx::InputMethodEntry &,
     // The engine is kept: creating it reads a 6 MB language model, and input
     // methods are switched constantly.
     if (engine_ != nullptr) engine_->reset();
-    cursor_ = 0;
 }
 
 void PingZhuEngine::reset(const fcitx::InputMethodEntry &,
                           fcitx::InputContextEvent &event) {
     if (engine_ != nullptr) engine_->reset();
-    cursor_ = 0;
     refresh(*event.inputContext());
+}
+
+/// A candidate the user can click.
+///
+/// fcitx5 calls select() when the panel entry is clicked; DisplayOnlyCandidateWord
+/// — what this list used to hold — implements that as an empty function, so the
+/// digit keys were the only way to choose.
+class PingZhuCandidateWord : public fcitx::CandidateWord {
+public:
+    PingZhuCandidateWord(fcitx::Text text, PingZhuEngine *engine, int oneBased)
+        : fcitx::CandidateWord(std::move(text)), engine_(engine), oneBased_(oneBased) {}
+
+    void select(fcitx::InputContext *inputContext) const override {
+        engine_->pickCandidate(*inputContext, oneBased_);
+    }
+
+private:
+    PingZhuEngine *engine_;
+    int oneBased_;
+};
+
+void PingZhuEngine::pickCandidate(fcitx::InputContext &ic, int oneBased) {
+    if (engine_ == nullptr) return;
+    const std::string text = engine_->selectCandidate(oneBased);
+    if (!text.empty()) {
+        ic.commitString(text);
+    }
+    refresh(ic);
 }
 
 void PingZhuEngine::refresh(fcitx::InputContext &ic) {
@@ -224,139 +250,127 @@ void PingZhuEngine::refresh(fcitx::InputContext &ic) {
 
     auto list = std::make_unique<fcitx::CommonCandidateList>();
     list->setLayoutHint(fcitx::CandidateLayoutHint::NotSet);
-    list->setPageSize(9);
-    for (const auto &text : candidates) {
-        list->append<fcitx::DisplayOnlyCandidateWord>(fcitx::Text(text));
+    // Ten, which is what the engine puts on a page. Nine meant the tenth
+    // candidate of every page sat alone on a second page of fcitx5's own making:
+    // reachable by paging, but the digit that selects it — 0 — was not on screen
+    // next to it.
+    list->setPageSize(10);
+    for (size_t index = 0; index < candidates.size(); ++index) {
+        // Clickable, not DisplayOnly: fcitx5 calls select() when a panel entry is
+        // clicked, and DisplayOnly's select() does nothing — which left the digit
+        // keys as the only way to pick anything, and made the highlight that ↑↓
+        // used to move look like a way of choosing when it was not.
+        list->append<PingZhuCandidateWord>(fcitx::Text(candidates[index]), this,
+                                           static_cast<int>(index) + 1);
     }
-    if (cursor_ < 0 || cursor_ >= static_cast<int>(candidates.size())) {
-        cursor_ = 0;
-    }
-    list->setGlobalCursorIndex(cursor_);
     ic.inputPanel().setCandidateList(std::move(list));
 }
 
 void PingZhuEngine::commitAndClear(fcitx::InputContext &ic) {
     if (engine_ == nullptr) return;
     const std::string text = engine_->commit();
-    cursor_ = 0;
     if (!text.empty()) {
         ic.commitString(text);
     }
     refresh(ic);
 }
 
+namespace {
+
+/// Maps an fcitx key to the router's vocabulary. The router itself knows nothing
+/// about fcitx5, which is what makes `tests/router_vectors` a compiler and a
+/// text file rather than a desktop.
+KeyEvent keyOf(const fcitx::Key &key) {
+    if (key.check(FcitxKey_space)) return {KeyKind::Space, 0};
+    if (key.check(FcitxKey_BackSpace)) return {KeyKind::Backspace, 0};
+    if (key.check(FcitxKey_Return) || key.check(FcitxKey_KP_Enter)) return {KeyKind::Enter, 0};
+    if (key.check(FcitxKey_Escape)) return {KeyKind::Escape, 0};
+    if (key.check(FcitxKey_Up)) return {KeyKind::ArrowUp, 0};
+    if (key.check(FcitxKey_Down)) return {KeyKind::ArrowDown, 0};
+    if (key.check(FcitxKey_Page_Up)) return {KeyKind::PageUp, 0};
+    if (key.check(FcitxKey_Page_Down)) return {KeyKind::PageDown, 0};
+    const std::string utf8 = fcitx::Key::keySymToUTF8(key.sym());
+    if (utf8.size() == 1) return {KeyKind::Character, utf8[0]};
+    return {KeyKind::Other, 0};
+}
+
+} // namespace
+
 void PingZhuEngine::keyEvent(const fcitx::InputMethodEntry &,
                              fcitx::KeyEvent &keyEvent) {
     if (engine_ == nullptr) return;
 
     const fcitx::Key key = keyEvent.key();
-    const bool composing = !engine_->composing().empty();
-    const bool listOpen = engine_->candidateWindowOpen();
+    const EngineState state{
+        !engine_->composing().empty(),
+        engine_->candidateWindowOpen(),
+        !engine_->candidates().empty(),
+    };
 
-    // Digits are Bopomofo keys (1=ㄅ 2=ㄉ 5=ㄓ 8=ㄚ 9=ㄞ 0=ㄢ). They select a
-    // candidate only while the list is open, which is the rule every shell
-    // follows and the one that v0.6.0 got wrong: 倒 and every word beginning
-    // with ㄅㄉㄓㄚㄞㄢ stopped typing.
-    if (listOpen && key.isDigit()) {
-        const int index = key.digit() == 0 ? 10 : key.digit();
-        const std::string text = engine_->selectCandidate(index);
-        cursor_ = 0;
-        if (!text.empty()) {
-            keyEvent.inputContext()->commitString(text);
-        }
-        refresh(*keyEvent.inputContext());
-        keyEvent.filterAndAccept();
-        return;
-    }
+    // What a key means is decided in src/router.cpp — one table, checked against
+    // tools/routing-vectors.tsv by tests/router_vectors. This function only
+    // carries the answer out, which is the whole point of splitting them: the
+    // rules used to live here, where nothing could reach them, and three of them
+    // had drifted from the other shells.
+    const Decision decision = route(keyOf(key), state);
 
-    if (key.check(FcitxKey_space)) {
-        if (!composing) {
-            return; // let the space through when nothing is being composed
+    switch (decision.action) {
+        case Action::Pass:
+            return; // the application gets it
+
+        case Action::Compose: {
+            const std::string utf8 = fcitx::Key::keySymToUTF8(key.sym());
+            // The layout has the last word: a character it does not know is not
+            // ours to swallow.
+            if (utf8.size() != 1 || !engine_->feedKey(utf8[0])) return;
+            refresh(*keyEvent.inputContext());
+            keyEvent.filterAndAccept();
+            return;
         }
-        // Space ends in an acceptance, but not on its first press: a first press
-        // that committed would leave the second candidate reachable only by
-        // someone who already knew to press ↓. So the first press opens the list
-        // and the second takes what is on it. With nothing to offer it accepts.
-        //
-        // "Already open" has to be read *before* the call that opens it. Asking
-        // afterwards makes the first press and the second look identical — the
-        // window is open either way — so the second press refreshed a list
-        // nobody asked to see and never accepted anything. The shared vectors
-        // say `space 1 1 1 → Commit`, and this is the line that disagreed.
-        const bool wasOpen = engine_->candidateWindowOpen();
-        const bool hasCandidates = !engine_->candidates().empty();
-        if (!wasOpen && hasCandidates) {
+
+        case Action::SelectCandidate:
+            // The same path a click on the panel takes.
+            pickCandidate(*keyEvent.inputContext(), decision.arg);
+            keyEvent.filterAndAccept();
+            return;
+
+        case Action::OpenCandidates:
             engine_->openCandidateWindow();
             refresh(*keyEvent.inputContext());
-        } else {
-            commitAndClear(*keyEvent.inputContext());
-        }
-        keyEvent.filterAndAccept();
-        return;
-    }
-
-    if (key.check(FcitxKey_Return) || key.check(FcitxKey_KP_Enter)) {
-        if (composing) {
-            commitAndClear(*keyEvent.inputContext());
             keyEvent.filterAndAccept();
-        }
-        return;
-    }
+            return;
 
-    if (key.check(FcitxKey_BackSpace)) {
-        if (composing) {
+        case Action::CloseCandidates:
+            engine_->closeCandidateWindow();
+            refresh(*keyEvent.inputContext());
+            keyEvent.filterAndAccept();
+            return;
+
+        case Action::NextPage:
+        case Action::PrevPage: {
+            const bool moved = decision.action == Action::NextPage ? engine_->nextPage()
+                                                                   : engine_->previousPage();
+            if (moved) refresh(*keyEvent.inputContext());
+            keyEvent.filterAndAccept();
+            return;
+        }
+
+        case Action::Backspace:
             engine_->backspace();
             refresh(*keyEvent.inputContext());
             keyEvent.filterAndAccept();
-        }
-        return;
-    }
+            return;
 
-    if (key.check(FcitxKey_Escape)) {
-        if (composing) {
+        case Action::Commit:
+            commitAndClear(*keyEvent.inputContext());
+            keyEvent.filterAndAccept();
+            return;
+
+        case Action::Cancel:
             engine_->reset();
-            cursor_ = 0;
-            refresh(*keyEvent.inputContext());
-            keyEvent.filterAndAccept();
-        }
-        return;
-    }
-
-    if (listOpen) {
-        if (key.check(FcitxKey_Page_Down) || key.check(FcitxKey_Page_Up)) {
-            // Paging needs a key of its own on this shell: ↓/↑ are the highlight
-            // here (unlike the desktop shells, where ↓ opens the list and then
-            // pages), so nothing was asking the engine for the next page and
-            // every candidate past the first ten was unreachable. `Engine::
-            // nextPage` had no caller at all.
-            const bool forward = key.check(FcitxKey_Page_Down);
-            const bool moved = forward ? engine_->nextPage() : engine_->previousPage();
-            if (moved) {
-                cursor_ = 0;
-                refresh(*keyEvent.inputContext());
-            }
-            keyEvent.filterAndAccept();
-            return;
-        }
-        if (key.check(FcitxKey_Down)) {
-            cursor_ = std::min(cursor_ + 1, static_cast<int>(engine_->candidates().size()) - 1);
             refresh(*keyEvent.inputContext());
             keyEvent.filterAndAccept();
             return;
-        }
-        if (key.check(FcitxKey_Up)) {
-            cursor_ = std::max(cursor_ - 1, 0);
-            refresh(*keyEvent.inputContext());
-            keyEvent.filterAndAccept();
-            return;
-        }
-    }
-
-    // Everything else: hand it to the engine if the engine's layout knows it.
-    const std::string keyUtf8 = fcitx::Key::keySymToUTF8(key.sym());
-    if (keyUtf8.size() == 1 && engine_->feedKey(keyUtf8[0])) {
-        refresh(*keyEvent.inputContext());
-        keyEvent.filterAndAccept();
     }
 }
 
