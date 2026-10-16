@@ -112,10 +112,14 @@ w96j0         → 台灣
      候选列在上、键盘在下、整体贴底），不经过框架那块容器。
 - ~~候选单开出来之后不能翻页~~ —— **已修**（2026-10-13）。翻页在共享路由里是 ↓ 的职责
   （`ArrowDown`：单没开就开，开了就翻十笔），而手机键盘上没有 ↓，空白在单开着时又是
-  「送出」，第一页十个之后的候选因此取不到。现在底排多了一个 **▼** 键（`''`，
+  「送出」，第一页十个之后的候选因此取不到。现在底排多了一个 **▼** 键（`'\u000b'`，
   正是 `Router.kt` 一直当作 ↓ 读的那个字符），`Router.kt` 的那一格也补成和桌面版一致：
   开着 → `NextPage`，没开 → `OpenCandidates`。JVM 测试加了
   `theDownArrowPagesOnceTheListIsOpen` 盯着它。
 - 尚未实作：手写、语音、表情符号、自订词库介面、主题。
 - 只做 64 位（`arm64-v8a`、`x86_64`）。32 位装置不支援。
-- 没有上架 Google Play，也没有签名金钥——release 用的是 debug 签名。
+- 没有上架 Google Play。**签的不是 debug key**：已发布的 `pingzhu-0.10.3-android.apk`
+  凭证是 `CN=PingZhu, OU=PingZhu, O=PingZhu, L=Shanghai, C=CN`（可以自己复核：
+  `apksigner verify --print-certs pingzhu-0.10.3-android.apk`）。签名金钥与
+  `keystore.properties` 都不在仓库里（`.gitignore` 挡着），所以要自己发版得先有自己的
+  keystore。
