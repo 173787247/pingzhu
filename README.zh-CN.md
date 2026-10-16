@@ -471,6 +471,7 @@ $ node engine/bench-learn.mjs 5000 --recall
 | [docs/07](docs/07-research-tooling.md) | 本仓库的调研工具链（可重现取证） |
 | [docs/08](docs/08-self-built-data.md) | **资料层可以自建**：Unihan 读音／简繁、词频公式、无监督新词发现 |
 | [docs/09](docs/09-zhuyin-vs-pinyin.md) | **注音 vs 拼音的量化论证**：方法、两种范围、自我验证、五条明确的限制 |
+| [docs/RELEASING](docs/RELEASING.md) | **发版检查单**：版本号散在哪些档、TSF DLL 档名何时该改、产物怎么建、发版前核对什么 |
 | [demo/](demo/index.html) | **网页试打版**：不装任何东西，打开就能打注音（引擎与测试同一份） |
 | [core-rs/](core-rs/README.md) | **Rust 核心 ＋ C ABI**：外壳怎么接、怎么验证 |
 | [windows/](windows/README.md) | **Windows 输入法**：操作、构建、限制 |
