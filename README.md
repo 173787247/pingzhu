@@ -33,17 +33,17 @@ reports what was loaded: 170,145 entries, 1,413 legal syllables.*
 
 | Platform | File |
 |---|---|
-| **Windows 10/11** | **[⬇ pingzhu-0.10.3-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-setup.exe)**　·　[portable ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-win-x64.zip) |
-| **Android 8+** | **[⬇ pingzhu-0.10.3-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-android.apk)** |
-| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)** ([needs verifying on a Mac first](macos/TESTING.md))<br>**0.10.3 ships no macOS build** — the input method needs an Apple-issued Developer ID to register with the system, and that enrolment is still pending. |
+| **Windows 10/11** | **[⬇ pingzhu-0.10.4-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.4/pingzhu-0.10.4-setup.exe)**　·　[portable ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.4/pingzhu-0.10.4-win-x64.zip) |
+| **Android 8+** | **[⬇ pingzhu-0.10.4-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.4/pingzhu-0.10.4-android.apk)** |
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)** ([needs verifying on a Mac first](macos/TESTING.md))<br>**0.10.4 ships no macOS build** — the input method needs an Apple-issued Developer ID to register with the system, and that enrolment is still pending. |
 
 **HarmonyOS** ships no installer — it produces a project, built from source.
 **Linux** ships two packages, or the same addon for anyone building from source:
 
 | Platform | What to take | How to install |
 |---|---|---|
-| **HarmonyOS NEXT** | **[pingzhu-0.10.3-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-0.10.3-harmonyos-project.zip)** | Open `harmonyos/` in DevEco, sign, Run ([steps](harmonyos/README.md)) |
-| **Linux** | **[fcitx5-pingzhu_0.10.3_amd64.deb](https://github.com/173787247/pingzhu/releases/download/v0.10.3/fcitx5-pingzhu_0.10.3_amd64.deb)**　·　[fcitx5-pingzhu-0.10.3-1.x86_64.rpm](https://github.com/173787247/pingzhu/releases/download/v0.10.3/fcitx5-pingzhu-0.10.3-1.x86_64.rpm) | Debian-based: `sudo dpkg -i …`　·　RPM-based: `sudo rpm -ivh …` ([linux/](linux/README.md)) |
+| **HarmonyOS NEXT** | **[pingzhu-0.10.4-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.4/pingzhu-0.10.4-harmonyos-project.zip)** | Open `harmonyos/` in DevEco, sign, Run ([steps](harmonyos/README.md)) |
+| **Linux** | **[fcitx5-pingzhu_0.10.4_amd64.deb](https://github.com/173787247/pingzhu/releases/download/v0.10.4/fcitx5-pingzhu_0.10.4_amd64.deb)**　·　[fcitx5-pingzhu-0.10.4-1.x86_64.rpm](https://github.com/173787247/pingzhu/releases/download/v0.10.4/fcitx5-pingzhu-0.10.4-1.x86_64.rpm) | Debian-based: `sudo dpkg -i …`　·　RPM-based: `sudo rpm -ivh …` ([linux/](linux/README.md)) |
 
 **Windows** installs to `%LOCALAPPDATA%\Programs\PingZhu` with no administrator rights.
 `Ctrl+Alt+Z` switches Chinese/English, `Ctrl+Alt+S` switches Traditional/Simplified (or use
@@ -287,7 +287,7 @@ The engine stands alone, with zero runtime dependencies:
 **Option 1 — the tarball on the release page** (no account, no setup; recommended)
 
 ```bash
-npm install https://github.com/173787247/pingzhu/releases/download/v0.10.3/pingzhu-engine-0.10.3.tgz
+npm install https://github.com/173787247/pingzhu/releases/download/v0.10.4/pingzhu-engine-0.10.4.tgz
 ```
 
 **Option 2 — GitHub Packages** (needs a GitHub token first)

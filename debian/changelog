@@ -1,3 +1,16 @@
+fcitx5-pingzhu (0.10.4) unstable; urgency=medium
+
+  * New upstream release 0.10.4. Four shells each had a feature that existed but
+    could not be reached: Android's candidate row never appeared at all and its
+    candidate list could not be opened, HarmonyOS's backspace threw the whole
+    composition away and deleted a character as well, Linux could not page past
+    the first ten candidates, and Windows's candidate window cut off its own
+    status line. The addon's own Version= in linux/fcitx5/pingzhu.conf now
+    follows the release number — it had said 0.9.0 since 0.9.0, because the
+    VERSION in CMakeLists.txt is a value nothing reads.
+
+ -- PingZhu <173787247@qq.com>  Fri, 17 Oct 2026 00:30:00 +0800
+
 fcitx5-pingzhu (0.10.3) unstable; urgency=medium
 
   * New upstream release 0.10.3. The packaging definitions (debian/ and

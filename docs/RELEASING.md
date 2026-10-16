@@ -15,6 +15,16 @@
 | `harmonyos/` 四处：`AppScope/app.json5`、`entry/oh-package.json5`、`keyboard/oh-package.json5`、`cpp/types/libpingzhu/oh-package.json5` | `versionName` / `version` |
 | `windows/build.bat`、`windows/tsf/tests/test_com.cpp` | TSF DLL 档名 —— **见第二节** |
 | `fcitx5-pingzhu.spec`、`debian/changelog` | `Version:` |
+| `linux/fcitx5/pingzhu.conf` | `Version=` —— **这才是生效的那个**：`fcitx5-diagnose` 显示的就是它 ✗ |
+
+两个容易白忙的地方：
+
+- `linux/fcitx5/CMakeLists.txt` 的 `project(... VERSION x.y.z)` 是**死值** ✗：
+  `PROJECT_VERSION` 全树没有第二处引用，改成什么都不会进包。真正装进去的是
+  `linux/fcitx5/pingzhu.conf` 那个静态档里的 `Version=` ✓。
+- `harmonyos/AppScope/app.json5` 的 `versionCode` 从 v0.10.0 到 v0.10.3 **一直是
+  1000000** ✗（Android 那边是 5 → 6 在递增的 ✓）。现在还没有走应用市场，所以没出事；
+  **要上架前必须每次都递增** —— v0.10.4 起已改成 1000001 ✓。
 | `docs/release-notes-vX.Y.Z.md` | 新增一份 |
 
 一次核完的办法是照上一版：

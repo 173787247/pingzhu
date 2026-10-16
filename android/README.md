@@ -118,8 +118,8 @@ w96j0         → 台灣
   `theDownArrowPagesOnceTheListIsOpen` 盯着它。
 - 尚未实作：手写、语音、表情符号、自订词库介面、主题。
 - 只做 64 位（`arm64-v8a`、`x86_64`）。32 位装置不支援。
-- 没有上架 Google Play。**签的不是 debug key**：已发布的 `pingzhu-0.10.3-android.apk`
+- 没有上架 Google Play。**签的不是 debug key**：已发布的 APK（v0.10.3 起）
   凭证是 `CN=PingZhu, OU=PingZhu, O=PingZhu, L=Shanghai, C=CN`（可以自己复核：
-  `apksigner verify --print-certs pingzhu-0.10.3-android.apk`）。签名金钥与
+  `apksigner verify --print-certs pingzhu-<版本>-android.apk`）。签名金钥与
   `keystore.properties` 都不在仓库里（`.gitignore` 挡着），所以要自己发版得先有自己的
   keystore。

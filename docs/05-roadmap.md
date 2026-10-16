@@ -134,7 +134,7 @@ Android／鸿蒙需要 `.so`），不是速度。距离 10 ms 的体验门槛还
 拿共享向量验。**
 
 **没做的**：Developer ID 签章与 notarization ✗（需要 Apple 开发者帐号，是治理问题），
-所以 **v0.10.3 的 release 里没有 macOS 产物** ✗ —— 想装的人得自己建 ✗。
+所以 **目前的 release 里没有 macOS 产物** ✗ —— 想装的人得自己建 ✗。
 
 **下面是动手之前的规划，保留了。**
 
@@ -148,9 +148,9 @@ Android／鸿蒙需要 `.so`），不是速度。距离 10 ms 的体验门槛还
 **风险**：中。IMK 相对稳定，且有一个 MIT 的完整同类产品可以对照。
 **注意**：macOS 沙箱与输入法的关系需在实作初期确认（Mac App Store 对输入法的限制）。
 
-### M6 · Android 外壳 —— ✅ 已完成并随 v0.10.3 发布
+### M6 · Android 外壳 —— ✅ 已完成并自 v0.10.3 起随 release 发布
 
-**2026-10 状态：`pingzhu-0.10.3-android.apk` 是官方 release 资产之一，用的是本专案
+**2026-10 状态：Android 的 APK 是官方 release 资产之一（自 v0.10.3 起），用的是本专案
 自己的凭证（`CN=PingZhu, OU=PingZhu, O=PingZhu, L=Shanghai, C=CN`），不是 Android
 debug key；金钥不在仓库里。候选列、翻页、选字都在模拟器上验证过。**
 
