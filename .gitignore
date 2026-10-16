@@ -39,6 +39,11 @@ demo/data/
 # Windows build staging lives outside the repo; nothing here to ignore
 dist/
 
+# CMake's out-of-tree directory for the Debian package: debian/rules creates it
+# with `cmake -S linux/fcitx5 -B build-deb`, so cutting a release leaves 15 MB
+# of it behind, untracked, every time.
+build-deb/
+
 # Python bytecode from the tooling in tools/ and research/tools/
 __pycache__/
 *.pyc
