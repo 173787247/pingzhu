@@ -9,6 +9,8 @@ k:s k:u k:3 k:c k:l k:3 open sel:2			0		妳好
 k:s k:u k:3 k:c k:l k:3 open close sel:1	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
 k:s k:u k:3 k:c k:l k:3 open k:g	你好師	ㄋㄧˇ ㄏㄠˇ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
 k:s k:u k:3 k:c k:l k:3 open bs	你好	ㄋㄧˇ ㄏㄠˇ	0	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
+k:s k:u k:3 k:c k:l k:3 bs	你蒿	ㄋㄧˇ ㄏㄠ	0	蒿|嚆|薅|䜰|侾|𠢕	
+k:s k:u k:3 k:c k:l k:3 bs bs	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c k:l k:3 right	你好	ㄋㄧˇ ㄏㄠˇ	1	好|郝|㚼|㝀|🆗|👌|👍|🙆|🙆‍♀️|🙆‍♂️	
 k:s k:u k:3 k:c k:l k:3 right left left	你好	ㄋㄧˇ ㄏㄠˇ	1	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
 k:s k:u k:3 k:c k:l k:3 left	你好	ㄋㄧˇ ㄏㄠˇ	1	你好|妳好|你|妳|擬|昵|旎|薿|禰|抳	
@@ -32,6 +34,8 @@ k:j k:i k:3 k:9 k:4 k:s k:u k:3 open sel:2			0		我愛你
 k:j k:i k:3 k:9 k:4 k:s k:u k:3 open close sel:1	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
 k:j k:i k:3 k:9 k:4 k:s k:u k:3 open k:g	我愛你師	ㄨㄛˇ ㄞˋ ㄋㄧˇ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
 k:j k:i k:3 k:9 k:4 k:s k:u k:3 open bs	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	0	我愛你|我|䂺|婐|捰|𣇫	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 bs	我愛	ㄨㄛˇ ㄞˋ [ㄋㄧ]	0	愛|礙|艾|隘|曖|誒|璦|噯|靉|乂	
+k:j k:i k:3 k:9 k:4 k:s k:u k:3 bs bs	我愛	ㄨㄛˇ ㄞˋ [ㄋ]	0	愛|礙|艾|隘|曖|誒|璦|噯|靉|乂	
 k:j k:i k:3 k:9 k:4 k:s k:u k:3 right	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	愛|礙|艾|隘|曖|誒|璦|噯|靉|乂	
 k:j k:i k:3 k:9 k:4 k:s k:u k:3 right left left	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
 k:j k:i k:3 k:9 k:4 k:s k:u k:3 left	我愛你	ㄨㄛˇ ㄞˋ ㄋㄧˇ	1	我愛你|我|䂺|婐|捰|𣇫	
@@ -55,6 +59,8 @@ k:t k:j k:4 k:g k:/ open sel:2			0		畜牲
 k:t k:j k:4 k:g k:/ open close sel:1	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
 k:t k:j k:4 k:g k:/ open k:g	畜生師	ㄔㄨˋ ㄕㄥ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
 k:t k:j k:4 k:g k:/ open bs	畜生	ㄔㄨˋ ㄕㄥ	0	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
+k:t k:j k:4 k:g k:/ bs	處師	ㄔㄨˋ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:t k:j k:4 k:g k:/ bs bs	處	ㄔㄨˋ	0	處|觸|畜|矗|絀|搐|黜|怵|俶|亍	
 k:t k:j k:4 k:g k:/ right	畜生	ㄔㄨˋ ㄕㄥ	1	生|聲|升|昇|牲|笙|甥|陞|勝|泩	
 k:t k:j k:4 k:g k:/ right left left	畜生	ㄔㄨˋ ㄕㄥ	1	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
 k:t k:j k:4 k:g k:/ left	畜生	ㄔㄨˋ ㄕㄥ	1	畜生|畜牲|處|觸|畜|矗|絀|搐|黜|怵	
@@ -78,6 +84,8 @@ k:u k:6 k:t k:p k:6 open sel:2			0		一陳
 k:u k:6 k:t k:p k:6 open close sel:1	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
 k:u k:6 k:t k:p k:6 open k:g	一陳屍	ㄧˊ ㄔㄣˊ ㄕ	0	陳屍|陳|沈|沉|晨|臣|塵|辰|忱|宸	
 k:u k:6 k:t k:p k:6 open bs	遺臣	ㄧˊ ㄔㄣˊ	0	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
+k:u k:6 k:t k:p k:6 bs	一琛	ㄧˊ ㄔㄣ	0	琛|瞋|嗔|郴|賝|棽|謓|諃|搷|堔	
+k:u k:6 k:t k:p k:6 bs bs	一吃	ㄧˊ ㄔ	0	吃|癡|痴|喫|嗤|笞|ㄔ|鴟|蚩|絺	
 k:u k:6 k:t k:p k:6 right	遺臣	ㄧˊ ㄔㄣˊ	1	陳|沈|沉|晨|臣|塵|辰|忱|宸|諶	
 k:u k:6 k:t k:p k:6 right left left	遺臣	ㄧˊ ㄔㄣˊ	1	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
 k:u k:6 k:t k:p k:6 left	遺臣	ㄧˊ ㄔㄣˊ	1	遺臣|一|移|疑|宜|遺|儀|怡|誼|夷	
@@ -101,6 +109,8 @@ k:j k:0 k:4 k:2 k:0 open sel:2			0		萬單
 k:j k:0 k:4 k:2 k:0 open close sel:1	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
 k:j k:0 k:4 k:2 k:0 open k:g	萬丹師	ㄨㄢˋ ㄉㄢ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
 k:j k:0 k:4 k:2 k:0 open bs	萬丹	ㄨㄢˋ ㄉㄢ	0	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
+k:j k:0 k:4 k:2 k:0 bs	萬	ㄨㄢˋ [ㄉ]	0	萬|腕|惋|万|玩|卍|翫|仴|魭|㬅	
+k:j k:0 k:4 k:2 k:0 bs bs	萬	ㄨㄢˋ	0	萬|腕|惋|万|玩|卍|翫|仴|魭|㬅	
 k:j k:0 k:4 k:2 k:0 right	萬丹	ㄨㄢˋ ㄉㄢ	1	單|擔|丹|耽|眈|簞|殫|鄲|酖|襌	
 k:j k:0 k:4 k:2 k:0 right left left	萬丹	ㄨㄢˋ ㄉㄢ	1	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
 k:j k:0 k:4 k:2 k:0 left	萬丹	ㄨㄢˋ ㄉㄢ	1	萬丹|萬|腕|惋|万|玩|卍|翫|仴|魭	
@@ -124,6 +134,8 @@ k:g k:4 open sel:2			0		事
 k:g k:4 open close sel:1	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
 k:g k:4 open k:g	誓師	ㄕˋ ㄕ	0	誓師|是|事|市|式|示|視|世|士|識	
 k:g k:4 open bs	是	ㄕˋ	0	是|事|市|式|示|視|世|士|識|試	
+k:g k:4 bs	師	ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
+k:g k:4 bs bs			0		
 k:g k:4 right	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
 k:g k:4 right left left	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
 k:g k:4 left	是	ㄕˋ	1	是|事|市|式|示|視|世|士|識|試	
@@ -147,6 +159,8 @@ k:s k:u k:3 open sel:2			0		妳
 k:s k:u k:3 open close sel:1	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 open k:g	你師	ㄋㄧˇ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
 k:s k:u k:3 open bs	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 bs		[ㄋㄧ]	0		
+k:s k:u k:3 bs bs		[ㄋ]	0		
 k:s k:u k:3 right	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 right left left	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 left	你	ㄋㄧˇ	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
@@ -170,6 +184,8 @@ k:s k:u k:3 k:c open sel:2			0		妳
 k:s k:u k:3 k:c open close sel:1	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c open k:g	你	ㄋㄧˇ [ㄏㄕ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c open bs	你	ㄋㄧˇ [ㄏ]	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c bs	你	ㄋㄧˇ	0	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
+k:s k:u k:3 k:c bs bs		[ㄋㄧ]	0		
 k:s k:u k:3 k:c right	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c right left left	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
 k:s k:u k:3 k:c left	你	ㄋㄧˇ [ㄏ]	1	你|妳|擬|昵|旎|薿|禰|抳|檷|祢	
@@ -193,6 +209,8 @@ k:r k:u k:0 k:4 k:g k:k k:4 open sel:2			0		建社
 k:r k:u k:0 k:4 k:g k:k k:4 open close sel:1	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
 k:r k:u k:0 k:4 k:g k:k k:4 open k:g	建設師	ㄐㄧㄢˋ ㄕㄜˋ ㄕ	0	師|失|施|詩|獅|濕|屍|噓|溼|虱	
 k:r k:u k:0 k:4 k:g k:k k:4 open bs	建設	ㄐㄧㄢˋ ㄕㄜˋ	0	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
+k:r k:u k:0 k:4 k:g k:k k:4 bs	建奢	ㄐㄧㄢˋ ㄕㄜ	0	奢|賒|奓|檨|譇|偖|畭|畲|賖	
+k:r k:u k:0 k:4 k:g k:k k:4 bs bs	濺溼	ㄐㄧㄢˋ ㄕ	0	濺溼|濺濕|建|見|件|健|漸|鍵|鑑|薦	
 k:r k:u k:0 k:4 k:g k:k k:4 right	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	社|設|攝|射|涉|舍|赦|麝|拾|葉	
 k:r k:u k:0 k:4 k:g k:k k:4 right left left	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	建設|建|見|件|健|漸|鍵|鑑|薦|劍	
 k:r k:u k:0 k:4 k:g k:k k:4 left	建設	ㄐㄧㄢˋ ㄕㄜˋ	1	建設|建|見|件|健|漸|鍵|鑑|薦|劍	

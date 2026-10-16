@@ -8,6 +8,7 @@
  */
 import pingzhu from 'libpingzhu.so';
 import { Session } from '../model/Session';
+import { BackspaceAction, routeBackspace } from '../model/Keys';
 
 /** One key on the board. */
 interface Key {
@@ -200,16 +201,26 @@ export struct KeyboardPanel {
       }
 
       // The function row, which is not Bopomofo and therefore is written here:
-      // space (commit), backspace, and the candidate list.
+      // commit, backspace, and the comma.
       Row({ space: 4 }) {
         Text('⌫')
           .fontSize(18).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)
           .onClick(() => {
-            pingzhu.reset();
-            this.composing = '';
-            this.candidates = [];
-            Session.deleteBackward();
+            // While composing this steps back one reading component — it does not
+            // clear the composition, and it does not touch the editor.
+            //
+            // Before this it called reset() (throwing the whole composition away)
+            // *and* Session.deleteBackward() (deleting a character the user had
+            // already committed): one press, two wrong things, and nothing to
+            // catch it — the rule had no name and this keyboard has no router.
+            if (routeBackspace(this.composing.length > 0) === BackspaceAction.StepBackComponent) {
+              pingzhu.backspace();
+              this.composing = pingzhu.composing();
+              this.candidates = pingzhu.candidates();
+            } else {
+              Session.deleteBackward();
+            }
           })
         Text('送出')
           .fontSize(16).textAlign(TextAlign.Center).layoutWeight(3).height(46)

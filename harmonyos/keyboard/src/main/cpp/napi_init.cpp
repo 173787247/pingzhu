@@ -236,6 +236,19 @@ napi_value Reset(napi_env env, napi_callback_info info) {
     return nullptr;
 }
 
+/// Steps back one bopomofo component.
+///
+/// This is the call the keyboard needed and did not have: `reset` was the only
+/// way to undo anything, so backspace used it — and threw away the whole
+/// composition instead of the last component. What the other shells do with
+/// backspace is in the shared vectors (`\b 1 0 0 → Backspace`).
+napi_value Backspace(napi_env env, napi_callback_info info) {
+    if (g_engine == nullptr) { napi_value r; napi_get_boolean(env, false, &r); return r; }
+    napi_value result;
+    napi_get_boolean(env, engine_backspace(g_engine), &result);
+    return result;
+}
+
 napi_value Decode(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value args[1] = {nullptr};
@@ -289,6 +302,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"composing", nullptr, Composing, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"commit", nullptr, Commit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"reset", nullptr, Reset, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"backspace", nullptr, Backspace, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;

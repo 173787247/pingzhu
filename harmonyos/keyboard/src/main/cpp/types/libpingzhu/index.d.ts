@@ -58,6 +58,15 @@ export function commit(): string;
 /** Clears without committing. */
 export function reset(): void;
 
+/**
+ * Steps back one bopomofo component. Returns whether there was one to step back.
+ *
+ * Reset is not a substitute: it throws the whole composition away, which is what
+ * backspace used to do — losing everything the user had typed instead of the
+ * last key.
+ */
+export function backspace(): boolean;
+
 /** Feeds one key. The keyboard uses this. */
 export function feedKey(key: string): boolean;
 

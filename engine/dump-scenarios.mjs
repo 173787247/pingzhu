@@ -63,6 +63,14 @@ const SCRIPTS = [
   ["open", "close", "sel:1"],
   ["open", "k:g"],
   ["open", "bs"],
+  // Backspace in the middle of a composition: it steps back one component and
+  // keeps the rest, which is what every shell has to do with the key. The
+  // HarmonyOS keyboard used to throw the whole composition away here (it called
+  // reset(), because the engine's backspace was not exposed to it at all), and
+  // nothing in this repository could see that — these two rows are the engine
+  // half of it, pinned against this implementation, which is the specification.
+  ["bs"],
+  ["bs", "bs"],
   ["right"],
   ["right", "left", "left"],
   ["left"],
