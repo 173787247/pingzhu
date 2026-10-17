@@ -20,13 +20,21 @@ name: macOS signing probe
 # guess, and the honest conclusion is "Developer ID required".
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'macOS runner label (macos-14 / macos-15 / macos-26 …)'
+        default: 'macos-15'
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   probe:
-    runs-on: macos-14
+    # The whole point is the version: the project believes ad-hoc signatures are
+    # accepted on macOS 14 and refused on 26. Running the same probe on two
+    # labels is what turns that belief into a boundary.
+    runs-on: ${{ inputs.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +63,7 @@ jobs:
           ./dist/InstallTest "$PWD/dist/PingZhu.app" > /tmp/baseline.log 2>&1
           echo "exit=$?"
           set -e
+          echo "--- $(sw_vers -productVersion) baseline ---"
           tail -20 /tmp/baseline.log
           if grep -q "installed" /tmp/baseline.log; then echo "baseline: install ran"; fi
           if grep -qi "not.*found\|missing" /tmp/baseline.log; then echo "baseline: NOT registered"; fi
