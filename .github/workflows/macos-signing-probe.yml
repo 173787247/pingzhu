@@ -65,8 +65,17 @@ jobs:
           set -e
           echo "--- $(sw_vers -productVersion) baseline ---"
           tail -20 /tmp/baseline.log
-          if grep -q "installed" /tmp/baseline.log; then echo "baseline: install ran"; fi
-          if grep -qi "not.*found\|missing" /tmp/baseline.log; then echo "baseline: NOT registered"; fi
+          # The install test prints "note ... does not list" and exits 0 when the
+          # system ignores the bundle: it is a report, not a gate. Keying on the
+          # exit code here produced a green "self-signed works" on a run where
+          # nothing registered — the note is the only honest signal.
+          if grep -q "does not list" /tmp/baseline.log; then
+            echo "baseline: NOT registered"
+            echo "::warning title=Ad-hoc does not register on this macOS::the system did not list tw.pingzhu.ime.Bopomofo"
+          else
+            echo "baseline: registered"
+            echo "::notice title=Ad-hoc registers on this macOS::the system listed tw.pingzhu.ime.Bopomofo"
+          fi
 
       - name: Make a self-signed code-signing identity and trust it
         run: |
@@ -106,10 +115,13 @@ jobs:
           set -e
           echo "InstallTest exit=$STATUS"
           tail -25 /tmp/selfsigned.log
-          if [ "$STATUS" -eq 0 ]; then
-            echo "::notice title=Self-signed works::the input method registered with a self-signed identity"
+          echo "exit=$STATUS (informational — the note is the signal)"
+          if grep -q "does not list" /tmp/selfsigned.log; then
+            echo "selfsigned: NOT registered"
+            echo "::warning title=Self-signed does not register::a trusted self-signed identity does not make the system accept the input method"
           else
-            echo "::warning title=Self-signed does not work::the input method did not register even with a trusted self-signed identity — Developer ID required"
+            echo "selfsigned: registered"
+            echo "::notice title=Self-signed registers::a trusted self-signed identity is enough on this macOS"
           fi
 
       - name: Summary
