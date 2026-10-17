@@ -136,6 +136,10 @@ Android／鸿蒙需要 `.so`），不是速度。距离 10 ms 的体验门槛还
 **没做的**：Developer ID 签章与 notarization ✗（需要 Apple 开发者帐号，是治理问题），
 所以 **目前的 release 里没有 macOS 产物** ✗ —— 想装的人得自己建 ✗。
 
+而且自己建也没用：2026-10 在 GitHub 的 macOS 14.8.9／15.7.9／26.6.2 三张 runner 上实测，
+**ad-hoc 与「自签 ＋ 本机信任」都不被系统列出** ✗（`spctl -a` 全部 `rejected`），
+复现方式见 `.github/workflows/macos-signing-probe.yml` 与 [macos/README.md](../macos/README.md)。
+
 **下面是动手之前的规划，保留了。**
 
 | 项目 | 说明 |

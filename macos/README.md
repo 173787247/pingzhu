@@ -262,6 +262,18 @@ PingZhu: after registering, the system lists 0 of our inputs     ← ★
 | **ad-hoc，呼叫 API（从 app 内部）** | ✗ **`noErr`，列出 0 个** ← 0.9.1 |
 | Apple 签发 ＋ 公证 ＋ 呼叫 API | ← 还没测，这是 `notarize.sh` |
 
+**2026-10 在 GitHub 的 runner 上复现过，三种 macOS 一样**
+（`.github/workflows/macos-signing-probe.yml`，手动触发、可选 runner）：
+
+| macOS（runner） | ad-hoc | 自签 ＋ 本机信任 |
+|---|---|---|
+| 14.8.9 | ✗ 系统不列出 | ✗ 系统不列出 |
+| 15.7.9 | ✗ 系统不列出 | ✗ 系统不列出 |
+| 26.6.2 | ✗ 系统不列出 | ✗ 系统不列出 |
+
+`spctl -a` 对它们全部返回 `rejected`。**「换一个签名身份就行」这条路到此结束** ✗——
+剩下的唯一候选就是上面最后一行（Developer ID ＋ 公证），仍未测。
+
 ### 所以
 
 **`spctl` 是判官，而它要的是 Apple 签发的 Developer ID。**

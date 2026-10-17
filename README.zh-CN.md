@@ -124,10 +124,22 @@ Windows 有两个外壳，共用同一份引擎与同一个候选视窗：
 ### 两个还没打勾的
 
 **macOS**：它在真机上编译、打包、签章、跑引擎全部通过，输入法选单里却始终没有它。
-**原因已经找到**：macOS 26 不注册 ad-hoc 签名的输入法——`spctl` 返回 `rejected`，
-而 `TISCreateInputSourceList` 报它「根本没安装」。CI 跑在 macOS 14 上，那里 ad-hoc 可以，
-所以每次构建都是绿的。修法是一张 Apple 签发的 Developer ID——细节在
-[macos/README.md](macos/README.md)。
+**「是 macOS 26 的问题」这个说法不成立** ✗——2026-10 用
+[`.github/workflows/macos-signing-probe.yml`](.github/workflows/macos-signing-probe.yml)
+在三张 GitHub runner 上实测（`spctl -a` 对它们全部返回 `rejected`）：
+
+| macOS | ad-hoc 签名 | 自签证书（设为本机信任） |
+|---|---|---|
+| 14.8.9 | ✗ 系统不列出 | ✗ 系统不列出 |
+| 15.7.9 | ✗ 系统不列出 | ✗ 系统不列出 |
+| 26.6.2 | ✗ 系统不列出 | ✗ 系统不列出 |
+
+**CI 一直是绿的，但不是因为系统接受了它** ✗——`macos/Tests/Install/main.swift` 把
+「系统不列它」印成一句 `note` 并以 0 退出（那是**发现**，不是缺陷），所以那一步不会失败。
+那个测试的注释本来就写着「机制是未知的」；上面这张表把「换签名身份也不管用」补成了事实。
+
+所以能确定的是：**ad-hoc 与自签都不行，三种 macOS 都一样**。还没试过的只剩 Apple 签发的
+Developer ID——实验矩阵与入会条件在 [macos/README.md](macos/README.md)。
 
 **Linux**：引擎在 CI 上跑过同样三个词，addon 也真的被 fcitx5 载入、启动过引擎；
 **但「在桌面环境里打字」没有测成功**，因为 WSLg 不转发输入法——原因在

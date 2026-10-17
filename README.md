@@ -132,10 +132,23 @@ compares composing text, chosen sentence, score, path words and first candidate 
 ### The two that are not ticked yet
 
 **macOS**: it compiles, bundles, signs and runs its engine on real hardware, and the input
-menu never lists it. **The cause is now known**: macOS 26 does not register an ad-hoc signed
-input method — `spctl` returns `rejected`, and `TISCreateInputSourceList` reports it as not
-installed at all. CI runs on macOS 14, where ad-hoc is accepted, which is why every build was
-green. The fix is an Apple-issued Developer ID — see [macos/README.md](macos/README.md).
+menu never lists it. **"It is a macOS 26 problem" is not what the evidence says** —
+[`.github/workflows/macos-signing-probe.yml`](.github/workflows/macos-signing-probe.yml) was run
+on three GitHub runners in 2026-10 (`spctl -a` returns `rejected` for every one of them):
+
+| macOS | ad-hoc | self-signed, trusted locally |
+|---|---|---|
+| 14.8.9 | ✗ not listed | ✗ not listed |
+| 15.7.9 | ✗ not listed | ✗ not listed |
+| 26.6.2 | ✗ not listed | ✗ not listed |
+
+**CI has always been green, but not because the system accepted it** — `macos/Tests/Install/main.swift`
+prints "the system does not list it" as a `note` and exits 0, because that is a *finding*, not a
+defect. Its own comment already says the mechanism is unknown; this table settles the part that
+can be settled: changing the signing identity does not help, on any of the three versions.
+
+So the one candidate left untried is an Apple-issued Developer ID — the experiment matrix and the
+enrolment requirements are in [macos/README.md](macos/README.md).
 
 **Linux**: the engine passes the same three phrases in CI, and fcitx5 really does load the
 addon and start the engine; **typing on a desktop has not been made to work**, because WSLg
