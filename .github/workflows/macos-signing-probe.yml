@@ -1,0 +1,118 @@
+name: macOS signing probe
+
+# Manual only — it is a question, not a gate.
+#
+# macOS is the one shell that builds, runs the engine and packages, and still
+# cannot be installed: the bundle lands in ~/Library/Input Methods and never
+# appears in the input-source list. The finding so far is "ad-hoc signature,
+# spctl says rejected" — but that was recorded without the macOS version beside
+# it, and the CI runner is macos-14 while the note says macOS 26.
+#
+# This probe answers three things in one run:
+#
+#   1. what macOS this actually is (sw_vers) and whether SIP is on
+#   2. whether the ad-hoc-signed bundle registers here (the baseline)
+#   3. whether re-signing with a *self-signed, trusted* code-signing identity
+#      changes that — the one identity class nobody has tried
+#
+# If (3) works, macOS becomes installable without an Apple account. If it does
+# not, the row in macos/README.md gets replaced with this evidence instead of a
+# guess, and the honest conclusion is "Developer ID required".
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: What this machine is
+        run: |
+          sw_vers
+          echo "arch: $(uname -m)"
+          echo "sip: $(csrutil status || echo unknown)"
+          echo "security: $(security -h >/dev/null 2>&1 && echo available)"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Build the bundle (ad-hoc, as the project ships it)
+        run: |
+          bash macos/build.sh
+          codesign -dv dist/PingZhu.app 2>&1 | head -8
+
+      - name: Baseline — does the ad-hoc bundle register?
+        run: |
+          swiftc -O -framework Carbon -framework Cocoa \
+            -o dist/InstallTest macos/Tests/Install/main.swift
+          set +e
+          ./dist/InstallTest "$PWD/dist/PingZhu.app" > /tmp/baseline.log 2>&1
+          echo "exit=$?"
+          set -e
+          tail -20 /tmp/baseline.log
+          if grep -q "installed" /tmp/baseline.log; then echo "baseline: install ran"; fi
+          if grep -qi "not.*found\|missing" /tmp/baseline.log; then echo "baseline: NOT registered"; fi
+
+      - name: Make a self-signed code-signing identity and trust it
+        run: |
+          set -o pipefail
+          WD="$RUNNER_TEMP/signing"
+          mkdir -p "$WD"
+          cd "$WD"
+          # A code-signing certificate: the extension is what makes codesign
+          # willing to use it at all.
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 2 \
+            -subj "/CN=PingZhu Self-Signed/O=PingZhu/C=CN" \
+            -addext "keyUsage=critical,digitalSignature" \
+            -addext "extendedKeyUsage=critical,codeSigning"
+          openssl pkcs12 -export -inkey key.pem -in cert.pem -out id.p12 -passout pass:probe
+          security create-keychain -p probe probe.keychain
+          security set-keychain-settings -lut 21600 probe.keychain
+          security unlock-keychain -p probe probe.keychain
+          security import id.p12 -k probe.keychain -P probe -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k probe probe.keychain > /dev/null
+          security list-keychains -d user -s probe.keychain $(security list-keychains -d user | tr -d '"')
+          # Trusted as a root for this machine. Without this, spctl calls the
+          # signature "unnotarized" no matter who signed it.
+          sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain cert.pem
+          echo "--- identities codesign can see ---"
+          security find-identity -v -p codesigning
+
+      - name: Re-sign with it, then ask the system again
+        run: |
+          set -x
+          codesign --force --deep --sign "PingZhu Self-Signed" dist/PingZhu.app
+          codesign --verify --verbose=2 dist/PingZhu.app
+          codesign -dv dist/PingZhu.app 2>&1 | head -8
+          spctl -a -vvv dist/PingZhu.app || echo "spctl: rejected"
+          set +e
+          ./dist/InstallTest "$PWD/dist/PingZhu.app" > /tmp/selfsigned.log 2>&1
+          STATUS=$?
+          set -e
+          echo "InstallTest exit=$STATUS"
+          tail -25 /tmp/selfsigned.log
+          if [ "$STATUS" -eq 0 ]; then
+            echo "::notice title=Self-signed works::the input method registered with a self-signed identity"
+          else
+            echo "::warning title=Self-signed does not work::the input method did not register even with a trusted self-signed identity — Developer ID required"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### macOS signing probe"
+            echo ""
+            echo "- \`$(sw_vers -productVersion)\` ($(sw_vers -buildVersion)), sip: $(csrutil status 2>/dev/null | tr -d '\n' || echo unknown)"
+            echo "- baseline (ad-hoc): $(grep -c 'ok ' /tmp/baseline.log 2>/dev/null || echo 0) checks passed"
+            echo "- self-signed: $(grep -c 'ok ' /tmp/selfsigned.log 2>/dev/null || echo 0) checks passed"
+            echo ""
+            echo "Read the two logs above: the question is whether the input-source ID"
+            echo "\`tw.pingzhu.ime.Bopomofo\` shows up, not how many checks passed."
+          } >> $GITHUB_STEP_SUMMARY
