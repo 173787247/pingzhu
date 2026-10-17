@@ -89,7 +89,14 @@ jobs:
             -subj "/CN=PingZhu Self-Signed/O=PingZhu/C=CN" \
             -addext "keyUsage=critical,digitalSignature" \
             -addext "extendedKeyUsage=critical,codeSigning"
-          openssl pkcs12 -export -inkey key.pem -in cert.pem -out id.p12 -passout pass:probe
+          # macOS 26 ships OpenSSL 3, whose PKCS#12 defaults (AES-256 + SHA-256)
+          # the legacy `security import` refuses with "MAC verification failed".
+          # -legacy restores the SHA1/3DES encoding it accepts; older macOS ships
+          # LibreSSL, which has no -legacy flag at all, so try it and fall back.
+          if ! openssl pkcs12 -export -legacy -inkey key.pem -in cert.pem \
+                 -out id.p12 -passout pass:probe 2>/dev/null; then
+            openssl pkcs12 -export -inkey key.pem -in cert.pem -out id.p12 -passout pass:probe
+          fi
           security create-keychain -p probe probe.keychain
           security set-keychain-settings -lut 21600 probe.keychain
           security unlock-keychain -p probe probe.keychain
