@@ -137,7 +137,7 @@ output = simplified
 ```bash
 bash windows/build.sh                    # 建置到 %LOCALAPPDATA%\pingzhu-build
 bash windows/build.sh <staging> --run    # 順便跑路由測試
-bash windows/package.sh 0.10.4           # 產出 dist/ 的 zip 與 setup.exe
+bash windows/package.sh 0.10.5           # 產出 dist/ 的 zip 與 setup.exe
 ```
 
 **`<staging>` 必须是 Windows 看得到的路径**（`/mnt/c/...`），不能放在 Linux 家目录：

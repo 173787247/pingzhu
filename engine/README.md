@@ -27,7 +27,7 @@ echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc
 this needs no account and no token:
 
 ```bash
-npm install https://github.com/173787247/pingzhu/releases/download/v0.10.4/pingzhu-engine-0.10.4.tgz
+npm install https://github.com/173787247/pingzhu/releases/download/v0.10.5/pingzhu-engine-0.10.5.tgz
 ```
 
 ```js

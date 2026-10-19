@@ -1,3 +1,17 @@
+fcitx5-pingzhu (0.10.5) unstable; urgency=medium
+
+  * New upstream release 0.10.5. Two fixes, both of the shape "the feature is
+    there, the result is empty":
+
+    - Selecting a candidate committed nothing on Android and macOS: select()
+      already commits and returns the text, and those shells asked the engine to
+      commit again, which returns nothing.
+    - This addon and the HarmonyOS keyboard never wrote the user dictionary, so
+      every word the user taught was forgotten on restart. They now load it at
+      startup and write it after a selection or a commit, like the other shells.
+
+ -- PingZhu <173787247@qq.com>  Tue, 20 Oct 2026 01:30:00 +0800
+
 fcitx5-pingzhu (0.10.4) unstable; urgency=medium
 
   * New upstream release 0.10.4. Four shells each had a feature that existed but
