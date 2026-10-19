@@ -348,8 +348,11 @@ class PingZhuImeService : InputMethodService() {
             }
             Action.NextPage -> engine.nextPage()
             Action.SelectCandidate -> {
+                // `select` returns the chosen text and commits in the same call;
+                // asking the engine to commit again returns nothing. This is the
+                // same mistake the touch path had, in the digit path.
                 val chosen = engine.select(Router.candidateIndex(ch))
-                if (chosen.isNotEmpty()) commit()
+                if (chosen.isNotEmpty()) commit(chosen)
             }
             Action.PrevPage -> Unit
         }
@@ -368,13 +371,17 @@ class PingZhuImeService : InputMethodService() {
 
     private fun selectCandidate(oneBased: Int) {
         val engine = this.engine ?: return
-        if (engine.select(oneBased).isNotEmpty()) commit()
+        // `select` returns the chosen text *and* clears the composition — it is
+        // the commit. Asking the engine to commit afterwards returns nothing,
+        // which is what this used to do: the choice was dropped and the
+        // composition cleared with it. Windows and Linux already spelled it this
+        // way; macOS had the same bug and is fixed alongside.
+        commit(engine.select(oneBased))
         refresh()
     }
 
-    private fun commit() {
+    private fun commit(text: String = engine?.commit() ?: "") {
         val engine = this.engine ?: return
-        val text = engine.commit()
         if (text.isNotEmpty()) currentInputConnection?.commitText(text, 1)
         engine.reset()
         // Learn from use: the corrections the user makes are the only training

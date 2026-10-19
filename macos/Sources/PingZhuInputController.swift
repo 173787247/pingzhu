@@ -141,10 +141,16 @@ final class PingZhuInputController: IMKInputController {
             showCandidates()
 
         case .selectCandidate:
-            if !engine.selectCandidate(oneBased: Router.candidateIndex(key)).isEmpty {
-                commit()
-            } else {
+            // `selectCandidate` returns the chosen text and clears the
+            // composition — it *is* the commit. Calling commit() afterwards asks
+            // the engine to commit again, gets nothing, and clears the
+            // composition anyway: the choice is dropped. Android had the same
+            // bug; Windows and Linux already read the returned text.
+            let chosen = engine.selectCandidate(oneBased: Router.candidateIndex(key))
+            if chosen.isEmpty {
                 showCandidates()
+            } else {
+                commit(chosen)
             }
         }
         return true
@@ -188,9 +194,12 @@ final class PingZhuInputController: IMKInputController {
         candidateWindow?.hide()
     }
 
-    private func commit() {
+    /// Commits the engine's pending text, or `chosen` when the caller already has
+    /// it — a candidate selection returns its text and commits in one call, so
+    /// asking the engine again would return nothing.
+    private func commit(_ chosen: String? = nil) {
         guard let engine, let client = client() else { return }
-        let text = engine.commit()
+        let text = chosen ?? engine.commit()
         if !text.isEmpty {
             client.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
         }
