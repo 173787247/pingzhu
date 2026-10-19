@@ -77,6 +77,14 @@ jobs:
           cd linux/fcitx5/build
           ./tests/engine_smoke /usr/share/pingzhu
 
+      - name: What the user teaches survives a restart
+        run: |
+          # The addon used to keep learned words in memory only: every restart
+          # forgot the user's corrections and nothing said so. This is the same
+          # teach → save → load round trip the addon now performs.
+          cd linux/fcitx5/build
+          ./tests/userdict "$GITHUB_WORKSPACE/data" "$RUNNER_TEMP/userdict.tsv"
+
       - name: The routing table, against the shared vectors
         run: |
           # Plain C++ with no fcitx5 in it, so this is a compiler and a text file

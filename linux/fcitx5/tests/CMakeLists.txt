@@ -17,3 +17,15 @@ add_executable(router_vectors router_vectors.cpp ../src/router.cpp)
 
 add_test(NAME router_vectors
          COMMAND router_vectors ${PINGZHU_REPO_ROOT}/tools/routing-vectors.tsv)
+
+# What the user teaches has to survive the process. This exercises the same
+# teach → save → load round trip the addon now performs, so the behaviour has a
+# test rather than a promise. The dictionary goes in the build directory: a test
+# must not touch the real one under $XDG_DATA_HOME.
+add_executable(userdict userdict.c)
+target_include_directories(userdict PRIVATE ${PINGZHU_REPO_ROOT}/core-rs/include)
+target_link_libraries(userdict PRIVATE ${PINGZHU_CORE_LIB})
+
+add_test(NAME userdict
+         COMMAND userdict ${CMAKE_INSTALL_FULL_DATADIR}/pingzhu
+                          ${CMAKE_CURRENT_BINARY_DIR}/userdict-test.tsv)

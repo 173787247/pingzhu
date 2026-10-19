@@ -65,6 +65,12 @@ public:
 
     std::string commit();
 
+    /// Loads the words learned in earlier sessions. Creates the dictionary when
+    /// the file is not there yet; false means the file was there and unreadable.
+    bool loadUserDictionary(const std::string &path);
+    /// Writes the words learned so far. False when the path cannot be written.
+    bool saveUserDictionary(const std::string &path);
+
 private:
     EngineHandle *handle_ = nullptr;
 };
@@ -93,10 +99,13 @@ public:
 private:
     std::unique_ptr<Engine> engine_;
 
-    /// Which candidate the arrow keys have moved to, if any.
-
     void refresh(fcitx::InputContext &ic);
     void commitAndClear(fcitx::InputContext &ic);
+
+    /// Writes what the user has taught the engine (a chosen candidate, or a
+    /// committed sentence) so the next session starts with it. Called after the
+    /// two places that learn.
+    void persistLearning();
 };
 
 class PingZhuEngineFactory : public fcitx::AddonFactory {

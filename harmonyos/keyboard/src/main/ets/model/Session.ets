@@ -28,6 +28,13 @@ const DOMAIN = 0x0000;
 export class Session {
   private static client: inputMethodEngine.InputClient | null = null;
 
+  /**
+   * Where the learned words live. The extension knows its files directory and
+   * the panel does not, so the extension writes it here at startup and the panel
+   * saves to it after a selection.
+   */
+  static userDictPath: string = '';
+
   /** Called by the extension on inputStart / inputStop. */
   static setClient(client: inputMethodEngine.InputClient | null): void {
     Session.client = client;

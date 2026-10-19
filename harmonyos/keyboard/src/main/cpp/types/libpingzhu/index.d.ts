@@ -59,6 +59,18 @@ export function commit(): string;
 export function reset(): void;
 
 /**
+ * Loads the words learned in earlier sessions. Creates the dictionary when the
+ * file does not exist yet; false means it was there and unreadable.
+ */
+export function loadUserDictionary(path: string): boolean;
+
+/**
+ * Writes the words learned so far. Call it after a selection or a commit — those
+ * are the two places the engine learns anything.
+ */
+export function saveUserDictionary(path: string): boolean;
+
+/**
  * Steps back one bopomofo component. Returns whether there was one to step back.
  *
  * Reset is not a substitute: it throws the whole composition away, which is what

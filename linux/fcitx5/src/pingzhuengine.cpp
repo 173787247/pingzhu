@@ -1,5 +1,8 @@
 #include "pingzhuengine.h"
 
+#include <cstdlib>
+#include <filesystem>
+
 #include <fcitx/candidatelist.h>
 #include <fcitx/inputpanel.h>
 #include <fcitx/text.h>
@@ -31,6 +34,24 @@ std::string dataDir() {
     // a fallback for running from a build tree; fcitx5's own path lookup would
     // be better but this addon has exactly one data directory.
     return PINGZHU_DATA_DIR_DEFAULT;
+}
+
+/// Where the words the user has taught us live.
+///
+/// fcitx5 keeps per-user data under `$XDG_DATA_HOME/fcitx5` (which is
+/// `~/.local/share/fcitx5` when unset), so a directory beside fcitx5's own is the
+/// place a user will look for it — and the place a system-wide install can still
+/// write to.
+std::string userDictPath() {
+    std::string base;
+    if (const char *xdg = std::getenv("XDG_DATA_HOME"); xdg != nullptr && *xdg != '\0') {
+        base = xdg;
+    } else if (const char *home = std::getenv("HOME"); home != nullptr && *home != '\0') {
+        base = std::string(home) + "/.local/share";
+    } else {
+        return {};
+    }
+    return base + "/fcitx5/pingzhu/userdict.tsv";
 }
 
 } // namespace
@@ -133,6 +154,16 @@ std::string Engine::commit() {
     return text == nullptr ? std::string() : std::string(text);
 }
 
+bool Engine::loadUserDictionary(const std::string &path) {
+    if (handle_ == nullptr || path.empty()) return false;
+    return engine_load_user_dictionary(handle_, path.c_str());
+}
+
+bool Engine::saveUserDictionary(const std::string &path) {
+    if (handle_ == nullptr || path.empty()) return false;
+    return engine_save_user_dictionary(handle_, path.c_str());
+}
+
 // ---------------------------------------------------------------- the addon
 
 std::vector<fcitx::InputMethodEntry> PingZhuEngine::listInputMethods() {
@@ -161,6 +192,13 @@ void PingZhuEngine::activate(const fcitx::InputMethodEntry &,
                              fcitx::InputContextEvent &event) {
     if (engine_ == nullptr) {
         engine_ = std::make_unique<Engine>();
+        // Words the user taught in earlier sessions. Engine::loadUserDictionary
+        // creates the dictionary when the file is not there yet, so this is the
+        // same call on a first run and on the hundredth.
+        const std::string path = userDictPath();
+        if (!path.empty()) {
+            FCITX_INFO() << "PingZhu: user dictionary " << (engine_->loadUserDictionary(path) ? "loaded from " : "not readable at ") << path;
+        }
     } else {
         engine_->reset();
     }
@@ -204,6 +242,10 @@ void PingZhuEngine::pickCandidate(fcitx::InputContext &ic, int oneBased) {
     const std::string text = engine_->selectCandidate(oneBased);
     if (!text.empty()) {
         ic.commitString(text);
+        // Choosing a word is what teaches the engine: it is the only signal this
+        // input method has. Persisting it here is what makes 「教一次」 true on
+        // the next session.
+        persistLearning();
     }
     refresh(ic);
 }
@@ -271,8 +313,23 @@ void PingZhuEngine::commitAndClear(fcitx::InputContext &ic) {
     const std::string text = engine_->commit();
     if (!text.empty()) {
         ic.commitString(text);
+        persistLearning();
     }
     refresh(ic);
+}
+
+void PingZhuEngine::persistLearning() {
+    if (engine_ == nullptr) return;
+    const std::string path = userDictPath();
+    if (path.empty()) return;
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+    if (!engine_->saveUserDictionary(path)) {
+        // Worth a line: the words are still in memory, so nothing is lost until
+        // the process ends — but the user should be able to find out why their
+        // corrections do not survive a restart.
+        FCITX_WARN() << "PingZhu: could not write the user dictionary to " << path;
+    }
 }
 
 namespace {

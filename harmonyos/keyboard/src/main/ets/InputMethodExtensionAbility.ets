@@ -190,6 +190,13 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
       if (ok) {
         hilog.info(DOMAIN, TAG, '引擎載入完成，ABI %{public}d', pingzhu.abiVersion());
         hilog.info(DOMAIN, TAG, '鍵面：%{public}s', pingzhu.keyboardRows('standard'));
+
+        // Outside the model directory: that one is rewritten from the raw files
+        // on every start, and the user's own words must not be caught up in it.
+        Session.userDictPath = `${this.context.filesDir}/userdict.tsv`;
+        const loaded: boolean = pingzhu.loadUserDictionary(Session.userDictPath);
+        hilog.info(DOMAIN, TAG, '使用者詞典：%{public}s %{public}s',
+          loaded ? '已載入' : '尚未建立', Session.userDictPath);
       } else {
         hilog.error(DOMAIN, TAG, '引擎讀不到模型：%{public}s', dir);
       }

@@ -64,12 +64,31 @@ export struct KeyboardPanel {
     }
   }
 
+  /**
+   * Writes the words the user has taught us.
+   *
+   * The words a user picks are the only training signal this input method has.
+   * They used to live in memory only: a restart forgot every correction, and
+   * nothing anywhere said so.
+   */
+  private saveUserDictionary(): void {
+    if (Session.userDictPath.length === 0) return;
+    try {
+      if (!pingzhu.saveUserDictionary(Session.userDictPath)) {
+        this.failure = `詞典寫不進去（${Session.userDictPath}）`;
+      }
+    } catch (error) {
+      this.failure = `${error}`;
+    }
+  }
+
   private commit(): void {
     try {
       const text: string = pingzhu.commit();
       this.composing = '';
       this.candidates = [];
       if (text.length === 0) return;
+      this.saveUserDictionary();
 
       // Through the Session, not into this.composing.
       //
@@ -149,6 +168,10 @@ export struct KeyboardPanel {
       this.composing = '';
       this.candidates = [];
       if (text.length === 0) return;
+      // Choosing a word is what teaches the engine — the only training signal
+      // this input method has. Persist it, or the next session starts having
+      // forgotten every correction the user made.
+      this.saveUserDictionary();
       if (!Session.insertText(text)) {
         this.composing = `沒有編輯器（${text}）`;
       }

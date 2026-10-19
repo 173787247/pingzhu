@@ -242,6 +242,45 @@ napi_value Reset(napi_env env, napi_callback_info info) {
 /// way to undo anything, so backspace used it — and threw away the whole
 /// composition instead of the last component. What the other shells do with
 /// backspace is in the shared vectors (`\b 1 0 0 → Backspace`).
+/// Reads a single string argument, or returns false when it is not one.
+static bool stringArg(napi_env env, napi_callback_info info, std::string &out) {
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    size_t length = 0;
+    if (argc < 1 || napi_get_value_string_utf8(env, args[0], nullptr, 0, &length) != napi_ok) {
+        return false;
+    }
+    out.assign(length, '\0');
+    napi_get_value_string_utf8(env, args[0], out.data(), length + 1, &length);
+    return true;
+}
+
+/// Words the user taught us, from a previous session.
+///
+/// The engine learns from the words a user picks — the only training signal this
+/// input method has — but until this existed those words lived only in memory,
+/// so every restart forgot them and nothing said so.
+napi_value LoadUserDictionary(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+    std::string path;
+    if (g_engine == nullptr || !stringArg(env, info, path)) return result;
+    napi_get_boolean(env, engine_load_user_dictionary(g_engine, path.c_str()), &result);
+    return result;
+}
+
+/// Writes the words learned so far. The shell calls this after a selection or a
+/// commit, which are the two places the engine learns.
+napi_value SaveUserDictionary(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+    std::string path;
+    if (g_engine == nullptr || !stringArg(env, info, path)) return result;
+    napi_get_boolean(env, engine_save_user_dictionary(g_engine, path.c_str()), &result);
+    return result;
+}
+
 napi_value Backspace(napi_env env, napi_callback_info info) {
     if (g_engine == nullptr) { napi_value r; napi_get_boolean(env, false, &r); return r; }
     napi_value result;
@@ -303,6 +342,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"commit", nullptr, Commit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"reset", nullptr, Reset, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"backspace", nullptr, Backspace, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"loadUserDictionary", nullptr, LoadUserDictionary, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"saveUserDictionary", nullptr, SaveUserDictionary, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
