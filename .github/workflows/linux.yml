@@ -85,6 +85,14 @@ jobs:
           cd linux/fcitx5/build
           ./tests/userdict "$GITHUB_WORKSPACE/data" "$RUNNER_TEMP/userdict.tsv"
 
+      - name: Traditional and simplified, both ways
+        run: |
+          # The decoder always works in traditional; the conversion is at the
+          # output boundary. Every other shell could switch; this addon could
+          # not, so its users got traditional and nothing else.
+          cd linux/fcitx5/build
+          ./tests/script /usr/share/pingzhu
+
       - name: The routing table, against the shared vectors
         run: |
           # Plain C++ with no fcitx5 in it, so this is a compiler and a text file

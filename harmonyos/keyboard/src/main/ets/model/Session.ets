@@ -21,6 +21,8 @@
  */
 import { inputMethodEngine } from '@kit.IMEKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { fileIo } from '@kit.CoreFileKit';
+import { util } from '@kit.ArkTS';
 
 const TAG = 'PingZhu';
 const DOMAIN = 0x0000;
@@ -34,6 +36,29 @@ export class Session {
    * saves to it after a selection.
    */
   static userDictPath: string = '';
+
+  /**
+   * Where the chosen output script lives. Same arrangement as the dictionary:
+   * the extension knows its files directory, the panel does not.
+   */
+  static scriptPath: string = '';
+
+  /** Writes the output script so the next session starts with it. */
+  static saveScript(script: string): void {
+    if (Session.scriptPath.length === 0) return;
+    try {
+      const bytes = new util.TextEncoder().encodeInto(script);
+      const file = fileIo.openSync(Session.scriptPath, fileIo.OpenMode.CREATE |
+                                   fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.TRUNC);
+      try {
+        fileIo.writeSync(file.fd, bytes.buffer as ArrayBuffer);
+      } finally {
+        fileIo.closeSync(file);
+      }
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '字形設定寫不進去：%{public}s', JSON.stringify(error));
+    }
+  }
 
   /** Called by the extension on inputStart / inputStop. */
   static setClient(client: inputMethodEngine.InputClient | null): void {

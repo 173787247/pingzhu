@@ -58,6 +58,12 @@ export function commit(): string;
 /** Clears without committing. */
 export function reset(): void;
 
+/** "traditional" or "simplified". The decoder always works in traditional. */
+export function setOutputScript(script: string): boolean;
+
+/** The current output script. */
+export function outputScript(): string;
+
 /**
  * Loads the words learned in earlier sessions. Creates the dictionary when the
  * file does not exist yet; false means it was there and unreadable.

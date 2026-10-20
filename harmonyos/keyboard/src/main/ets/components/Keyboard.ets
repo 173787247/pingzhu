@@ -24,6 +24,8 @@ export struct KeyboardPanel {
   @State private candidates: string[] = [];
   @State private ready: boolean = false;
   @State private failure: string = '';
+  /** "traditional" or "simplified" — what the decoder outputs, not how it decodes. */
+  @State private script: string = 'traditional';
 
   aboutToAppear(): void {
     this.load();
@@ -31,6 +33,7 @@ export struct KeyboardPanel {
 
   private load(): void {
     try {
+      this.script = pingzhu.outputScript();
       // Pairs, not two parallel strings. The 倚天 layout has more keys in its
       // first row than it has Bopomofo components, so the two cannot be zipped
       // from separate runs — a test in core-rs/ caught that.
@@ -71,6 +74,22 @@ export struct KeyboardPanel {
    * They used to live in memory only: a restart forgot every correction, and
    * nothing anywhere said so.
    */
+  /**
+   * Switches the output between traditional and simplified.
+   *
+   * The decoder always works in traditional — that is the design, not a
+   * limitation — and the conversion happens at the output boundary. Every other
+   * shell could choose; this keyboard could not, so its users got traditional
+   * and nothing else.
+   */
+  private toggleScript(): void {
+    const next: string = this.script === 'simplified' ? 'traditional' : 'simplified';
+    if (!pingzhu.setOutputScript(next)) return;
+    this.script = next;
+    this.candidates = pingzhu.candidates();
+    Session.saveScript(next);
+  }
+
   private saveUserDictionary(): void {
     if (Session.userDictPath.length === 0) return;
     try {
@@ -253,6 +272,12 @@ export struct KeyboardPanel {
           .fontSize(18).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#FFFFFF').borderRadius(4)
           .onClick(() => { this.tap(','); })
+        // The label is the script in use, so pressing it is the switch. The other
+        // shells call this 繁/简 in their own way; this keyboard had no way at all.
+        Text(this.script === 'simplified' ? '简' : '繁')
+          .fontSize(16).textAlign(TextAlign.Center).layoutWeight(1).height(46)
+          .backgroundColor('#D0D0D0').borderRadius(4)
+          .onClick(() => { this.toggleScript(); })
       }
       .width('100%')
       .padding({ left: 4, right: 4 })

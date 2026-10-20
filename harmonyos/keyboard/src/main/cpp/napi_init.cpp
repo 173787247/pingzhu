@@ -261,6 +261,24 @@ static bool stringArg(napi_env env, napi_callback_info info, std::string &out) {
 /// The engine learns from the words a user picks — the only training signal this
 /// input method has — but until this existed those words lived only in memory,
 /// so every restart forgot them and nothing said so.
+/// "traditional" / "simplified" — the output boundary, not the decoder.
+napi_value SetOutputScript(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+    std::string script;
+    if (g_engine == nullptr || !stringArg(env, info, script)) return result;
+    napi_get_boolean(env, engine_set_output_script(g_engine, script.c_str()), &result);
+    return result;
+}
+
+napi_value OutputScript(napi_env env, napi_callback_info info) {
+    const char *script = g_engine == nullptr ? nullptr : engine_output_script(g_engine);
+    napi_value result;
+    napi_create_string_utf8(env, script == nullptr ? "traditional" : script,
+                            NAPI_AUTO_LENGTH, &result);
+    return result;
+}
+
 napi_value LoadUserDictionary(napi_env env, napi_callback_info info) {
     napi_value result;
     napi_get_boolean(env, false, &result);
@@ -344,6 +362,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"backspace", nullptr, Backspace, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"loadUserDictionary", nullptr, LoadUserDictionary, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"saveUserDictionary", nullptr, SaveUserDictionary, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setOutputScript", nullptr, SetOutputScript, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"outputScript", nullptr, OutputScript, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;

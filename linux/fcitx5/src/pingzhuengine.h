@@ -71,6 +71,10 @@ public:
     /// Writes the words learned so far. False when the path cannot be written.
     bool saveUserDictionary(const std::string &path);
 
+    /// "traditional" or "simplified" — the output boundary, not the decoder.
+    std::string outputScript() const;
+    bool setOutputScript(const std::string &script);
+
 private:
     EngineHandle *handle_ = nullptr;
 };
@@ -106,6 +110,13 @@ private:
     /// committed sentence) so the next session starts with it. Called after the
     /// two places that learn.
     void persistLearning();
+
+    /// Reads the output script chosen in an earlier session. The decoder always
+    /// works in traditional; this is the boundary where output is converted.
+    void loadScript();
+    /// Ctrl+Alt+S — the chord the Windows shell uses.
+    void toggleScript(fcitx::InputContext &ic);
+    void persistScript();
 };
 
 class PingZhuEngineFactory : public fcitx::AddonFactory {

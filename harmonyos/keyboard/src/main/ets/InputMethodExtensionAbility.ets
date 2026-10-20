@@ -197,6 +197,18 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
         const loaded: boolean = pingzhu.loadUserDictionary(Session.userDictPath);
         hilog.info(DOMAIN, TAG, '使用者詞典：%{public}s %{public}s',
           loaded ? '已載入' : '尚未建立', Session.userDictPath);
+
+        // The output script chosen last time. The decoder always works in
+        // traditional; this is the boundary where text is converted on the way
+        // out, so the choice belongs beside the dictionary.
+        Session.scriptPath = `${this.context.filesDir}/script`;
+        if (fileIo.accessSync(Session.scriptPath)) {
+          const chosen: string = fileIo.readTextSync(Session.scriptPath).trim();
+          if (chosen === 'traditional' || chosen === 'simplified') {
+            pingzhu.setOutputScript(chosen);
+            hilog.info(DOMAIN, TAG, '輸出字形：%{public}s', chosen);
+          }
+        }
       } else {
         hilog.error(DOMAIN, TAG, '引擎讀不到模型：%{public}s', dir);
       }

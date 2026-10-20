@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 
 #include <fcitx/candidatelist.h>
 #include <fcitx/inputpanel.h>
@@ -42,7 +43,7 @@ std::string dataDir() {
 /// `~/.local/share/fcitx5` when unset), so a directory beside fcitx5's own is the
 /// place a user will look for it — and the place a system-wide install can still
 /// write to.
-std::string userDictPath() {
+std::string userDataPath(const char *name) {
     std::string base;
     if (const char *xdg = std::getenv("XDG_DATA_HOME"); xdg != nullptr && *xdg != '\0') {
         base = xdg;
@@ -51,8 +52,14 @@ std::string userDictPath() {
     } else {
         return {};
     }
-    return base + "/fcitx5/pingzhu/userdict.tsv";
+    return base + "/fcitx5/pingzhu/" + name;
 }
+
+/// The user dictionary: the words the user taught us.
+std::string userDictPath() { return userDataPath("userdict.tsv"); }
+
+/// The output script the user last chose ("traditional" / "simplified").
+std::string scriptPath() { return userDataPath("script"); }
 
 } // namespace
 
@@ -164,6 +171,17 @@ bool Engine::saveUserDictionary(const std::string &path) {
     return engine_save_user_dictionary(handle_, path.c_str());
 }
 
+std::string Engine::outputScript() const {
+    if (handle_ == nullptr) return "traditional";
+    const char *script = engine_output_script(handle_);
+    return script == nullptr ? "traditional" : std::string(script);
+}
+
+bool Engine::setOutputScript(const std::string &script) {
+    if (handle_ == nullptr || script.empty()) return false;
+    return engine_set_output_script(handle_, script.c_str());
+}
+
 // ---------------------------------------------------------------- the addon
 
 std::vector<fcitx::InputMethodEntry> PingZhuEngine::listInputMethods() {
@@ -199,6 +217,7 @@ void PingZhuEngine::activate(const fcitx::InputMethodEntry &,
         if (!path.empty()) {
             FCITX_INFO() << "PingZhu: user dictionary " << (engine_->loadUserDictionary(path) ? "loaded from " : "not readable at ") << path;
         }
+        loadScript();
     } else {
         engine_->reset();
     }
@@ -318,6 +337,45 @@ void PingZhuEngine::commitAndClear(fcitx::InputContext &ic) {
     refresh(ic);
 }
 
+void PingZhuEngine::loadScript() {
+    if (engine_ == nullptr) return;
+    const std::string path = scriptPath();
+    if (path.empty()) return;
+    std::ifstream file(path);
+    if (!file) return; // nothing chosen yet: traditional, where the engine starts
+    std::string script;
+    std::getline(file, script);
+    while (!script.empty() && (script.back() == '\r' || script.back() == ' ')) {
+        script.pop_back();
+    }
+    if (script == "traditional" || script == "simplified") {
+        engine_->setOutputScript(script);
+    }
+}
+
+void PingZhuEngine::toggleScript(fcitx::InputContext &ic) {
+    if (engine_ == nullptr) return;
+    const std::string next =
+        engine_->outputScript() == "simplified" ? "traditional" : "simplified";
+    if (!engine_->setOutputScript(next)) return;
+    persistScript();
+    refresh(ic);
+}
+
+void PingZhuEngine::persistScript() {
+    if (engine_ == nullptr) return;
+    const std::string path = scriptPath();
+    if (path.empty()) return;
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+    std::ofstream file(path, std::ios::trunc);
+    if (!file) {
+        FCITX_WARN() << "PingZhu: could not write the output script to " << path;
+        return;
+    }
+    file << engine_->outputScript() << "\n";
+}
+
 void PingZhuEngine::persistLearning() {
     if (engine_ == nullptr) return;
     const std::string path = userDictPath();
@@ -356,6 +414,17 @@ KeyEvent keyOf(const fcitx::Key &key) {
 void PingZhuEngine::keyEvent(const fcitx::InputMethodEntry &,
                              fcitx::KeyEvent &keyEvent) {
     if (engine_ == nullptr) return;
+
+    // Ctrl+Alt+S switches the output script, the chord the Windows shell uses.
+    //
+    // Checked before routing on purpose: the router speaks layouts and knows
+    // nothing about modifiers. Teaching it a fourth state for one shell's hotkey
+    // would put a shell concern into a table four shells share.
+    if (keyEvent.key().check(FcitxKey_s, fcitx::KeyStates(fcitx::KeyState::Ctrl_Alt))) {
+        toggleScript(*keyEvent.inputContext());
+        keyEvent.filterAndAccept();
+        return;
+    }
 
     const fcitx::Key key = keyEvent.key();
     const EngineState state{

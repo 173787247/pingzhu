@@ -29,3 +29,11 @@ target_link_libraries(userdict PRIVATE ${PINGZHU_CORE_LIB})
 add_test(NAME userdict
          COMMAND userdict ${CMAKE_INSTALL_FULL_DATADIR}/pingzhu
                           ${CMAKE_CURRENT_BINARY_DIR}/userdict-test.tsv)
+
+# The output boundary: traditional in, either script out. Before this addon could
+# switch, Linux users got traditional only, while every other shell could choose.
+add_executable(script script.c)
+target_include_directories(script PRIVATE ${PINGZHU_REPO_ROOT}/core-rs/include)
+target_link_libraries(script PRIVATE ${PINGZHU_CORE_LIB})
+
+add_test(NAME script COMMAND script ${CMAKE_INSTALL_FULL_DATADIR}/pingzhu)
