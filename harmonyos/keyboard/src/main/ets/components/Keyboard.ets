@@ -16,6 +16,26 @@ interface Key {
   label: string;    // what is drawn on it, e.g. "ㄅ" — empty for a key with no component
 }
 
+/**
+ * The English board.
+ *
+ * A phone keyboard has to be able to type a URL, an address, a password — and
+ * this one could not: every key on it is a Bopomofo component, and the engine
+ * rejects what is not in the layout, so there was no way to produce a Latin
+ * letter at all. Android handles this by switching to QWERTY for numeric,
+ * phone and password fields; this board is switched by hand, because the
+ * HarmonyOS editor attributes that would allow the automatic version are not
+ * something a build without a device can verify.
+ *
+ * Same letters as Android's QWERTY_ROWS, so the two phones feel the same.
+ */
+const QWERTY_ROWS: Key[][] = [
+  '1234567890'.split('').map((k: string): Key => ({ letter: k, label: k })),
+  'qwertyuiop'.split('').map((k: string): Key => ({ letter: k, label: k })),
+  'asdfghjkl'.split('').map((k: string): Key => ({ letter: k, label: k })),
+  'zxcvbnm'.split('').map((k: string): Key => ({ letter: k, label: k })),
+];
+
 @Component
 export struct KeyboardPanel {
   /** Rows of keys, from the engine. */
@@ -26,6 +46,8 @@ export struct KeyboardPanel {
   @State private failure: string = '';
   /** "traditional" or "simplified" — what the decoder outputs, not how it decodes. */
   @State private script: string = 'traditional';
+  /** True while the English board is showing instead of Bopomofo. */
+  @State private english: boolean = false;
 
   aboutToAppear(): void {
     this.load();
@@ -59,6 +81,13 @@ export struct KeyboardPanel {
 
   private tap(letter: string): void {
     try {
+      // Nothing here belongs to the input method when the English board is up.
+      // Leaving the Bopomofo decoder live behind a Latin keyboard is how a phone
+      // number field quietly fills with Chinese.
+      if (this.english) {
+        Session.insertText(letter);
+        return;
+      }
       pingzhu.feedKey(letter);
       this.composing = pingzhu.composing();
       this.candidates = pingzhu.candidates();
@@ -88,6 +117,24 @@ export struct KeyboardPanel {
     this.script = next;
     this.candidates = pingzhu.candidates();
     Session.saveScript(next);
+  }
+
+  /**
+   * Switches between the Bopomofo board and the English one.
+   *
+   * Turning it on clears any half-typed reading: the next key is Latin, and a
+   * composition left behind would sit on the bar forever.
+   */
+  private toggleEnglish(): void {
+    this.english = !this.english;
+    if (this.english) {
+      pingzhu.reset();
+      this.composing = '';
+      this.candidates = [];
+      this.rows = QWERTY_ROWS;
+    } else {
+      this.load();
+    }
   }
 
   private saveUserDictionary(): void {
@@ -264,10 +311,19 @@ export struct KeyboardPanel {
               Session.deleteBackward();
             }
           })
-        Text('送出')
+        // The middle key changes meaning with the board: 送出 accepts the
+        // composition, 空白 types a space. An English board with no space bar is
+        // not a usable board.
+        Text(this.english ? '空白' : '送出')
           .fontSize(16).textAlign(TextAlign.Center).layoutWeight(3).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)
-          .onClick(() => { this.commit(); })
+          .onClick(() => {
+            if (this.english) {
+              Session.insertText(' ');
+            } else {
+              this.commit();
+            }
+          })
         Text('，')
           .fontSize(18).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#FFFFFF').borderRadius(4)
@@ -278,6 +334,13 @@ export struct KeyboardPanel {
           .fontSize(16).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)
           .onClick(() => { this.toggleScript(); })
+        // 英/中. Every key on the Bopomofo board is a reading; without this the
+        // keyboard could not produce a single Latin letter, which rules out
+        // URLs, addresses and passwords on a phone.
+        Text(this.english ? '中' : '英')
+          .fontSize(16).textAlign(TextAlign.Center).layoutWeight(1).height(46)
+          .backgroundColor('#D0D0D0').borderRadius(4)
+          .onClick(() => { this.toggleEnglish(); })
       }
       .width('100%')
       .padding({ left: 4, right: 4 })
