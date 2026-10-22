@@ -36,6 +36,10 @@
   .cand:hover { border-color: var(--accent); }
   .cand b { color: var(--accent); font-weight: 600; margin-right: 3px; font-size: 13px; }
   .cand.learned { border-color: var(--ok); }
+  /* The sentence is a guess rather than a decode: the candidates are the answer,
+     and saying so is the same thing the Android keyboard does by dimming it. */
+  #sentence.guess { opacity: .55; font-style: italic; }
+  #learnclear { color: var(--accent); cursor: pointer; text-decoration: underline; }
   .meta { display: flex; gap: 16px; flex-wrap: wrap; color: var(--dim); font-size: 13px; margin-top: 8px; }
   .badge { padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); }
   .badge.on { border-color: var(--accent); color: var(--accent); }
@@ -86,6 +90,7 @@
     <span id="pageinfo">—</span>
     <span class="badge" id="mode">打字模式</span>
     <span id="learninfo"></span>
+    <span id="learnclear" hidden>清除</span>
   </div>
   <div id="status"></div>
 </div>
@@ -147,7 +152,34 @@ if (!response) {
 const text = await response.text();
 const dict = Dictionary.fromText(text, "bopomofo-lm.tsv");
 const inventory = buildSyllableInventoryFromText(text);
-const userDict = new UserDictionary();
+// --------------------------------------------------------- what was taught
+//
+// The other shells write the user dictionary to disk; a browser has no
+// Application Support directory, but it does have localStorage. Without this the
+// demo forgot every correction on reload, which made its "已學" highlight a
+// one-session trick rather than the feature the desktop shells have.
+const STORAGE_KEY = "pingzhu.userdict.v1";
+
+function loadUserDictionary() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return UserDictionary.fromText(stored);
+  } catch (error) {
+    // Private mode or storage disabled: the demo still works, it just forgets.
+    console.warn("user dictionary unavailable:", error);
+  }
+  return new UserDictionary();
+}
+
+function saveUserDictionary() {
+  try {
+    localStorage.setItem(STORAGE_KEY, userDict.toText());
+  } catch (error) {
+    console.warn("could not save the user dictionary:", error);
+  }
+}
+
+const userDict = loadUserDictionary();
 const engine = new InputEngine(dict, inventory, { layout: "standard", userDictionary: userDict });
 $("status").textContent = `已載入 ${dict.size.toLocaleString()} 詞條 / ${inventory.size} 合法音節`;
 
@@ -185,7 +217,11 @@ function draw() {
   $("composing").innerHTML = composing
     ? composing.replace(/\[([^\]]*)\]/, '<span class="pending">[$1]</span>')
     : '<span style="color:var(--dim)">—</span>';
-  $("sentence").textContent = engine.bestSentence || "—";
+  const sentence = engine.bestSentence;
+  $("sentence").textContent = sentence || "—";
+  // A guess, not a decode: the candidates below are the answer. This is the same
+  // signal the Android keyboard renders by dimming the sentence.
+  $("sentence").classList.toggle("guess", sentence !== "" && engine.usedFallback);
 
   const page = engine.candidatePage;
   const keys = ["1","2","3","4","5","6","7","8","9","0"];
@@ -202,7 +238,7 @@ function draw() {
     el.onclick = () => {
       if (!engine.candidateWindowOpen) engine.openCandidateWindow();
       const out = engine.selectCandidate(i + 1);
-      if (out) { committed.push(out); engine.reset(); }
+      if (out) { committed.push(out); engine.reset(); saveUserDictionary(); }
       draw();
     };
     box.appendChild(el);
@@ -214,7 +250,8 @@ function draw() {
   const mode = $("mode");
   mode.textContent = engine.candidateWindowOpen ? "選字模式（1-9,0 選字）" : "打字模式（數字是注音鍵）";
   mode.classList.toggle("on", engine.candidateWindowOpen);
-  $("learninfo").textContent = userDict.size ? `已學 ${userDict.size} 個詞` : "";
+  $("learninfo").textContent = userDict.size ? `已學 ${userDict.size} 個詞（存在這個瀏覽器裡）` : "";
+  $("learnclear").hidden = userDict.size === 0;
   $("document").value = committed.join("");
 }
 
@@ -222,6 +259,16 @@ function feed(key) {
   engine.press(key);
   draw();
 }
+
+$("learnclear").onclick = () => {
+  userDict.clear();
+  saveUserDictionary();
+  draw();
+};
+
+// A commit can happen without a save above (the toolbar's 送出), and a tab can be
+// closed mid-session; this costs nothing and keeps the two paths from drifting.
+window.addEventListener("beforeunload", saveUserDictionary);
 
 // -------------------------------------------------------------- key routing
 document.addEventListener("keydown", (e) => {
@@ -236,7 +283,7 @@ document.addEventListener("keydown", (e) => {
   else if (k === "Backspace") { e.preventDefault(); engine.backspace(); }
   else if (k === "Enter") {
     e.preventDefault();
-    if (engine.isComposing()) { committed.push(engine.commit()); }
+    if (engine.isComposing()) { committed.push(engine.commit()); saveUserDictionary(); }
     else { committed.push("\n"); }
   } else if (k === "Escape") { e.preventDefault(); engine.reset(); }
   else if (/^[0-9]$/.test(k)) {
@@ -245,7 +292,7 @@ document.addEventListener("keydown", (e) => {
     if (engine.candidateWindowOpen) {
       e.preventDefault();
       const out = engine.selectCandidate(k === "0" ? 10 : Number(k));
-      if (out) { committed.push(out); engine.reset(); }
+      if (out) { committed.push(out); engine.reset(); saveUserDictionary(); }
     } else {
       e.preventDefault();
       engine.press(k);
