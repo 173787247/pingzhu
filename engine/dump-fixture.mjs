@@ -14,6 +14,7 @@
  */
 import { loadDictionary, loadSyllableInventory } from "./src/node-data.ts";
 import { InputEngine } from "./src/engine.ts";
+import { LAYOUTS } from "./src/keyboard.ts";
 import { buildTestSet, readingToKeys } from "./bench-lib.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -60,6 +61,77 @@ const emit = (keys, options) => {
     page,
   ].join("\t"));
 };
+
+// `--layouts` writes the per-layout fixture instead: every layout that exists,
+// over the same handful of readings, with the layout named in the first column.
+// The main fixture keeps its positional layout hack (two ETen cases at the end)
+// because rewriting 1,500 rows to add a column would churn the one thing that has
+// been catching porting mistakes since day one.
+const LAYOUT_READINGS = [
+  "ㄋㄧˇ ㄏㄠˇ", "ㄨㄛˇ ㄞˋ ㄋㄧˇ", "ㄊㄞˊ ㄨㄢ", "ㄔㄨˋ ㄕㄥ",
+  "ㄨㄢˋ ㄉㄢ", "ㄓㄨㄥ", "ㄏㄨㄚ", "ㄌㄧㄢˊ", "ㄒㄧㄝˋ ㄒㄧㄝˋ",
+];
+
+/** The key sequence a layout uses for a reading, or null when it cannot type it. */
+function keysForReading(layoutId, reading) {
+  const table = LAYOUTS[layoutId];
+  const at = new Map();
+  for (const [key, comps] of table.keyToComponents) {
+    for (const c of comps) {
+      const id = `${c.kind}:${c.index}`;
+      if (!at.has(id)) at.set(id, key);
+    }
+  }
+  const groups = [
+    ["consonant", "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ"],
+    ["medial", "ㄧㄨㄩ"],
+    ["vowel", "ㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ"],
+  ];
+  let out = "";
+  for (const syllable of reading.split(" ")) {
+    for (const ch of syllable) {
+      let id = null;
+      if (/[ˊˇˋ˙]/.test(ch)) {
+        id = `tone:${"ˊˇˋ˙".indexOf(ch) + 1}`;
+      } else {
+        for (const [kind, chars] of groups) {
+          const i = chars.indexOf(ch);
+          if (i >= 0) { id = `${kind}:${i + 1}`; break; }
+        }
+      }
+      if (!id) throw new Error(`cannot read ${ch}`);
+      const key = at.get(id);
+      if (!key) return null; // this layout has no way to type this reading
+      out += key;
+    }
+  }
+  return out;
+}
+
+if (process.argv.includes("--layouts")) {
+  const rows = [];
+  const covered = [];
+  for (const layout of Object.keys(LAYOUTS)) {
+    let typed = 0;
+    for (const reading of LAYOUT_READINGS) {
+      const keys = keysForReading(layout, reading);
+      if (!keys) continue; // the layout cannot spell this one; say so by omission
+      const engine = new InputEngine(dict, inventory, { layout });
+      for (const ch of keys) engine.press(ch);
+      const page = engine.candidatePage.entries.map((e) => e.word).join("|");
+      const words = engine.chosenPath ? engine.chosenPath.nodes.map((n) => n.entry.word).join("|") : "";
+      rows.push([
+        layout, keys, engine.composing, engine.bestSentence,
+        engine.bestScore.toFixed(6), engine.usedFallback ? "1" : "0", words, page,
+      ].join("\t"));
+      typed++;
+    }
+    covered.push(`${layout}:${typed}`);
+  }
+  process.stderr.write(`layout fixture: ${rows.length} cases (${covered.join(" ")})\n`);
+  process.stdout.write(rows.join("\n") + "\n");
+  process.exit(0);
+}
 
 for (const keys of HAND_PICKED) emit(keys);
 

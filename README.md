@@ -184,8 +184,12 @@ Highlighted are the six presses of `su3cl3`: s ㄋ → u ㄧ → 3 ˇ gives ㄋ�
 c ㄏ → l ㄠ → 3 ˇ gives ㄏㄠˇ. Note what the digit row is: `1` is ㄅ, `3` is ˇ,
 `6` is ˊ, `0` is ㄢ. Digits are Bopomofo keys, which is why the candidate window
 has an explicit open state — with the window closed, `1` types ㄅ and only a
-`↓` or a space makes it select the first candidate. A 倚天式 (ETen) layout is
-implemented alongside it and cross-checked key for key against libchewing.*
+`↓` or a space makes it select the first candidate. **Six more** layouts sit
+alongside it (ETen, Hsu, ETen 26-key, IBM, GinYieh, Mitac): their tables are
+generated from the reference implementation by
+`research/tools/import-mcbopomofo-layouts.mjs`, and the TypeScript and Rust
+copies are compared case by case in `core-rs/tests/fixture-layouts.tsv`. The demo
+page has a layout picker above the keyboard.*
 
 ---
 

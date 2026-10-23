@@ -14,6 +14,11 @@ use crate::syllable::{Component, Kind};
 pub enum Layout {
     Standard,
     ETen,
+    Hsu,
+    ETen26,
+    Ibm,
+    Ginyieh,
+    Mitac,
 }
 
 impl Layout {
@@ -21,6 +26,11 @@ impl Layout {
         match self {
             Layout::Standard => "standard",
             Layout::ETen => "eten",
+            Layout::Hsu => "hsu",
+            Layout::ETen26 => "eten26",
+            Layout::Ibm => "ibm",
+            Layout::Ginyieh => "ginyieh",
+            Layout::Mitac => "mitac",
         }
     }
 
@@ -28,6 +38,11 @@ impl Layout {
         match self {
             Layout::Standard => "標準 (大千式)",
             Layout::ETen => "倚天式",
+            Layout::Hsu => "許氏",
+            Layout::ETen26 => "倚天 26 鍵",
+            Layout::Ibm => "IBM",
+            Layout::Ginyieh => "精業",
+            Layout::Mitac => "神通",
         }
     }
 
@@ -35,8 +50,29 @@ impl Layout {
         match id {
             "standard" => Some(Layout::Standard),
             "eten" => Some(Layout::ETen),
+            "hsu" => Some(Layout::Hsu),
+            "eten26" => Some(Layout::ETen26),
+            "ibm" => Some(Layout::Ibm),
+            "ginyieh" => Some(Layout::Ginyieh),
+            "mitac" => Some(Layout::Mitac),
             _ => None,
         }
+    }
+
+    /// Every layout the engine knows.
+    ///
+    /// Tests walk this rather than listing variants, so a layout added tomorrow is
+    /// exercised the day it exists instead of the day someone remembers to add it.
+    pub fn all() -> &'static [Layout] {
+        &[
+            Layout::Standard,
+            Layout::ETen,
+            Layout::Hsu,
+            Layout::ETen26,
+            Layout::Ibm,
+            Layout::Ginyieh,
+            Layout::Mitac,
+        ]
     }
 
     /// Components a key can produce. An empty slice means the key is not part of
@@ -45,6 +81,11 @@ impl Layout {
         match self {
             Layout::Standard => standard_components(key),
             Layout::ETen => eten_components(key),
+            Layout::Hsu => hsu_components(key),
+            Layout::ETen26 => eten26_components(key),
+            Layout::Ibm => ibm_components(key),
+            Layout::Ginyieh => ginyieh_components(key),
+            Layout::Mitac => mitac_components(key),
         }
     }
 
@@ -248,7 +289,7 @@ mod tests {
     /// only the first time someone finds it easier to special-case a label.
     #[test]
     fn the_drawn_keyboard_matches_the_decoder() {
-        for layout in [Layout::Standard, Layout::ETen] {
+        for layout in Layout::all() {
             for row in layout.key_rows() {
                 for (key, label) in row {
                     match layout.components_for(key).first() {
@@ -277,7 +318,7 @@ mod tests {
     #[test]
     fn every_composing_key_is_drawn() {
         const ALL_KEYS: &str = "1234567890-qwertyuiopasdfghjkl;zxcvbnm,./";
-        for layout in [Layout::Standard, Layout::ETen] {
+        for layout in Layout::all() {
             let drawn: Vec<char> = layout
                 .key_rows()
                 .iter()
@@ -296,5 +337,241 @@ mod tests {
                 }
             }
         }
+    }
+}
+
+// The five tables below are generated from the reference implementation's
+// BopomofoKeyboardLayout.ts by research/tools/import-mcbopomofo-layouts.mjs
+// (`--rust`). Do not edit them by hand: rerun the generator.
+
+fn hsu_components(key: char) -> &'static [Component] {
+    match key {
+        'w' => &VOWS[7..7 + 1],
+        'e' => &HSU_E,
+        'r' => &CONS[18..18 + 1],
+        't' => &CONS[6..6 + 1],
+        'y' => &VOWS[1..1 + 1],
+        'u' => &MEDS[3..3 + 1],
+        'i' => &VOWS[5..5 + 1],
+        'o' => &VOWS[8..8 + 1],
+        'p' => &CONS[2..2 + 1],
+        'a' => &HSU_A,
+        's' => &HSU_S,
+        'd' => &HSU_D,
+        'f' => &HSU_F,
+        'g' => &HSU_G,
+        'h' => &HSU_H,
+        'j' => &HSU_J,
+        'k' => &HSU_K,
+        'l' => &HSU_L,
+        'z' => &CONS[19..19 + 1],
+        'x' => &MEDS[2..2 + 1],
+        'c' => &HSU_C,
+        'v' => &HSU_V,
+        'b' => &CONS[1..1 + 1],
+        'n' => &HSU_N,
+        'm' => &HSU_M,
+        _ => &[],
+    }
+}
+
+static HSU_E: [Component; 2] = [med(1), vow(4)];
+static HSU_A: [Component; 2] = [cons(20), vow(6)];
+static HSU_S: [Component; 2] = [cons(21), tone(4)];
+static HSU_D: [Component; 2] = [cons(5), tone(1)];
+static HSU_F: [Component; 2] = [cons(4), tone(2)];
+static HSU_G: [Component; 2] = [cons(9), vow(3)];
+static HSU_H: [Component; 2] = [cons(11), vow(2)];
+static HSU_J: [Component; 3] = [cons(12), cons(15), tone(3)];
+static HSU_K: [Component; 2] = [cons(10), vow(11)];
+static HSU_L: [Component; 3] = [cons(8), vow(12), vow(13)];
+static HSU_C: [Component; 2] = [cons(14), cons(17)];
+static HSU_V: [Component; 2] = [cons(13), cons(16)];
+static HSU_N: [Component; 2] = [cons(7), vow(10)];
+static HSU_M: [Component; 2] = [cons(3), vow(9)];
+
+fn eten26_components(key: char) -> &'static [Component] {
+    match key {
+        'q' => &ETEN26_Q,
+        'w' => &ETEN26_W,
+        'e' => &MEDS[1..1 + 1],
+        'r' => &VOWS[3..3 + 1],
+        't' => &ETEN26_T,
+        'y' => &CONS[16..16 + 1],
+        'u' => &MEDS[3..3 + 1],
+        'i' => &VOWS[5..5 + 1],
+        'o' => &VOWS[2..2 + 1],
+        'p' => &ETEN26_P,
+        'a' => &VOWS[1..1 + 1],
+        's' => &CONS[21..21 + 1],
+        'd' => &ETEN26_D,
+        'f' => &ETEN26_F,
+        'g' => &ETEN26_G,
+        'h' => &ETEN26_H,
+        'j' => &ETEN26_J,
+        'k' => &ETEN26_K,
+        'l' => &ETEN26_L,
+        'z' => &VOWS[7..7 + 1],
+        'x' => &MEDS[2..2 + 1],
+        'c' => &ETEN26_C,
+        'v' => &ETEN26_V,
+        'b' => &CONS[1..1 + 1],
+        'n' => &ETEN26_N,
+        'm' => &ETEN26_M,
+        _ => &[],
+    }
+}
+
+static ETEN26_Q: [Component; 2] = [cons(19), vow(6)];
+static ETEN26_W: [Component; 2] = [cons(20), vow(4)];
+static ETEN26_T: [Component; 2] = [cons(6), vow(11)];
+static ETEN26_P: [Component; 2] = [cons(2), vow(8)];
+static ETEN26_D: [Component; 2] = [cons(5), tone(4)];
+static ETEN26_F: [Component; 2] = [cons(4), tone(1)];
+static ETEN26_G: [Component; 2] = [cons(15), cons(12)];
+static ETEN26_H: [Component; 2] = [cons(11), vow(13)];
+static ETEN26_J: [Component; 2] = [cons(18), tone(2)];
+static ETEN26_K: [Component; 2] = [cons(10), tone(3)];
+static ETEN26_L: [Component; 2] = [cons(8), vow(12)];
+static ETEN26_C: [Component; 2] = [cons(17), cons(14)];
+static ETEN26_V: [Component; 2] = [cons(9), cons(13)];
+static ETEN26_N: [Component; 2] = [cons(7), vow(10)];
+static ETEN26_M: [Component; 2] = [cons(3), vow(9)];
+
+fn ibm_components(key: char) -> &'static [Component] {
+    match key {
+        '1' => &CONS[1..1 + 1],
+        '2' => &CONS[2..2 + 1],
+        '3' => &CONS[3..3 + 1],
+        '4' => &CONS[4..4 + 1],
+        '5' => &CONS[5..5 + 1],
+        '6' => &CONS[6..6 + 1],
+        '7' => &CONS[7..7 + 1],
+        '8' => &CONS[8..8 + 1],
+        '9' => &CONS[9..9 + 1],
+        '0' => &CONS[10..10 + 1],
+        'q' => &CONS[12..12 + 1],
+        'w' => &CONS[13..13 + 1],
+        'e' => &CONS[14..14 + 1],
+        'r' => &CONS[15..15 + 1],
+        't' => &CONS[16..16 + 1],
+        'y' => &CONS[17..17 + 1],
+        'u' => &CONS[18..18 + 1],
+        'i' => &CONS[19..19 + 1],
+        'o' => &CONS[20..20 + 1],
+        'p' => &CONS[21..21 + 1],
+        'a' => &MEDS[1..1 + 1],
+        's' => &MEDS[2..2 + 1],
+        'd' => &MEDS[3..3 + 1],
+        'f' => &VOWS[1..1 + 1],
+        'g' => &VOWS[2..2 + 1],
+        'h' => &VOWS[3..3 + 1],
+        'j' => &VOWS[4..4 + 1],
+        'k' => &VOWS[5..5 + 1],
+        'l' => &VOWS[6..6 + 1],
+        ';' => &VOWS[7..7 + 1],
+        'z' => &VOWS[8..8 + 1],
+        'x' => &VOWS[9..9 + 1],
+        'c' => &VOWS[10..10 + 1],
+        'v' => &VOWS[11..11 + 1],
+        'b' => &VOWS[12..12 + 1],
+        'n' => &VOWS[13..13 + 1],
+        'm' => &TONES[1..1 + 1],
+        ',' => &TONES[2..2 + 1],
+        '.' => &TONES[3..3 + 1],
+        '/' => &TONES[4..4 + 1],
+        '-' => &CONS[11..11 + 1],
+        _ => &[],
+    }
+}
+
+fn ginyieh_components(key: char) -> &'static [Component] {
+    match key {
+        '1' => &TONES[4..4 + 1],
+        '2' => &CONS[1..1 + 1],
+        '3' => &CONS[5..5 + 1],
+        '6' => &CONS[15..15 + 1],
+        '8' => &VOWS[1..1 + 1],
+        '9' => &VOWS[5..5 + 1],
+        '0' => &VOWS[9..9 + 1],
+        'q' => &TONES[1..1 + 1],
+        'w' => &CONS[2..2 + 1],
+        'e' => &CONS[6..6 + 1],
+        'r' => &CONS[9..9 + 1],
+        't' => &CONS[12..12 + 1],
+        'y' => &CONS[16..16 + 1],
+        'u' => &CONS[19..19 + 1],
+        'i' => &VOWS[2..2 + 1],
+        'o' => &VOWS[6..6 + 1],
+        'p' => &VOWS[10..10 + 1],
+        'a' => &TONES[2..2 + 1],
+        's' => &CONS[3..3 + 1],
+        'd' => &CONS[7..7 + 1],
+        'f' => &CONS[10..10 + 1],
+        'g' => &CONS[13..13 + 1],
+        'h' => &CONS[17..17 + 1],
+        'j' => &CONS[20..20 + 1],
+        'k' => &VOWS[3..3 + 1],
+        'l' => &VOWS[7..7 + 1],
+        ';' => &VOWS[11..11 + 1],
+        'z' => &TONES[3..3 + 1],
+        'x' => &CONS[4..4 + 1],
+        'c' => &CONS[8..8 + 1],
+        'v' => &CONS[11..11 + 1],
+        'b' => &CONS[14..14 + 1],
+        'n' => &CONS[18..18 + 1],
+        'm' => &CONS[21..21 + 1],
+        ',' => &VOWS[4..4 + 1],
+        '.' => &VOWS[8..8 + 1],
+        '/' => &VOWS[12..12 + 1],
+        '-' => &MEDS[1..1 + 1],
+        _ => &[],
+    }
+}
+
+fn mitac_components(key: char) -> &'static [Component] {
+    match key {
+        '1' => &TONES[4..4 + 1],
+        '2' => &TONES[1..1 + 1],
+        '3' => &TONES[2..2 + 1],
+        '4' => &TONES[3..3 + 1],
+        '5' => &VOWS[5..5 + 1],
+        '6' => &VOWS[7..7 + 1],
+        '7' => &VOWS[9..9 + 1],
+        '8' => &VOWS[10..10 + 1],
+        '9' => &VOWS[11..11 + 1],
+        '0' => &VOWS[12..12 + 1],
+        'q' => &CONS[13..13 + 1],
+        'w' => &MEDS[2..2 + 1],
+        'e' => &VOWS[3..3 + 1],
+        'r' => &CONS[18..18 + 1],
+        't' => &CONS[6..6 + 1],
+        'y' => &MEDS[1..1 + 1],
+        'u' => &VOWS[8..8 + 1],
+        'i' => &VOWS[6..6 + 1],
+        'o' => &VOWS[2..2 + 1],
+        'p' => &CONS[2..2 + 1],
+        'a' => &VOWS[1..1 + 1],
+        's' => &CONS[21..21 + 1],
+        'd' => &CONS[5..5 + 1],
+        'f' => &CONS[4..4 + 1],
+        'g' => &CONS[9..9 + 1],
+        'h' => &CONS[11..11 + 1],
+        'j' => &CONS[12..12 + 1],
+        'k' => &CONS[10..10 + 1],
+        'l' => &CONS[8..8 + 1],
+        ';' => &VOWS[6..6 + 1],
+        'z' => &CONS[19..19 + 1],
+        'x' => &CONS[14..14 + 1],
+        'c' => &CONS[20..20 + 1],
+        'v' => &MEDS[3..3 + 1],
+        'b' => &CONS[1..1 + 1],
+        'n' => &CONS[7..7 + 1],
+        'm' => &CONS[3..3 + 1],
+        ',' => &CONS[15..15 + 1],
+        '.' => &CONS[16..16 + 1],
+        '/' => &CONS[17..17 + 1],
+        '-' => &VOWS[3..3 + 1],
+        _ => &[],
     }
 }

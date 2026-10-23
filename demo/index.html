@@ -40,6 +40,9 @@
      and saying so is the same thing the Android keyboard does by dimming it. */
   #sentence.guess { opacity: .55; font-style: italic; }
   #learnclear { color: var(--accent); cursor: pointer; text-decoration: underline; }
+  .key.dim { opacity: .4; }
+  #layout { background: var(--panel); color: var(--fg); border: 1px solid var(--line);
+            border-radius: 6px; padding: 4px 8px; font-size: 13px; margin-left: 8px; }
   .meta { display: flex; gap: 16px; flex-wrap: wrap; color: var(--dim); font-size: 13px; margin-top: 8px; }
   .badge { padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); }
   .badge.on { border-color: var(--accent); color: var(--accent); }
@@ -96,7 +99,9 @@
 </div>
 
 <div class="panel">
-  <div class="label">大千式鍵盤（沒有注音鍵盤也能用滑鼠點）</div>
+  <div class="label">鍵盤（沒有注音鍵盤也能用滑鼠點）
+    <select id="layout"></select>
+  </div>
   <div id="keyboard"></div>
 </div>
 
@@ -123,7 +128,7 @@
 import { InputEngine } from "./engine/engine.js";
 import { Dictionary, buildSyllableInventoryFromText } from "./engine/dictionary.js";
 import { UserDictionary } from "./engine/userdict.js";
-import { LAYOUTS, STANDARD_LAYOUT } from "./engine/keyboard.js";
+import { LAYOUTS, STANDARD_LAYOUT, keyboardRows } from "./engine/keyboard.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -180,34 +185,61 @@ function saveUserDictionary() {
 }
 
 const userDict = loadUserDictionary();
-const engine = new InputEngine(dict, inventory, { layout: "standard", userDictionary: userDict });
+let currentLayout = "standard";
+let engine = new InputEngine(dict, inventory, { layout: currentLayout, userDictionary: userDict });
 $("status").textContent = `已載入 ${dict.size.toLocaleString()} 詞條 / ${inventory.size} 合法音節`;
 
 // ------------------------------------------------------------------ keyboard
-const ROWS = [
-  [["1","ㄅ"],["2","ㄉ"],["3","ˇ"],["4","ˋ"],["5","ㄓ"],["6","ˊ"],["7","˙"],["8","ㄚ"],["9","ㄞ"],["0","ㄢ"],["-","ㄦ"]],
-  [["q","ㄆ"],["w","ㄊ"],["e","ㄍ"],["r","ㄐ"],["t","ㄔ"],["y","ㄗ"],["u","ㄧ"],["i","ㄛ"],["o","ㄟ"],["p","ㄣ"]],
-  [["a","ㄇ"],["s","ㄋ"],["d","ㄎ"],["f","ㄑ"],["g","ㄕ"],["h","ㄘ"],["j","ㄨ"],["k","ㄜ"],["l","ㄠ"],[";","ㄤ"]],
-  [["z","ㄈ"],["x","ㄌ"],["c","ㄏ"],["v","ㄒ"],["b","ㄖ"],["n","ㄙ"],["m","ㄩ"],[",","ㄝ"],[".","ㄡ"],["/","ㄥ"]],
-];
+// The picture comes from the engine — `keyboardRows(layout)` — for the same
+// reason the shells ask for it: a hand-drawn board drifts one key at a time, and
+// only someone who knows the layout by heart would notice. With seven layouts
+// there is no chance of keeping seven pictures correct by hand.
 const kb = $("keyboard");
-for (const row of ROWS) {
-  const div = document.createElement("div");
-  div.className = "krow";
-  for (const [code, sym] of row) {
-    const k = document.createElement("div");
-    k.className = "key";
-    k.innerHTML = `<span class="b">${sym}</span><span class="s">${code}</span>`;
-    k.onclick = () => feed(code);
-    div.appendChild(k);
+function buildKeyboard(layout) {
+  kb.innerHTML = "";
+  for (const row of keyboardRows(layout)) {
+    const div = document.createElement("div");
+    div.className = "krow";
+    for (const { key: code, label: sym } of row) {
+      const k = document.createElement("div");
+      k.className = "key";
+      if (!sym) k.classList.add("dim");
+      k.innerHTML = `<span class="b">${sym || "·"}</span><span class="s">${code}</span>`;
+      k.onclick = () => feed(code);
+      div.appendChild(k);
+    }
+    const space = document.createElement("div");
+    space.className = "key wide";
+    space.innerHTML = `<span class="b">空白</span><span class="s">開啟／下一頁</span>`;
+    space.onclick = () => { engine.nextCandidatePage(); draw(); };
+    div.appendChild(space);
+    kb.appendChild(div);
   }
-  const space = document.createElement("div");
-  space.className = "key wide";
-  space.innerHTML = `<span class="b">空白</span><span class="s">開啟／下一頁</span>`;
-  space.onclick = () => { engine.nextCandidatePage(); draw(); };
-  div.appendChild(space);
-  kb.appendChild(div);
 }
+buildKeyboard(currentLayout);
+
+// Which layout, by name. The engine has seven (the reference implementation's
+// tables, generated rather than typed — see research/tools/); the shells still
+// pass "standard", so this is where a person can actually try 許氏 or 倚天 26.
+const layoutSelect = $("layout");
+for (const [id, table] of Object.entries(LAYOUTS)) {
+  const option = document.createElement("option");
+  option.value = id;
+  option.textContent = table.label;
+  layoutSelect.appendChild(option);
+}
+layoutSelect.value = currentLayout;
+layoutSelect.onchange = () => {
+  currentLayout = layoutSelect.value;
+  // A new engine, not a mutated one: the layout is fixed at construction, which
+  // is what keeps the layout table from being a mutable global the decoder has to
+  // re-check on every keystroke.
+  engine = new InputEngine(dict, inventory, { layout: currentLayout, userDictionary: userDict });
+  committed.length = 0;
+  $("document").value = "";
+  buildKeyboard(currentLayout);
+  draw();
+};
 
 // ----------------------------------------------------------------- rendering
 const committed = [];
