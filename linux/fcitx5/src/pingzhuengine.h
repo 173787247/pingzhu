@@ -35,7 +35,10 @@ namespace pingzhu {
 /// kind of bug that only shows up after a hundred input method switches.
 class Engine {
 public:
-    Engine();
+    /// `layout` is fixed for the engine's lifetime — the decoder is built around
+    /// it. Callers that let the user choose one create the engine after reading
+    /// the choice, which is why it is a constructor argument and not a setter.
+    explicit Engine(const std::string &layout = "standard");
     ~Engine();
 
     Engine(const Engine &) = delete;

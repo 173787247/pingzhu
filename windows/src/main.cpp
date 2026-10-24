@@ -336,7 +336,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     pingzhu::writeDefaultConfigIfMissing(exeDir);
     g_config = pingzhu::loadConfig(exeDir);
     std::string error;
-    if (!g_engine.load(exeDir + L"\\pingzhu_core.dll", resolveDataDir(), "standard", nullptr)) {
+    if (!g_engine.load(exeDir + L"\\pingzhu_core.dll", resolveDataDir(), g_config.layout.c_str(), nullptr)) {
         error = g_engine.lastError();
     }
 

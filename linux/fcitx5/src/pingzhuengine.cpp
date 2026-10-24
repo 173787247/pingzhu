@@ -61,11 +61,33 @@ std::string userDictPath() { return userDataPath("userdict.tsv"); }
 /// The output script the user last chose ("traditional" / "simplified").
 std::string scriptPath() { return userDataPath("script"); }
 
+/// The keyboard layout the user chose. Written by hand: a layout is a taste, not
+/// a toggle — the file sits beside the dictionary and the script.
+std::string layoutPath() { return userDataPath("layout"); }
+
+/// The layout named in that file, or "standard" when there is none or the name is
+/// not one the engine knows.
+std::string readLayout() {
+    const std::string path = layoutPath();
+    if (path.empty()) return "standard";
+    std::ifstream file(path);
+    if (!file) return "standard";
+    std::string layout;
+    std::getline(file, layout);
+    while (!layout.empty() && (layout.back() == '\r' || layout.back() == ' ')) {
+        layout.pop_back();
+    }
+    // Hand it to the engine as written: it falls back to standard for an unknown
+    // name, and a warning here would fire on every start for a file the user may
+    // have stopped caring about. The log line below says what was used.
+    return layout;
+}
+
 } // namespace
 
-Engine::Engine() {
+Engine::Engine(const std::string &layout) {
     const std::string dir = dataDir();
-    handle_ = engine_create(dir.c_str(), "standard", "frequency");
+    handle_ = engine_create(dir.c_str(), layout.c_str(), "frequency");
     if (handle_ == nullptr) {
         // Loud, not silent. An input method with no dictionary types nothing,
         // and looks exactly like one that is working until someone tries.
@@ -209,7 +231,9 @@ std::vector<fcitx::InputMethodEntry> PingZhuEngine::listInputMethods() {
 void PingZhuEngine::activate(const fcitx::InputMethodEntry &,
                              fcitx::InputContextEvent &event) {
     if (engine_ == nullptr) {
-        engine_ = std::make_unique<Engine>();
+        const std::string layout = readLayout();
+        engine_ = std::make_unique<Engine>(layout);
+        FCITX_INFO() << "PingZhu: layout " << layout;
         // Words the user taught in earlier sessions. Engine::loadUserDictionary
         // creates the dictionary when the file is not there yet, so this is the
         // same call on a first run and on the hundredth.

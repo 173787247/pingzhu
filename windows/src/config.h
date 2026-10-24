@@ -22,6 +22,13 @@ struct Config {
     /* "traditional" or "simplified" */
     std::string output = "traditional";
 
+    /* Which keyboard layout the engine is built with: standard, eten, hsu,
+     * eten26, ibm, ginyieh or mitac. Fixed when the engine is created, so a change
+     * takes effect on the next start — the same as `output` did before the button.
+     * The five layouts beyond the two the shells always had come from the
+     * reference implementation's tables; see engine/src/keyboard.ts. */
+    std::string layout = "standard";
+
     /* Where the floating 繁／簡 button was left. INT_MIN means "never moved",
      * which is different from a position that happens to be off-screen. */
     int statusX = INT_MIN;
@@ -46,6 +53,11 @@ bool saveOutputScript(const std::wstring &moduleDir, const std::string &script);
 
 /* Remember where the floating button was dragged to. */
 bool saveStatusPosition(const std::wstring &moduleDir, int x, int y);
+
+/* Whether `name` is a layout the engine knows. An unknown one must not reach the
+ * engine: it would fall back to standard silently, and the user would be left
+ * wondering why their edit did nothing. */
+bool isKnownLayout(const std::string &name);
 
 /* Trimmed value for `key`, or "" when absent. Exposed for tests. */
 std::string configValue(const std::string &text, const std::string &key);

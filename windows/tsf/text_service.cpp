@@ -798,7 +798,11 @@ void TextService::EnsureEngineLoaded() {
     displayAttribute_ = new (std::nothrow) DisplayAttributeInfo();
 
     std::wstring coreDll = moduleDir() + L"\\pingzhu_core.dll";
-    if (!engine_.load(coreDll, toUtf8(dataDir_), "standard", nullptr)) {
+    /* The layout comes from pingzhu.ini, the same file the output script does.
+     * It is fixed for the engine's lifetime, so changing it needs a restart —
+     * which is what the file's own instructions say. */
+    const Config config = loadConfig(moduleDir());
+    if (!engine_.load(coreDll, toUtf8(dataDir_), config.layout.c_str(), nullptr)) {
         log("ENGINE LOAD FAILED: " + engine_.lastError());
         return;
     }

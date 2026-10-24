@@ -96,6 +96,11 @@ if [ "$RUN_TESTS" = "--run" ]; then
   VECTORS="$(wslpath -w "$ROOT/tools/routing-vectors.tsv")"
   ( cd "$STAGE" && ./pingzhu-router-test.exe "$VECTORS" ) | sed 's/^/      /'
 
+  log "settings file"
+  # No engine and no desktop: a hand-edited pingzhu.ini, with its comments and
+  # whitespace, and the layout names the engine will accept.
+  ( cd "$STAGE" && ./pingzhu-config-test.exe ) | sed 's/^/      /'
+
   log "candidate window geometry"
   # No vectors and no engine: it shows the window with the views the shell builds
   # and checks that its height covers the lines it draws. Needs a desktop, so it

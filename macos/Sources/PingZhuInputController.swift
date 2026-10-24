@@ -60,7 +60,10 @@ final class PingZhuInputController: IMKInputController {
             }
         }
 
-        guard let created = Engine(dataDir: dataDir.path) else {
+        // The layout is stored the same way the script is, and read here for the
+        // same reason: it is decided when the engine is built.
+        let layout = UserDefaults.standard.string(forKey: "layout") ?? "standard"
+        guard let created = Engine(dataDir: dataDir.path, layout: layout) else {
             NSLog("PingZhu: the engine could not load its language model from \(dataDir.path)")
             return
         }
@@ -261,12 +264,42 @@ final class PingZhuInputController: IMKInputController {
         simplifiedItem.state = simplified ? .on : .off
         menu.addItem(simplifiedItem)
 
+        // Seven layouts. A layout is fixed when the engine is built, so this is a
+        // submenu of alternatives rather than a toggle: choosing one rebuilds the
+        // engine (see useLayout).
+        let layoutMenu = NSMenuItem(title: "鍵盤布局", action: nil, keyEquivalent: "")
+        let layouts = NSMenu(title: "鍵盤布局")
+        let currentLayout = UserDefaults.standard.string(forKey: "layout") ?? "standard"
+        for choice in Engine.layoutChoices {
+            let item = NSMenuItem(title: choice.label, action: #selector(useLayout(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = choice.id
+            item.state = choice.id == currentLayout ? .on : .off
+            layouts.addItem(item)
+        }
+        layoutMenu.submenu = layouts
+        menu.addItem(layoutMenu)
+
         menu.addItem(.separator())
         let about = NSMenuItem(title: "關於平注", action: #selector(showAbout), keyEquivalent: "")
         about.target = self
         menu.addItem(about)
 
         return menu
+    }
+
+    @objc private func useLayout(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        let previous = UserDefaults.standard.string(forKey: "layout") ?? "standard"
+        guard id != previous else { return }
+        UserDefaults.standard.set(id, forKey: "layout")
+        loadEngine()
+        // The old composition belongs to the old layout — it cannot be carried
+        // over, and leaving it on screen would show a reading the new engine would
+        // never produce.
+        markedText = ""
+        engine?.reset()
+        showMarkedText()
     }
 
     @objc private func useTraditional() { setScript("traditional") }

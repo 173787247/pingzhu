@@ -21,12 +21,30 @@ final class Engine {
     /// Returns nil when the language model cannot be read. The caller shows an
     /// error rather than pretending to work — an input method that silently
     /// types nothing is worse than one that says it cannot start.
-    init?(dataDir: String) {
-        guard let created = dataDir.withCString({ engine_create($0, "standard", nil) }) else {
+    /// `layout` is fixed for the engine's lifetime — the decoder is built around
+    /// it — which is why changing it means making a new engine, not calling a
+    /// setter.
+    init?(dataDir: String, layout: String = "standard") {
+        guard let created = dataDir.withCString({ dataCString in
+            layout.withCString { layoutCString in
+                engine_create(dataCString, layoutCString, nil)
+            }
+        }) else {
             return nil
         }
         handle = created
     }
+
+    /// The layouts the engine knows, in the order the menu shows them.
+    static let layoutChoices: [(id: String, label: String)] = [
+        ("standard", "大千式"),
+        ("eten", "倚天式"),
+        ("hsu", "許氏"),
+        ("eten26", "倚天 26 鍵"),
+        ("ibm", "IBM"),
+        ("ginyieh", "精業"),
+        ("mitac", "神通"),
+    ]
 
     deinit { close() }
 

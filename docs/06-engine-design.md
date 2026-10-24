@@ -452,8 +452,9 @@ $ node engine/bench-learn.mjs 5000
 
    原文举的例子也**不成立**：许氏的 ㄑ 就在 `v` 键上，`vuj` 直接得到 ㄑㄩˋ → 去。
 
-   还没做的：**外壳的布局选择 UI** —— 引擎与 C ABI 都接受布局名，五个外壳仍写死
-   `standard`；目前只有网页试打版的选单能切换。
+   **外壳怎么选布局**（2026-10）：Windows 两个外壳读 `pingzhu.ini` 的 `layout =`，
+   Linux 附加组件读 `~/.local/share/fcitx5/pingzhu/layout`，网页试打版是键盘上方的选单。
+   macOS、Android、HarmonyOS 仍写死 `standard` —— 尚未做。
 2. **候选视窗只在「选定的那个切分」里找词。** 这是目前最实在的功能缺口，有具体案例：
 
    ```

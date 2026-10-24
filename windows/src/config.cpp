@@ -41,13 +41,36 @@ const char *kDefaultFile =
     "\r\n"
     "# 輸出字形：traditional（繁體）或 simplified（簡體）\r\n"
     "# 輸入的注音與詞庫不受影響，只改變送出的字。\r\n"
-    "output = traditional\r\n";
+    "output = traditional\r\n"
+    "\r\n"
+    "# 鍵盤布局：standard（大千式）、eten（倚天式）、hsu（許氏）、eten26（倚天 26 鍵）、\r\n"
+    "# ibm、ginyieh（精業）、mitac（神通）。不在這份清單裡的值會被忽略。\r\n"
+    "# 布局在建引擎時決定，改完要重新執行。\r\n"
+    "layout = standard\r\n";
 
 std::wstring configPath(const std::wstring &moduleDir) {
     return moduleDir + L"\\" + kFileName;
 }
 
 }  // namespace
+
+namespace {
+
+/* The names the engine accepts. Kept here rather than in the header: nothing
+ * outside this file needs the list, and a `const char *const []` cannot be
+ * forward-declared without a size anyway. */
+const char *const kLayoutNames[] = {
+    "standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac",
+};
+
+}  // namespace
+
+bool isKnownLayout(const std::string &name) {
+    for (const char *known : kLayoutNames) {
+        if (name == known) return true;
+    }
+    return false;
+}
 
 std::string configValue(const std::string &text, const std::string &key) {
     size_t pos = 0;
@@ -74,6 +97,8 @@ Config loadConfig(const std::wstring &moduleDir) {
      * in place rather than reaching the engine, which would reject it anyway and
      * leave the user with no idea why their edit did nothing. */
     if (output == "traditional" || output == "simplified") config.output = output;
+    const std::string layout = configValue(text, "layout");
+    if (!layout.empty() && isKnownLayout(layout)) config.layout = layout;
     const std::string x = configValue(text, "status_x");
     const std::string y = configValue(text, "status_y");
     if (!x.empty() && !y.empty()) {
