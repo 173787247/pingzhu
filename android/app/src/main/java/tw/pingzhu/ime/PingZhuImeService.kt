@@ -118,7 +118,13 @@ class PingZhuImeService : InputMethodService() {
         // buildKeyboard(), which needs the input view, and openEngine() runs before
         // the view exists. So this line reported "0 keys" for as long as it has
         // existed — a diagnostic that is always zero teaches people to ignore it.
-        report("engine ready: ${Engine.keyboardRows(layoutInUse).sumOf { it.size }} keys, " +
+        // Count the labelled cells, not the grid: a layout may leave cells empty
+        // (許氏 has no digit row), and those are dropped before drawing, so the
+        // raw count would overstate the board by one row on those layouts.
+        val keyCount = Engine.keyboardRows(layoutInUse).sumOf { row ->
+            row.count { (_, label) -> label.isNotEmpty() }
+        }
+        report("engine ready: $keyCount keys, " +
             "${created.outputScript()} output; native layout payload = " +
             "${Engine.rawKeyboardLabels(layoutInUse).length} chars")
         refresh()
