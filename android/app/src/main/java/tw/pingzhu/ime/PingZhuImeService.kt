@@ -114,7 +114,11 @@ class PingZhuImeService : InputMethodService() {
         created.loadUserDictionary(userDictionary().absolutePath)
         created.setOutputScript(prefs().getString(KEY_SCRIPT, "traditional") ?: "traditional")
         buildKeyboard()
-        report("engine ready: ${keyboardRows.sumOf { it.size }} keys, " +
+        // The engine's own rows, not `keyboardRows`: that field is filled by
+        // buildKeyboard(), which needs the input view, and openEngine() runs before
+        // the view exists. So this line reported "0 keys" for as long as it has
+        // existed — a diagnostic that is always zero teaches people to ignore it.
+        report("engine ready: ${Engine.keyboardRows(layoutInUse).sumOf { it.size }} keys, " +
             "${created.outputScript()} output; native layout payload = " +
             "${Engine.rawKeyboardLabels(layoutInUse).length} chars")
         refresh()
