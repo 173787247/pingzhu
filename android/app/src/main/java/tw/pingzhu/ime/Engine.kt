@@ -84,8 +84,14 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
          * from [dataDir]. Returns null when the language model cannot be read —
          * the caller shows a message rather than pretending to work.
          */
-        fun create(dataDir: String): Engine? {
-            val handle = nativeCreate(dataDir)
+        /**
+         * @param layout one of standard / eten / hsu / eten26 / ibm / ginyieh / mitac.
+         * An unknown name falls back to standard inside the core — the same rule the
+         * desktop shells apply, so a typo is "the layout did not change", never a
+         * keyboard that types nothing.
+         */
+        fun create(dataDir: String, layout: String = "standard"): Engine? {
+            val handle = nativeCreate(dataDir, layout)
             return if (handle == 0L) null else Engine(handle)
         }
 
@@ -98,10 +104,18 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
          * the picture slowly stopped matching it.
          */
         /** The raw native payload, for diagnosis. Not for drawing. */
-        fun rawKeyboardLabels(): String = nativeKeyboardLabels(0L)
+        fun rawKeyboardLabels(layout: String = "standard"): String = nativeKeyboardLabels(layout)
 
-        fun keyboardRows(): List<List<Pair<Char, String>>> =
-            nativeKeyboardLabels(0L)
+        /**
+         * The board as it should be drawn, for the layout in use.
+         *
+         * It takes the layout by name rather than asking the engine: the rows are a
+         * property of the layout table, and the engine that exists may be a
+         * different one than the rows are wanted for (the settings screen draws
+         * nothing, the keyboard draws after the engine is rebuilt).
+         */
+        fun keyboardRows(layout: String = "standard"): List<List<Pair<Char, String>>> =
+            nativeKeyboardLabels(layout)
                 .split('\n')
                 .filter { it.isNotEmpty() }
                 .map { row ->
@@ -115,7 +129,9 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
             System.loadLibrary("pingzhu_android")
         }
 
-        @JvmStatic private external fun nativeCreate(dataDir: String): Long
+        @JvmStatic private external fun nativeCreate(dataDir: String, layout: String): Long
+
+        @JvmStatic private external fun nativeKeyboardLabels(layout: String): String
         @JvmStatic private external fun nativeDestroy(handle: Long)
         @JvmStatic private external fun nativeFeedKey(handle: Long, key: String): Boolean
         @JvmStatic private external fun nativeBackspace(handle: Long): Boolean
@@ -133,6 +149,5 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
         @JvmStatic private external fun nativeSetOutputScript(handle: Long, script: String): Boolean
         @JvmStatic private external fun nativeLoadUserDictionary(handle: Long, path: String): Boolean
         @JvmStatic private external fun nativeSaveUserDictionary(handle: Long, path: String): Boolean
-        @JvmStatic private external fun nativeKeyboardLabels(handle: Long): String
     }
 }

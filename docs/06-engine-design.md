@@ -453,8 +453,13 @@ $ node engine/bench-learn.mjs 5000
    原文举的例子也**不成立**：许氏的 ㄑ 就在 `v` 键上，`vuj` 直接得到 ㄑㄩˋ → 去。
 
    **外壳怎么选布局**（2026-10）：Windows 两个外壳读 `pingzhu.ini` 的 `layout =`，
-   Linux 附加组件读 `~/.local/share/fcitx5/pingzhu/layout`，网页试打版是键盘上方的选单。
-   macOS、Android、HarmonyOS 仍写死 `standard` —— 尚未做。
+   Linux 附加组件读 `~/.local/share/fcitx5/pingzhu/layout`，macOS 是输入法菜单的
+   「鍵盤布局」子菜单，Android 是设置页的 Spinner，网页试打版是键盘上方的选单。
+   **HarmonyOS 仍写死 `standard`** —— 尚未做。
+
+   Android 那一步顺带暴露了一个真问题：键面原来是**另一份**布局
+   （JNI 里 `Layout::Standard` 写死），所以选了许氏之后引擎按许氏解码、画出来的却是
+   大千 —— 每个键显示的都不是它实际的意思。现在布局名从设置页一路传到画键面的地方。
 2. **候选视窗只在「选定的那个切分」里找词。** 这是目前最实在的功能缺口，有具体案例：
 
    ```

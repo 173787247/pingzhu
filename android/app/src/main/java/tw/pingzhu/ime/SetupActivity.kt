@@ -6,11 +6,15 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import android.view.inputmethod.InputMethodManager
@@ -75,6 +79,47 @@ class SetupActivity : Activity() {
                 prefs().edit().putString(PingZhuImeService.KEY_SCRIPT, next).apply()
                 Toast.makeText(this, scriptButtonLabel(), Toast.LENGTH_SHORT).show()
                 recreate()
+            },
+        )
+
+        // The layout, beside the script: both are engine-wide choices a user may
+        // want on a phone, and both need a restart to take effect.
+        column.addView(title(getString(R.string.setup_layout)))
+        column.addView(body(getString(R.string.setup_layout_body)))
+        val layoutIds = arrayOf("standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac")
+        val layoutLabels = arrayOf(
+            R.string.layout_standard, R.string.layout_eten, R.string.layout_hsu,
+            R.string.layout_eten26, R.string.layout_ibm, R.string.layout_ginyieh,
+            R.string.layout_mitac,
+        ).map { getString(it) }
+        column.addView(
+            Spinner(this).apply {
+                adapter = ArrayAdapter(
+                    this@SetupActivity,
+                    android.R.layout.simple_spinner_item,
+                    layoutLabels,
+                ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+                val current = prefs().getString(PingZhuImeService.KEY_LAYOUT, "standard")
+                setSelection(layoutIds.indexOf(current).coerceAtLeast(0))
+                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(
+                        parent: AdapterView<*>?,
+                        view: View?,
+                        position: Int,
+                        id: Long,
+                    ) {
+                        val chosen = layoutIds[position]
+                        if (chosen == prefs().getString(PingZhuImeService.KEY_LAYOUT, "standard")) return
+                        prefs().edit().putString(PingZhuImeService.KEY_LAYOUT, chosen).apply()
+                        Toast.makeText(
+                            this@SetupActivity,
+                            getString(R.string.setup_layout_saved, layoutLabels[position]),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+                }
             },
         )
 

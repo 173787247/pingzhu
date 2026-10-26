@@ -138,6 +138,7 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeCreate(
     env: *mut JNIEnv,
     _class: jclass,
     data_dir: jstring,
+    layout: jstring,
 ) -> jlong {
     guarded(0, || {
         let Some(dir) = (unsafe { to_string(env, data_dir) }) else { return 0 };
@@ -154,8 +155,15 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeCreate(
             Err(_) => Converter::identity(),
         };
 
+        // A layout the engine does not know falls back to standard, which is the
+        // same rule the desktop shells apply before handing the name over.
+        let layout = (unsafe { to_string(env, layout) })
+            .and_then(|name| Layout::from_id(&name))
+            .unwrap_or(Layout::Standard);
+
         let engine = InputEngine::new(dict, inventory, EngineOptions {
             converter,
+            layout,
             ..Default::default()
         })
         // Always attach a user dictionary: without one, selecting a candidate
@@ -473,12 +481,19 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeSaveUserDictionary(
 pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeKeyboardLabels(
     env: *mut JNIEnv,
     _class: jclass,
-    _handle: jlong,
+    layout: jstring,
 ) -> jstring {
     let text = guarded_string(|| {
         // "key\tlabel" pairs, rows separated by newlines: enough for the shell
         // to draw the keyboard without keeping a second copy of the layout.
-        Layout::Standard
+        //
+        // The layout has to be named: this used to be hardcoded to Standard, so a
+        // phone switched to 許氏 drew the 大千 keyboard over a 許氏 decoder — every
+        // key meant something other than what it said.
+        let layout = (unsafe { to_string(env, layout) })
+            .and_then(|name| Layout::from_id(&name))
+            .unwrap_or(Layout::Standard);
+        layout
             .key_rows()
             .iter()
             .map(|row| {

@@ -83,7 +83,13 @@ class PingZhuImeService : InputMethodService() {
                 Log.e(TAG, "the language model is missing from the APK — this is a build error")
                 null
             } else {
-                Engine.create(dataDir.absolutePath).also {
+                // The layout is fixed when the engine is built (the decoder is
+                // shaped around it), so this is read here and applied on the next
+                // start — the settings screen says so.
+                Engine.create(
+                    dataDir.absolutePath,
+                    prefs().getString(KEY_LAYOUT, "standard") ?: "standard",
+                ).also {
                     if (it == null) Log.e(TAG, "the engine refused ${dataDir.absolutePath}")
                 }
             }
@@ -110,7 +116,7 @@ class PingZhuImeService : InputMethodService() {
         buildKeyboard()
         report("engine ready: ${keyboardRows.sumOf { it.size }} keys, " +
             "${created.outputScript()} output; native layout payload = " +
-            "${Engine.rawKeyboardLabels().length} chars")
+            "${Engine.rawKeyboardLabels(layoutInUse).length} chars")
         refresh()
     }
 
@@ -148,6 +154,12 @@ class PingZhuImeService : InputMethodService() {
     private fun userDictionary() = File(filesDir, "pingzhu-userdict.txt")
 
     private fun prefs() = getSharedPreferences("pingzhu", Context.MODE_PRIVATE)
+
+    /// The layout the engine was built with. Read from the same preference the
+    /// engine is created from, so the drawn board and the decoder cannot disagree —
+    /// which they did while the board was hardcoded to standard.
+    private val layoutInUse: String
+        get() = prefs().getString(KEY_LAYOUT, "standard") ?: "standard"
 
     // ------------------------------------------------------------------- views
 
@@ -247,7 +259,7 @@ class PingZhuImeService : InputMethodService() {
             board.simplified = false
             return
         }
-        val rows = Engine.keyboardRows().map { row ->
+        val rows = Engine.keyboardRows(layoutInUse).map { row ->
             row.mapNotNull { (key, label) ->
                 if (label.isEmpty()) null else KeyboardView.Key(key, label)
             }
@@ -484,6 +496,7 @@ class PingZhuImeService : InputMethodService() {
         private const val TAG = "PingZhu"
 
         const val KEY_SCRIPT = "output_script"
+        const val KEY_LAYOUT = "layout"
 
         /**
          * The Latin board, for numeric and password fields.

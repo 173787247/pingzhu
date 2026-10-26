@@ -11,6 +11,18 @@
     <string name="setup_select">2. 選擇輸入法</string>
     <string name="setup_how">怎麼打</string>
     <string name="setup_how_body">直接打注音，例如：\n\n　su3cl3　　　→ 你好\n　ji394su3　　→ 我愛你\n　w96j0　　　 → 台灣\n\n空白鍵：有選字單時換下一頁，否則送出整句。\n數字鍵：選字單開著時選字，否則照打（1 是 ㄅ、2 是 ㄉ）。\n↓ 或長按：打開選字單。</string>
+    <string name="setup_layout">鍵盤布局</string>
+    <string name="setup_layout_body">大千式是台灣的預設排列。許氏、倚天 26 鍵等排列把注音按音類重排，熟悉的人打起來更快。
+
+布局在建引擎時決定，所以改完要重新啟用輸入法：切到別的輸入法再切回來，或重新開機。試打的那個欄位會跟著換。</string>
+    <string name="setup_layout_saved">布局已儲存：%1$s（下次啟用生效）</string>
+    <string name="layout_standard">大千式</string>
+    <string name="layout_eten">倚天式</string>
+    <string name="layout_hsu">許氏</string>
+    <string name="layout_eten26">倚天 26 鍵</string>
+    <string name="layout_ibm">IBM</string>
+    <string name="layout_ginyieh">精業</string>
+    <string name="layout_mitac">神通</string>
     <string name="setup_script">輸出字形</string>
     <string name="setup_script_body">引擎內部全程使用繁體（讀音、語言模型、詞庫），簡體是輸出時轉換的結果。兩者共用同一個詞頻庫，所以選字順序不會因為字形而改變。</string>
     <string name="script_current_traditional">目前：繁體（點一下改成簡體）</string>
