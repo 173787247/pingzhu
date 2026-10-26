@@ -306,6 +306,21 @@ napi_value Backspace(napi_env env, napi_callback_info info) {
     return result;
 }
 
+/**
+ * Whether the best sentence is a decode or a guess.
+ *
+ * The other five shells have shown this since the engine grew it: a sentence the
+ * engine is unsure of is dimmed and italicised, because that is exactly when the
+ * user should look at the choices. This keyboard had no way to ask — not in the
+ * ArkTS layer, and not here — so it could not show it either.
+ */
+napi_value OutputIsFaithful(napi_env env, napi_callback_info info) {
+    if (g_engine == nullptr) { napi_value r; napi_get_boolean(env, true, &r); return r; }
+    napi_value result;
+    napi_get_boolean(env, engine_output_is_faithful(g_engine), &result);
+    return result;
+}
+
 napi_value Decode(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value args[1] = {nullptr};
@@ -357,6 +372,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"nextPage", nullptr, NextPage, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"candidateCount", nullptr, CandidateCount, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"composing", nullptr, Composing, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"outputIsFaithful", nullptr, OutputIsFaithful, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"commit", nullptr, Commit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"reset", nullptr, Reset, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"backspace", nullptr, Backspace, nullptr, nullptr, nullptr, napi_default, nullptr},

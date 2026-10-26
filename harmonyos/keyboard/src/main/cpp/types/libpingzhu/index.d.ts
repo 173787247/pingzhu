@@ -40,6 +40,15 @@ export function composing(): string;
 /** The sentence that would be committed. */
 export function bestSentence(): string;
 
+/**
+ * Whether `bestSentence()` is a decode of what was typed rather than a guess.
+ *
+ * False means the engine could not read the buffer as a known word and is doing
+ * its best; the keyboard dims the sentence in that case, the way the other shells
+ * do.
+ */
+export function outputIsFaithful(): boolean;
+
 /** Picks the n-th (1-based) candidate and returns what was committed. */
 export function selectCandidate(oneBased: number): string;
 

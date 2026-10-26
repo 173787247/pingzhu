@@ -42,6 +42,10 @@ export struct KeyboardPanel {
   @State private rows: Key[][] = [];
   @State private composing: string = '';
   @State private candidates: string[] = [];
+  /** What the engine would commit, shown next to the reading. */
+  @State private sentence: string = '';
+  /** False when that sentence is a guess rather than a decode. */
+  @State private faithful: boolean = true;
   @State private ready: boolean = false;
   @State private failure: string = '';
   /** "traditional" or "simplified" — what the decoder outputs, not how it decodes. */
@@ -89,8 +93,7 @@ export struct KeyboardPanel {
         return;
       }
       pingzhu.feedKey(letter);
-      this.composing = pingzhu.composing();
-      this.candidates = pingzhu.candidates();
+      this.syncFromEngine();
     } catch (error) {
       this.failure = `${error}`;
     }
@@ -111,11 +114,25 @@ export struct KeyboardPanel {
    * shell could choose; this keyboard could not, so its users got traditional
    * and nothing else.
    */
+  /**
+   * Pulls everything the board shows out of the engine in one place.
+   *
+   * These four used to be copied by hand at each call site, which is how the
+   * sentence came to be fetched nowhere: `bestSentence()` existed in the napi table
+   * from the start and no ArkTS line ever called it.
+   */
+  private syncFromEngine(): void {
+    this.composing = pingzhu.composing();
+    this.candidates = pingzhu.candidates();
+    this.sentence = pingzhu.bestSentence();
+    this.faithful = pingzhu.outputIsFaithful();
+  }
+
   private toggleScript(): void {
     const next: string = this.script === 'simplified' ? 'traditional' : 'simplified';
     if (!pingzhu.setOutputScript(next)) return;
     this.script = next;
-    this.candidates = pingzhu.candidates();
+    this.syncFromEngine();
     Session.saveScript(next);
   }
 
@@ -274,10 +291,22 @@ export struct KeyboardPanel {
       }
 
       if (this.composing.length > 0) {
-        Text(this.composing)
-          .fontSize(18)
-          .fontColor('#333333')
-          .height(34)
+        Row({ space: 8 }) {
+          Text(this.composing)
+            .fontSize(18)
+            .fontColor('#333333')
+          // Dim and italic when the engine is guessing, exactly as the Android
+          // bar, the macOS candidates and the demo page do. A phone user who
+          // cannot tell a decode from a guess has no reason to open the list.
+          Text(this.sentence)
+            .fontSize(18)
+            .fontColor('#333333')
+            .opacity(this.faithful ? 1 : 0.55)
+            .fontStyle(this.faithful ? FontStyle.Normal : FontStyle.Italic)
+        }
+        .height(34)
+        .width('100%')
+        .justifyContent(FlexAlign.Center)
       }
 
       this.CandidateBar()
