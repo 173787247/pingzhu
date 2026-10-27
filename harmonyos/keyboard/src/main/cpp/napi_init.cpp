@@ -57,8 +57,8 @@ napi_value AbiVersion(napi_env env, napi_callback_info info) {
 // obtained from the ability context — the native side has no way to know where
 // the HAP unpacked its resources.
 napi_value Create(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value args[1] = {nullptr};
+    size_t argc = 2;
+    napi_value args[2] = {nullptr, nullptr};
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
 
     size_t length = 0;
@@ -69,18 +69,30 @@ napi_value Create(napi_env env, napi_callback_info info) {
     std::string dir(length, '\0');
     napi_get_value_string_utf8(env, args[0], dir.data(), length + 1, &length);
 
+    // The layout is optional: a caller that passes none gets 大千式, which is what
+    // every build did before the keyboard could choose. An unknown name is left to
+    // the core, which falls back to standard.
+    std::string layout = "standard";
+    if (argc >= 2) {
+        size_t layoutLength = 0;
+        if (napi_get_value_string_utf8(env, args[1], nullptr, 0, &layoutLength) == napi_ok) {
+            layout.resize(layoutLength);
+            napi_get_value_string_utf8(env, args[1], layout.data(), layoutLength + 1, &layoutLength);
+        }
+    }
+
     if (g_engine != nullptr) {
         engine_destroy(g_engine);
         g_engine = nullptr;
     }
     // Three arguments, not one.
     //
-    // engine_create(data_dir, layout, candidate_order) — the layout is "standard"
-    // (大千式) or "eten", and the candidate order is "longest-first",
-    // "frequency", or anything else for the default. Passing fewer arguments is
-    // a compile error on the C++ side, which is how this was found; a shell that
+    // engine_create(data_dir, layout, candidate_order) — the layout is one of
+    // standard / eten / hsu / eten26 / ibm / ginyieh / mitac, and the candidate
+    // order is "longest-first", "frequency", or anything else for the default.
+    // Passing fewer arguments is a compile error on the C++ side; a shell that
     // loads the library dynamically would have found out at runtime instead.
-    g_engine = engine_create(dir.c_str(), "standard", "frequency");
+    g_engine = engine_create(dir.c_str(), layout.c_str(), "frequency");
     if (g_engine == nullptr) {
         // Not an exception: the caller decides whether a missing model is fatal.
         // An input method that cannot read its dictionary should say so and stay

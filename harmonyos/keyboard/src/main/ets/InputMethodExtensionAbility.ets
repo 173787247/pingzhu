@@ -186,10 +186,23 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
       }
 
       step = 'engine create';
-      const ok: boolean = pingzhu.create(dir);
+      Session.modelDir = dir;
+
+      // Which keyboard layout. Read before create(), because the layout is fixed
+      // for the engine's lifetime — the decoder is built around it.
+      Session.layoutPath = `${this.context.filesDir}/layout`;
+      let layout = 'standard';
+      if (fileIo.accessSync(Session.layoutPath)) {
+        const chosen: string = fileIo.readTextSync(Session.layoutPath).trim();
+        if (chosen.length > 0) layout = chosen;
+      }
+      Session.layout = layout;
+
+      const ok: boolean = pingzhu.create(dir, layout);
       if (ok) {
         hilog.info(DOMAIN, TAG, '引擎載入完成，ABI %{public}d', pingzhu.abiVersion());
-        hilog.info(DOMAIN, TAG, '鍵面：%{public}s', pingzhu.keyboardRows('standard'));
+        hilog.info(DOMAIN, TAG, '鍵面（%{public}s）：%{public}s', layout,
+          pingzhu.keyboardRows(layout));
 
         // Outside the model directory: that one is rewritten from the raw files
         // on every start, and the user's own words must not be caught up in it.

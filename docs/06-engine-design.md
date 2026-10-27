@@ -455,7 +455,8 @@ $ node engine/bench-learn.mjs 5000
    **外壳怎么选布局**（2026-10）：Windows 两个外壳读 `pingzhu.ini` 的 `layout =`，
    Linux 附加组件读 `~/.local/share/fcitx5/pingzhu/layout`，macOS 是输入法菜单的
    「鍵盤布局」子菜单，Android 是设置页的 Spinner，网页试打版是键盘上方的选单。
-   **HarmonyOS 仍写死 `standard`** —— 尚未做。
+   HarmonyOS 没有设置界面、功能列也塞不下第七个键，入口挂在「繁／簡」键的**长按**上
+   （七种布局，当前那个打勾），选择写进 `filesDir/layout`。到这一步六种前端都有了。
 
    Android 那一步顺带暴露了一个真问题：键面原来是**另一份**布局
    （JNI 里 `Layout::Standard` 写死），所以选了许氏之后引擎按许氏解码、画出来的却是

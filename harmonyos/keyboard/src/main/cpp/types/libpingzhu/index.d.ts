@@ -32,7 +32,7 @@ export function abiVersion(): number;
  * Loads the language model from a directory the caller obtained from the
  * ability context. The native side cannot know where the HAP unpacked things.
  */
-export function create(modelDir: string): boolean;
+export function create(modelDir: string, layout?: string): boolean;
 
 /** What is being composed, in Bopomofo. */
 export function composing(): string;

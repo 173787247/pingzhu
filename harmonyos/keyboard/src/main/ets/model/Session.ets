@@ -43,6 +43,40 @@ export class Session {
    */
   static scriptPath: string = '';
 
+  /**
+   * Where the model files are, so the panel can rebuild the engine itself when the
+   * user picks a different layout. The extension knows this; the panel does not.
+   */
+  static modelDir: string = '';
+
+  /**
+   * Which keyboard layout the engine was built with, and where that choice lives.
+   *
+   * A layout is fixed when the engine is built — the decoder is shaped around it —
+   * so this is not a setting the engine reads; it is what the panel passes to
+   * `create()` when it rebuilds.
+   */
+  static layoutPath: string = '';
+  static layout: string = 'standard';
+
+  /** Writes the layout so the next session (and a rebuild) uses it. */
+  static saveLayout(layout: string): void {
+    Session.layout = layout;
+    if (Session.layoutPath.length === 0) return;
+    try {
+      const bytes = new util.TextEncoder().encodeInto(layout);
+      const file = fileIo.openSync(Session.layoutPath, fileIo.OpenMode.CREATE |
+                                   fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.TRUNC);
+      try {
+        fileIo.writeSync(file.fd, bytes.buffer as ArrayBuffer);
+      } finally {
+        fileIo.closeSync(file);
+      }
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '布局設定寫不進去：%{public}s', JSON.stringify(error));
+    }
+  }
+
   /** Writes the output script so the next session starts with it. */
   static saveScript(script: string): void {
     if (Session.scriptPath.length === 0) return;

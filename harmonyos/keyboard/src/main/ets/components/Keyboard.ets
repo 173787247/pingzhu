@@ -9,6 +9,21 @@
 import pingzhu from 'libpingzhu.so';
 import { Session } from '../model/Session';
 import { BackspaceAction, routeBackspace } from '../model/Keys';
+import { promptAction } from '@kit.ArkUI';
+
+/**
+ * The layouts the engine has, with the names the core knows. Order is the menu's
+ * order: the two almost everyone uses first, then the rearranged ones.
+ */
+const LAYOUT_CHOICES: Array<[string, string]> = [
+  ['standard', '大千式'],
+  ['eten', '倚天式'],
+  ['hsu', '許氏'],
+  ['eten26', '倚天 26 鍵'],
+  ['ibm', 'IBM'],
+  ['ginyieh', '精業'],
+  ['mitac', '神通'],
+];
 
 /** One key on the board. */
 interface Key {
@@ -50,6 +65,8 @@ export struct KeyboardPanel {
   @State private failure: string = '';
   /** "traditional" or "simplified" — what the decoder outputs, not how it decodes. */
   @State private script: string = 'traditional';
+  /** The layout the engine was built with; a rebuild is how it changes. */
+  @State private layout: string = 'standard';
   /** True while the English board is showing instead of Bopomofo. */
   @State private english: boolean = false;
 
@@ -60,10 +77,14 @@ export struct KeyboardPanel {
   private load(): void {
     try {
       this.script = pingzhu.outputScript();
+      // The layout the extension built the engine with. The board must be drawn
+      // from the same name, or the keys say one thing and the decoder does
+      // another — which is exactly what happened on Android.
+      this.layout = Session.layout.length > 0 ? Session.layout : 'standard';
       // Pairs, not two parallel strings. The 倚天 layout has more keys in its
       // first row than it has Bopomofo components, so the two cannot be zipped
       // from separate runs — a test in core-rs/ caught that.
-      const raw: string = pingzhu.keyboardRows('standard');
+      const raw: string = pingzhu.keyboardRows(this.layout);
       const parsed: Key[][] = [];
       for (const line of raw.split('\n')) {
         const row: Key[] = [];
@@ -126,6 +147,59 @@ export struct KeyboardPanel {
     this.candidates = pingzhu.candidates();
     this.sentence = pingzhu.bestSentence();
     this.faithful = pingzhu.outputIsFaithful();
+  }
+
+  /**
+   * The layout menu, attached to a long press on the script key.
+   */
+  @Builder
+  layoutMenu() {
+    Column() {
+      ForEach(LAYOUT_CHOICES, (choice: [string, string]) => {
+        Row({ space: 8 }) {
+          Text(choice[0] === this.layout ? '✓' : '')
+            .fontSize(13)
+            .width(18)
+          Text(choice[1])
+            .fontSize(15)
+        }
+        .height(40)
+        .width('100%')
+        .padding({ left: 14, right: 14 })
+        .onClick(() => { this.useLayout(choice[0], choice[1]); })
+      }, (choice: [string, string]) => choice[0])
+    }
+    .width(180)
+    .backgroundColor('#FFFFFF')
+  }
+
+  /**
+   * Switches the layout by rebuilding the engine.
+   *
+   * A layout is fixed when the engine is built — the decoder is shaped around it —
+   * so this is a rebuild, not a setting. napi's `create()` destroys the old engine
+   * and makes a new one; the user dictionary and the output script have to be
+   * reattached afterwards, because a fresh engine has neither.
+   */
+  private useLayout(id: string, label: string): void {
+    if (id === this.layout) return;
+    try {
+      if (!pingzhu.create(Session.modelDir, id)) {
+        this.failure = `布局載入失敗：${label}`;
+        return;
+      }
+      pingzhu.loadUserDictionary(Session.userDictPath);
+      pingzhu.setOutputScript(this.script);
+      Session.saveLayout(id);
+      // The composition was a reading in the old layout. In the new one those keys
+      // mean something else, so keeping it would be worse than losing it.
+      this.composing = '';
+      this.load();
+      this.syncFromEngine();
+      promptAction.showToast({ message: `布局：${label}`, duration: 1500 });
+    } catch (error) {
+      this.failure = `${error}`;
+    }
   }
 
   private toggleScript(): void {
@@ -363,6 +437,11 @@ export struct KeyboardPanel {
           .fontSize(16).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)
           .onClick(() => { this.toggleScript(); })
+          // Long press: the keyboard layout. There is no settings screen on this
+          // platform, and a phone board has no room for a seventh function key, so
+          // the switch hangs off the key that is already about "which characters
+          // come out". Short press still toggles the script.
+          .bindContextMenu(this.layoutMenu, ResponseType.LongPress)
         // 英/中. Every key on the Bopomofo board is a reading; without this the
         // keyboard could not produce a single Latin letter, which rules out
         // URLs, addresses and passwords on a phone.
