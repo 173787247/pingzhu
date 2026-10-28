@@ -57,6 +57,19 @@
   .key .b { font-size: 17px; }
   .key .s { font-size: 10px; color: var(--dim); }
   .key.wide { width: 108px; }
+
+  /* A phone. Eleven keys at 46px is ~600px, wider than the screen, and the row
+     ran off the right edge instead of shrinking. Below this width the keys share
+     the row they are in rather than keeping a fixed size. */
+  @media (max-width: 560px) {
+    body { padding: 12px; }
+    .panel { padding: 10px 12px; }
+    .key { width: auto; flex: 1; height: 42px; }
+    .key .b { font-size: 15px; }
+    .key .s { font-size: 9px; }
+    .key.wide { width: auto; flex: 2; }
+    .label { font-size: 12px; }
+  }
   .help { color: var(--dim); font-size: 13px; }
   .help kbd {
     background: #232833; border: 1px solid var(--line); border-bottom-width: 2px;
