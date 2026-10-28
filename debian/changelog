@@ -1,3 +1,24 @@
+fcitx5-pingzhu (0.10.6) unstable; urgency=medium
+
+  * New upstream release 0.10.6. The engine now has seven keyboard layouts
+    (standard, eten, hsu, eten26, ibm, ginyieh, mitac), transcribed from the
+    reference implementation by a generator rather than by hand, and every front
+    end can choose one: Windows and Linux read a file, macOS a menu, Android the
+    settings screen, HarmonyOS a long press on the script key, the demo page a
+    picker above the keyboard.
+
+    Also in this release:
+
+    - The drawn keyboard was a second copy of the layout in the Android and
+      HarmonyOS shells, so choosing a layout decoded one way and drew another.
+    - HarmonyOS could not produce a single Latin letter, could not switch the
+      output script, and never showed the sentence it would commit.
+    - Linux could toggle the output script only by editing its file, not with
+      the Ctrl+Alt+S the other shells have.
+    - The demo page forgot the words a user taught it when the tab closed.
+
+ -- PingZhu <173787247@qq.com>  Wed, 28 Oct 2026 11:50:00 +0800
+
 fcitx5-pingzhu (0.10.5) unstable; urgency=medium
 
   * New upstream release 0.10.5. Two fixes, both of the shape "the feature is
