@@ -40,7 +40,7 @@ class KeyboardView(context: Context, attrs: AttributeSet? = null) : View(context
         val weight: Float = 1f,
         val function: Function = Function.None,
     ) {
-        enum class Function { None, Script, Space, Backspace, Enter }
+        enum class Function { None, Script, Space, Backspace, Enter, Symbols }
     }
 
     private val rows: MutableList<MutableList<Key>> = mutableListOf()
@@ -137,6 +137,7 @@ class KeyboardView(context: Context, attrs: AttributeSet? = null) : View(context
                     // does. "What is displayed is what is output" is the whole
                     // point of a script indicator.
                     Key.Function.Script -> if (simplified) "简" else "繁"
+                    Key.Function.Symbols -> "符"
                     else -> key.label
                 }
                 if (text.isNotEmpty()) {

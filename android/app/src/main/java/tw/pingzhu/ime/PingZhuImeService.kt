@@ -262,6 +262,15 @@ class PingZhuImeService : InputMethodService() {
     /** All rows are [row][column]. */
     private val keyboardRows = mutableListOf<List<KeyboardView.Key>>()
 
+    /**
+     * Whether the punctuation page is up instead of the Bopomofo board.
+     *
+     * It is a mode rather than a key that inserts one glyph, because a phone has no
+     * Shift: on a desktop `Shift+,` reaches the application as a comma, and there is
+     * no equivalent gesture here.
+     */
+    private var symbolsShown = false
+
     private fun buildKeyboard() {
         val board = keyboard ?: return
         if (englishMode) {
@@ -269,6 +278,14 @@ class PingZhuImeService : InputMethodService() {
             board.simplified = false
             return
         }
+        if (symbolsShown) {
+            keyboardRows.clear()
+            keyboardRows.addAll(symbolRows())
+            board.setKeys(keyboardRows)
+            board.simplified = engine?.outputScript() == "simplified"
+            return
+        }
+
         val rows = Engine.keyboardRows(layoutInUse).map { row ->
             row.mapNotNull { (key, label) ->
                 if (label.isEmpty()) null else KeyboardView.Key(key, label)
@@ -285,6 +302,10 @@ class PingZhuImeService : InputMethodService() {
         )
         val bottom = listOf(
             scriptKey,
+            KeyboardView.Key(
+                '符', "符", weight = 1.4f,
+                function = KeyboardView.Key.Function.Symbols,
+            ),
             KeyboardView.Key(' ', "空白", weight = 4f, function = KeyboardView.Key.Function.Space),
             /*
              * The browsing key. A phone board has no arrow keys, so the job the
@@ -315,9 +336,33 @@ class PingZhuImeService : InputMethodService() {
 
     // ------------------------------------------------------------------- input
 
+    /** The punctuation page: the shared table, plus the keys needed to leave it. */
+    private fun symbolRows(): List<List<KeyboardView.Key>> {
+        val rows = Symbols.ROWS.map { row -> row.map { KeyboardView.Key(it[0], it) } }.toMutableList()
+        rows.add(
+            listOf(
+                KeyboardView.Key(
+                    '符', "符", weight = 1.4f,
+                    function = KeyboardView.Key.Function.Symbols,
+                ),
+                KeyboardView.Key(' ', "空白", weight = 4f, function = KeyboardView.Key.Function.Space),
+                KeyboardView.Key(
+                    '\b', "⌫", weight = 1.4f,
+                    function = KeyboardView.Key.Function.Backspace,
+                ),
+                KeyboardView.Key('\n', "↵", weight = 1.4f, function = KeyboardView.Key.Function.Enter),
+            ),
+        )
+        return rows
+    }
+
     private fun onKeyPressed(key: KeyboardView.Key) {
         when (key.function) {
             KeyboardView.Key.Function.Script -> toggleScript()
+            KeyboardView.Key.Function.Symbols -> {
+                symbolsShown = !symbolsShown
+                buildKeyboard()
+            }
             KeyboardView.Key.Function.Space -> handleKey(' ')
             KeyboardView.Key.Function.Backspace -> handleKey('\b')
             KeyboardView.Key.Function.Enter -> handleKey('\n')
