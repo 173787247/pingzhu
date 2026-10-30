@@ -108,6 +108,15 @@ function keysForReading(layoutId, reading) {
   return out;
 }
 
+if (process.argv.includes("--symbols")) {
+  // The punctuation page has two copies: this one, because the browser demo has no
+  // C ABI to ask, and core-rs/src/symbols.rs. This dumps the TypeScript one in the
+  // wire format the FFI uses, so a test can hold the Rust one to it.
+  const { SYMBOL_ROWS } = await import("./src/symbols.ts");
+  process.stdout.write(SYMBOL_ROWS.map((row) => row.join("|")).join("\n") + "\n");
+  process.exit(0);
+}
+
 if (process.argv.includes("--layouts")) {
   const rows = [];
   const covered = [];

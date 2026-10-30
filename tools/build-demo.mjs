@@ -30,6 +30,7 @@ const MODULES = [
   "dictionary.ts",
   "grid.ts",
   "userdict.ts",
+  "symbols.ts",
   "engine.ts",
 ];
 

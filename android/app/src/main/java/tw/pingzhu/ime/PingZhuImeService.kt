@@ -364,7 +364,9 @@ class PingZhuImeService : InputMethodService() {
 
     /** The punctuation page: the shared table, plus the keys needed to leave it. */
     private fun symbolRows(): List<List<KeyboardView.Key>> {
-        val rows = Symbols.ROWS.map { row -> row.map { KeyboardView.Key(it[0], it) } }.toMutableList()
+        val rows = Engine.symbolRows().map { row ->
+            row.map { KeyboardView.Key(it[0], it) }
+        }.toMutableList()
         rows.add(
             listOf(
                 KeyboardView.Key(

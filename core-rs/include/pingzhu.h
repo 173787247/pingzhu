@@ -41,6 +41,13 @@ typedef struct EngineHandle EngineHandle;
 char *engine_keyboard_rows(const char *layout);
 void engine_keyboard_rows_free(char *text);
 
+/* The punctuation page: `|` between cells, `\n` between rows, the same
+ * separators as engine_keyboard_rows. The page does not depend on the layout —
+ * punctuation is not a reading — so there is no argument.
+ * Each cell is exactly one character. Free with engine_symbol_rows_free. */
+char *engine_symbol_rows(void);
+void engine_symbol_rows_free(char *text);
+
 uint32_t engine_abi_version(void);
 
 /* data_dir must contain bopomofo-lm.tsv.

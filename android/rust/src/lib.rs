@@ -508,6 +508,30 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeKeyboardLabels(
     unsafe { to_jstring(env, &text) }
 }
 
+/// The punctuation page, as rows of glyphs.
+///
+/// `|` between cells, `\n` between rows — the FFI's wire format. The page is the
+/// same in every layout, so there is no argument; the table itself lives in the
+/// core (core-rs/src/symbols.rs) so the phone, the desktop shells and the demo
+/// page cannot show different pages.
+///
+/// # Safety
+/// Called by the JVM.
+#[no_mangle]
+pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeSymbolRows(
+    env: *mut JNIEnv,
+    _class: jclass,
+) -> jstring {
+    let text = guarded_string(|| {
+        pingzhu_core::symbols::ROWS
+            .iter()
+            .map(|row| row.join("|"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    });
+    unsafe { to_jstring(env, &text) }
+}
+
 /// Unused parameter kept for ABI symmetry with the other entry points.
 #[allow(dead_code)]
 fn _touch(_: *mut c_void, _: *const c_char) {}

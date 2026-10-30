@@ -30,6 +30,7 @@ pub mod engine;
 pub mod ffi;
 pub mod grid;
 pub mod keyboard;
+pub mod symbols;
 pub mod syllable;
 pub mod userdict;
 

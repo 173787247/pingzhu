@@ -142,6 +142,7 @@ import { InputEngine } from "./engine/engine.js";
 import { Dictionary, buildSyllableInventoryFromText } from "./engine/dictionary.js";
 import { UserDictionary } from "./engine/userdict.js";
 import { LAYOUTS, STANDARD_LAYOUT, keyboardRows } from "./engine/keyboard.js";
+import { SYMBOL_ROWS } from "./engine/symbols.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -208,8 +209,42 @@ $("status").textContent = `已載入 ${dict.size.toLocaleString()} 詞條 / ${in
 // only someone who knows the layout by heart would notice. With seven layouts
 // there is no chance of keeping seven pictures correct by hand.
 const kb = $("keyboard");
+
+// The punctuation page. Same table as the shells (engine/src/symbols.ts), because
+// the board has no room for it: `,` is ㄝ on the 大千 layout, and a phone has no
+// Shift to reach a comma with.
+let symbolsShown = false;
+
+function feedSymbol(sym) {
+  // Not a reading: it goes straight into the document, the way the Android shell
+  // commits it. The engine has no opinion about punctuation.
+  committed.push(sym);
+  $("document").value = committed.join("");
+  draw();
+}
+
 function buildKeyboard(layout) {
   kb.innerHTML = "";
+  if (symbolsShown) {
+    for (const row of SYMBOL_ROWS) {
+      const div = document.createElement("div");
+      div.className = "krow";
+      for (const sym of row) {
+        const k = document.createElement("div");
+        k.className = "key";
+        k.innerHTML = `<span class="b">${sym}</span>`;
+        k.onclick = () => feedSymbol(sym);
+        div.appendChild(k);
+      }
+      const back = document.createElement("div");
+      back.className = "key wide";
+      back.innerHTML = `<span class="b">符</span><span class="s">回注音</span>`;
+      back.onclick = () => { symbolsShown = false; buildKeyboard(currentLayout); };
+      div.appendChild(back);
+      kb.appendChild(div);
+    }
+    return;
+  }
   for (const row of keyboardRows(layout)) {
     const div = document.createElement("div");
     div.className = "krow";
@@ -226,6 +261,11 @@ function buildKeyboard(layout) {
     space.innerHTML = `<span class="b">空白</span><span class="s">開啟／下一頁</span>`;
     space.onclick = () => { engine.nextCandidatePage(); draw(); };
     div.appendChild(space);
+    const symbols = document.createElement("div");
+    symbols.className = "key";
+    symbols.innerHTML = `<span class="b">符</span><span class="s">標點</span>`;
+    symbols.onclick = () => { symbolsShown = true; buildKeyboard(currentLayout); };
+    div.appendChild(symbols);
     kb.appendChild(div);
   }
 }
@@ -344,7 +384,13 @@ document.addEventListener("keydown", (e) => {
     }
   } else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault();
-    engine.press(k);
+    // A character the layout has no key for — `，` from a zh-TW keyboard, a
+    // full-width stop — is not a reading. It goes into the document. Swallowing it
+    // is how this page ended up unable to produce a single punctuation mark.
+    if (!engine.press(k)) {
+      committed.push(k);
+      $("document").value = committed.join("");
+    }
   } else {
     return;
   }

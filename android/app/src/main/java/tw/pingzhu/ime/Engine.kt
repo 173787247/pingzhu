@@ -114,6 +114,19 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
          * different one than the rows are wanted for (the settings screen draws
          * nothing, the keyboard draws after the engine is rebuilt).
          */
+        /**
+         * The punctuation page, as rows of glyphs.
+         *
+         * It comes from the core rather than a Kotlin table: the page is the same in
+         * every layout, and the desktop shells and the demo page read the same one.
+         * A table per shell is what this project keeps having to un-copy.
+         */
+        fun symbolRows(): List<List<String>> =
+            nativeSymbolRows()
+                .split('\n')
+                .filter { it.isNotEmpty() }
+                .map { row -> row.split('|').filter { it.isNotEmpty() } }
+
         fun keyboardRows(layout: String = "standard"): List<List<Pair<Char, String>>> =
             nativeKeyboardLabels(layout)
                 .split('\n')
@@ -132,6 +145,8 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
         @JvmStatic private external fun nativeCreate(dataDir: String, layout: String): Long
 
         @JvmStatic private external fun nativeKeyboardLabels(layout: String): String
+
+        @JvmStatic private external fun nativeSymbolRows(): String
         @JvmStatic private external fun nativeDestroy(handle: Long)
         @JvmStatic private external fun nativeFeedKey(handle: Long, key: String): Boolean
         @JvmStatic private external fun nativeBackspace(handle: Long): Boolean

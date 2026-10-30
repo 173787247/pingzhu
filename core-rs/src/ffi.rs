@@ -467,6 +467,42 @@ pub unsafe extern "C" fn engine_keyboard_rows_free(text: *mut c_char) {
     }
 }
 
+/// The punctuation page, as rows of glyphs.
+///
+/// `|` between cells, `\n` between rows — the same separators `engine_keyboard_rows`
+/// uses, for the same reason: no glyph is either of them. The page is the same in
+/// every layout; punctuation is not a reading.
+///
+/// The caller inserts one glyph per key press, so each cell is exactly one
+/// character (a test in `symbols` holds that).
+///
+/// # Safety
+/// The returned string must be freed with `engine_symbol_rows_free`.
+#[no_mangle]
+pub unsafe extern "C" fn engine_symbol_rows() -> *mut c_char {
+    let text = crate::symbols::ROWS
+        .iter()
+        .map(|row| row.join("|"))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    match CString::new(text) {
+        Ok(value) => value.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// Frees a string returned by `engine_symbol_rows`.
+///
+/// # Safety
+/// `text` must have come from `engine_symbol_rows`, or be NULL.
+#[no_mangle]
+pub unsafe extern "C" fn engine_symbol_rows_free(text: *mut c_char) {
+    if !text.is_null() {
+        drop(unsafe { CString::from_raw(text) });
+    }
+}
+
 /// ABI version, so a shell can refuse to load a mismatched library instead of
 /// corrupting memory.
 ///
