@@ -14,6 +14,14 @@
     -->
     <style name="ImeTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowIsFloating">false</item>
+        <!--
+          視窗本身也要是半透明的，光把 windowBackground 設成透明不夠：兩者是
+          分開的兩件事，不透明的視窗會把底下 app 的畫面整塊蓋掉。這個輸入法的
+          輸入視窗是整屏的（見 onCreateInputView 的 onMeasure），所以「蓋掉」
+          等於使用者看不到自己打進去的字 —— 只看得見候選列裡的那一句。
+        -->
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">false</item>

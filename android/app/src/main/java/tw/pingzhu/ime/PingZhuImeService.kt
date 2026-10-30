@@ -259,6 +259,32 @@ class PingZhuImeService : InputMethodService() {
         return root
     }
 
+    /**
+     * Where the application's content really starts.
+     *
+     * The input view is the whole screen (see onCreateInputView's onMeasure), so the
+     * framework's default — content starts where the input view starts — puts it at
+     * the very top. The application's window is then zero pixels tall and draws
+     * nothing: you type into a field you cannot see, and only the candidate row
+     * tells you anything. It starts where the input method's own drawing starts.
+     */
+    override fun onComputeInsets(outInsets: Insets) {
+        super.onComputeInsets(outInsets)
+        val anchor = listOfNotNull(
+            candidates?.takeIf { it.isShown },
+            keyboard,
+        ).filter { it.isAttachedToWindow }.minByOrNull { view ->
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            location[1]
+        } ?: return
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        if (location[1] <= 0) return
+        outInsets.contentTopInsets = location[1]
+        outInsets.visibleTopInsets = location[1]
+    }
+
     /** All rows are [row][column]. */
     private val keyboardRows = mutableListOf<List<KeyboardView.Key>>()
 
