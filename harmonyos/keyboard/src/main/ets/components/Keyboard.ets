@@ -61,6 +61,8 @@ export struct KeyboardPanel {
   @State private sentence: string = '';
   /** False when that sentence is a guess rather than a decode. */
   @State private faithful: boolean = true;
+  /** Whether the punctuation page is up instead of a reading board. */
+  @State private symbolsShown: boolean = false;
   @State private ready: boolean = false;
   @State private failure: string = '';
   /** "traditional" or "simplified" — what the decoder outputs, not how it decodes. */
@@ -113,7 +115,16 @@ export struct KeyboardPanel {
         Session.insertText(letter);
         return;
       }
-      pingzhu.feedKey(letter);
+      // A character this layout has no key for — a comma, a full-width full stop —
+      // is not a reading. It goes into the editor. Dropping it is how this keyboard
+      // could not produce a single punctuation mark.
+      if (!pingzhu.feedKey(letter)) {
+        if (this.composing.length > 0) {
+          const sentence: string = pingzhu.commit();
+          if (sentence.length > 0) Session.insertText(sentence);
+        }
+        Session.insertText(letter);
+      }
       this.syncFromEngine();
     } catch (error) {
       this.failure = `${error}`;
@@ -142,6 +153,36 @@ export struct KeyboardPanel {
    * sentence came to be fetched nowhere: `bestSentence()` existed in the napi table
    * from the start and no ArkTS line ever called it.
    */
+  /**
+   * The punctuation page, from the core: `|` between cells, `\n` between rows.
+   *
+   * The table is not duplicated here. It lives in core-rs/src/symbols.rs, the same
+   * one Android and the demo page read, so the three cannot show different pages.
+   */
+  private symbolRows(): Key[][] {
+    return pingzhu.symbolRows()
+      .split('\n')
+      .filter((row: string) => row.length > 0)
+      .map((row: string) => row.split('|')
+        .filter((cell: string) => cell.length > 0)
+        .map((cell: string): Key => ({ letter: cell, label: cell })));
+  }
+
+  private toggleSymbols(): void {
+    this.symbolsShown = !this.symbolsShown;
+    if (this.symbolsShown) {
+      // A half-typed reading stays in the engine; the page only changes what is
+      // drawn. Toggling back re-reads the board from the engine, so nothing is lost.
+      this.rows = this.symbolRows();
+    } else if (this.english) {
+      // Leaving the page must not silently switch the board back to Bopomofo: the
+      // English board is the one that was up.
+      this.rows = QWERTY_ROWS;
+    } else {
+      this.load();
+    }
+  }
+
   private syncFromEngine(): void {
     this.composing = pingzhu.composing();
     this.candidates = pingzhu.candidates();
@@ -445,6 +486,10 @@ export struct KeyboardPanel {
         // 英/中. Every key on the Bopomofo board is a reading; without this the
         // keyboard could not produce a single Latin letter, which rules out
         // URLs, addresses and passwords on a phone.
+        Text(this.symbolsShown ? '注' : '符')
+          .fontSize(16).textAlign(TextAlign.Center).layoutWeight(1).height(46)
+          .backgroundColor('#D0D0D0').borderRadius(4)
+          .onClick(() => { this.toggleSymbols(); })
         Text(this.english ? '中' : '英')
           .fontSize(16).textAlign(TextAlign.Center).layoutWeight(1).height(46)
           .backgroundColor('#D0D0D0').borderRadius(4)

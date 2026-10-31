@@ -37,6 +37,14 @@ export function create(modelDir: string, layout?: string): boolean;
 /** What is being composed, in Bopomofo. */
 export function composing(): string;
 
+/**
+ * The punctuation page: `|` between cells, `\n` between rows.
+ *
+ * The same page the other shells show — it comes from the core, not from a table
+ * per shell.
+ */
+export function symbolRows(): string;
+
 /** The sentence that would be committed. */
 export function bestSentence(): string;
 

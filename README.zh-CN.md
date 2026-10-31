@@ -454,7 +454,7 @@ $ node engine/bench-learn.mjs 5000 --recall
 | **M5** | macOS IMK 外壳：IMKInputController、候选 NSPanel、CI 构建与引擎实测 | ⚠️ **真机可编译可执行，系统尚未接受**（见 [macos/](macos/README.md)） |
 | **M6** | Android `InputMethodService` 外壳：自绘键盘、候选列、JNI | ✅ 已完成 |
 | **M7** | HarmonyOS IME Kit 外壳：ArkTS、NAPI、Rust 核心、键盘 UI、面板、编辑器连线 | ✅ **真机验证：`su3cl3` → 你好** |
-| **M8** | 符号表、联想词、快捷输入 | 待做 |
+| **M8** | ~~符号表~~（已完成）、联想词、快捷输入 | 待做 |
 
 测试现况（2026-10-11）：
 

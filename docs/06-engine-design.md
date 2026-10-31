@@ -434,7 +434,11 @@ $ node engine/bench-learn.mjs 5000
 
 **已实作**：简繁转换（[09](09-zhuyin-vs-pinyin.md) 的对照表，三种切换方式）。
 
-**尚未实作**：符号表、联想词、快捷输入、数字快打、云端同步（M8）。
+**尚未实作**：联想词、快捷输入、数字快打、云端同步（M8）。
+
+**符号表已完成**（2026-11）：六种前端各有一页全形标点。表只有一份，在
+`core-rs/src/symbols.rs`；试打版用的是 `engine/src/symbols.ts`（它没有 C ABI 可问，
+那是它存在的意义），两份由 `core-rs/tests/symbols.tsv` 对照。
 
 ## 已知限制
 

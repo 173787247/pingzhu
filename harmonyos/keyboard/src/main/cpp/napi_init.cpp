@@ -137,6 +137,25 @@ napi_value KeyboardRows(napi_env env, napi_callback_info info) {
     return result;
 }
 
+/**
+ * The punctuation page: `|` between cells, `\n` between rows.
+ *
+ * The table lives in the core (core-rs/src/symbols.rs) so that every front end
+ * shows the same page — the phone, the desktop shells and the demo page. The page
+ * does not depend on the layout: punctuation is not a reading.
+ */
+napi_value SymbolRows(napi_env env, napi_callback_info info) {
+    char* rows = engine_symbol_rows();
+    napi_value result;
+    if (rows == nullptr) {
+        napi_throw_error(env, nullptr, "the engine could not produce its symbol page");
+        return nullptr;
+    }
+    napi_create_string_utf8(env, rows, NAPI_AUTO_LENGTH, &result);
+    engine_symbol_rows_free(rows);
+    return result;
+}
+
 napi_value Candidates(napi_env env, napi_callback_info info) {
     if (g_engine == nullptr) {
         napi_throw_error(env, nullptr, "candidates() before create()");
@@ -377,6 +396,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"create", nullptr, Create, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"decode", nullptr, Decode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"keyboardRows", nullptr, KeyboardRows, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"symbolRows", nullptr, SymbolRows, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"candidates", nullptr, Candidates, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"bestSentence", nullptr, BestSentence, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"feedKey", nullptr, FeedKey, nullptr, nullptr, nullptr, napi_default, nullptr},
