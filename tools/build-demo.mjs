@@ -22,17 +22,48 @@ const here = dirname(fileURLToPath(import.meta.url));
 const engineSrc = join(here, "..", "engine", "src");
 const outDir = join(here, "..", "demo", "engine");
 
-/** Pure modules only — anything importing node:fs would break in a browser. */
-const MODULES = [
-  "syllable.ts",
-  "converter.ts",
-  "keyboard.ts",
-  "dictionary.ts",
-  "grid.ts",
-  "userdict.ts",
-  "symbols.ts",
-  "engine.ts",
-];
+/**
+ * The modules the demo loads, derived rather than listed.
+ *
+ * This used to be a hand-written list, and every engine module the demo needed had
+ * to be remembered here too. `symbols.ts` was not: the page 404'd on it in the
+ * browser while this script reported success. The list is now the transitive
+ * closure of the demo's own imports, so a module that is used is copied, a module
+ * that is missing is an error, and nobody has to remember anything.
+ *
+ * A module that imports `node:` still fails loudly — that is the property this
+ * script exists to prove.
+ */
+function demoModules() {
+  const html = readFileSync(join(here, "..", "demo", "index.html"), "utf8");
+  const entries = new Set();
+  for (const m of html.matchAll(/from\s+"\.\/engine\/([\w-]+)\.js"/g)) {
+    entries.add(`${m[1]}.ts`);
+  }
+  if (entries.size === 0) {
+    throw new Error("demo/index.html imports no engine modules; the page or this regex changed");
+  }
+
+  const seen = new Set();
+  const queue = [...entries];
+  while (queue.length > 0) {
+    const name = queue.shift();
+    if (seen.has(name)) continue;
+    let source;
+    try {
+      source = readFileSync(join(engineSrc, name), "utf8");
+    } catch {
+      throw new Error(`${name} is imported but not in engine/src; the demo would 404 on it`);
+    }
+    seen.add(name);
+    for (const m of source.matchAll(/from\s+"\.\/([\w-]+)\.ts"/g)) {
+      queue.push(`${m[1]}.ts`);
+    }
+  }
+  return [...seen];
+}
+
+const MODULES = demoModules();
 
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
