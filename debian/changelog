@@ -1,3 +1,22 @@
+fcitx5-pingzhu (0.10.7) unstable; urgency=medium
+
+  * New upstream release 0.10.7. Punctuation has a page on the phone shells now:
+    every key on a Bopomofo layout is a reading (`,` is ㄝ), and a phone has no
+    Shift to reach a comma with. The table lives in the engine, so the shells and
+    the demo page show the same page rather than one copy each.
+
+    Also in this release:
+
+    - Android: the input window covered the whole screen, so the application's
+      window measured zero pixels and drew nothing — the user could not see what
+      they typed.
+    - Android and HarmonyOS: a character the layout has no key for was dropped
+      instead of being sent to the editor.
+    - The demo page's board did not fit a phone, and its build silently left out a
+      module the page imported.
+
+ -- PingZhu <173787247@qq.com>  Mon, 02 Nov 2026 00:45:00 +0800
+
 fcitx5-pingzhu (0.10.6) unstable; urgency=medium
 
   * New upstream release 0.10.6. The engine now has seven keyboard layouts
