@@ -573,10 +573,32 @@ export class InputEngine {
       }
       combos = next;
     }
+    // A syllable with no tone is how people actually type: most Bopomofo users
+    // leave the tone out. The inventory is keyed by tone, so a tone-less chunk
+    // matches only 一聲 and the final one stays pending — you type a word and
+    // nothing comes out.
+    //
+    // Expanding it into the four tones lets the language model pick, which is what
+    // it is for. The four extras are alternatives, not a longer syllable: each is
+    // scored on its own and the sentence decides.
+    // Only the last syllable of the buffer. A tone-less syllable in the middle is
+    // closed by the next syllable's first key and reads as 一聲 — the old behaviour,
+    // which is what the order test below depends on. The last one has nothing after
+    // it, so without this it stays pending and the user gets nothing at all.
+    const isFinal = pos + len === this.keys.length;
+    const expanded: KeyComponent[][] = [];
+    for (const combo of combos) {
+      expanded.push(combo);
+      if (!isFinal || combo.some((c) => c.kind === "tone")) continue;
+      for (let tone = 1; tone <= 4; tone++) {
+        expanded.push([...combo, { kind: "tone", index: tone }]);
+      }
+    }
+
     // Reject combinations that would put two components of one class in a
     // syllable only after composing, so keep them: composeSyllable().null does
     // the check and returns null.
-    return combos.filter((c) => composeSyllable(c) !== null);
+    return expanded.filter((c) => composeSyllable(c) !== null);
   }
 
   /** Human readable dump of one component, for the CLI's key echo. */

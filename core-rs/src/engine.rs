@@ -20,7 +20,7 @@ use crate::grid::{CandidateOrder, GridOptions, GridPath, ReadingGrid};
 use crate::keyboard::Layout;
 use crate::syllable::{
     compose_syllable, is_canonical_component_order, is_well_formed_components, Component,
-};
+    Kind,};
 use crate::userdict::UserDictionary;
 
 /// Ten, because that is how many a keyboard can address with 1234567890.
@@ -639,6 +639,29 @@ impl InputEngine {
             combos = next;
         }
         combos.retain(|c| compose_syllable(c).is_some());
+
+        // Only the last syllable of the buffer. A tone-less syllable in the middle
+        // is closed by the next syllable's first key and reads as 一聲; the last one
+        // has nothing after it, so without a tone it stays pending and the user gets
+        // nothing at all. Expanding it into the four tones lets the language model
+        // choose, which is what it is for.
+        if pos + len == self.keys.len() {
+            let mut expanded: Vec<Vec<Component>> = Vec::with_capacity(combos.len() * 5);
+            for combo in combos {
+                let has_tone = combo.iter().any(|c| c.kind == Kind::Tone);
+                expanded.push(combo.clone());
+                if has_tone {
+                    continue;
+                }
+                for tone in 1..=4usize {
+                    let mut with_tone = combo.clone();
+                    with_tone.push(Component::new(Kind::Tone, tone));
+                    expanded.push(with_tone);
+                }
+            }
+            expanded.retain(|c| compose_syllable(c).is_some());
+            return expanded;
+        }
         combos
     }
 

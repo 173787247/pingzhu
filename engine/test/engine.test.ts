@@ -108,6 +108,8 @@ test("components may not be reordered inside a syllable", () => {
   // bag [ㄨ ㄣ ㄔ] into ㄔㄨㄣ -- the ㄔ jumps in front of the ㄨ -- and the engine
   // answered ㄔㄨㄣ-ㄨㄣˊ, a reading nobody typed.
   const engine = type("jptjp6");
+  // The first syllable carries no tone and is not the last, so it stays 一聲 —
+  // the last syllable is where a missing tone is given to the language model.
   assert.equal(engine.composing, "ㄨㄣ ㄔㄨㄣˊ");
   assert.equal(engine.bestSentence, "溫純");
 });
