@@ -409,27 +409,30 @@ no `Rc<str>`, no async API, no premature optimisation.
 ```console
 $ node engine/bench.mjs 5000
 
-  top-1 accuracy    78.82%   (3941/5000)  exact word match
+  top-1 accuracy    76.80%   (3840/5000)  exact word match
   reading accuracy  100.00%   (5000/5000)  output reads as typed
-    homophone ties        1059   (another real word, same reading — needs context)
-    lost to decomposition 0   (a word existed and lost to single characters)
+    homophone ties        941   (another real word, same reading — needs context)
+    lost to decomposition 219   (a word existed and lost to single characters)
   KSPC              2.889 keys per character
-  decode time       109.2 µs per case
+  decode time       267.6 µs per case
   top-1 by span
-    1 syllable       5.38%   (41/762)
-    2–4 syllables   92.02%   (3900/4238)
+    1 syllable       4.46%   (34/762)
+    2–4 syllables   89.81%   (3806/4238)
 ```
 
 **Read the two rows at the bottom before the top one.** A single-syllable reading is
 dozens of homophones with nothing to choose between them — ㄕˋ is 是, 事, 市, 式 and
-eighty more — so 5.38% is not a defect, it is the shape of the problem: without context
+eighty more — so 4.46% is not a defect, it is the shape of the problem: without context
 there is no right answer, and a user typing one character is browsing the candidate list
 anyway. Where the model actually decides — words of 2–4 syllables, 4,238 of the 5,000
-samples — it is right **92.02%** of the time.
+samples — it is right **89.81%** of the time.
 
-**Of the 1,059 misses, all but none are homophone ties**: the output reads exactly as
-typed, and another real word with the same reading won. 5,000 samples produced **zero
-real decode failures** — the output always reads back as what you typed.
+**Of the 1,160 misses, 941 are homophone ties**: the output reads exactly as typed, and
+another real word with the same reading won. The other 219 are readings whose **tone was
+left out** — `ㄅㄚ` is 巴 in 一聲 and 把 in ˇ, the sample names one word and the decoder
+picks the likeliest. A tone-less reading has no single right answer: the decoder is now
+asked to choose one, and the count of these moved from 0 to 219 when the benchmark stopped
+excluding them. The 2,413 toned readings scored the same before and after that change.
 
 > ⚠️ The sample is drawn from the language model itself, so this is **self-consistency**
 > (an upper bound) and a regression guard, not a head-to-head number against another input
