@@ -1,3 +1,20 @@
+fcitx5-pingzhu (0.10.8) unstable; urgency=medium
+
+  * New upstream release 0.10.8. A syllable typed without its tone now works:
+    most Bopomofo users leave the tone out, and the last syllable used to stay
+    pending — nothing was committed at all. It is now expanded into the four tones
+    and the language model picks.
+
+    Also in this release:
+
+    - A harness round-trip check compared tones, which silently dropped 48 samples
+      once the decoder began choosing a tone. It compares syllable boundaries now.
+    - The benchmark reports the honest distribution: top-1 76.80% rather than
+      78.82%, because tone-less readings are counted instead of filtered out. The
+      2,413 toned readings score exactly as before.
+
+ -- PingZhu <173787247@qq.com>  Wed, 04 Nov 2026 01:30:00 +0800
+
 fcitx5-pingzhu (0.10.7) unstable; urgency=medium
 
   * New upstream release 0.10.7. Punctuation has a page on the phone shells now:

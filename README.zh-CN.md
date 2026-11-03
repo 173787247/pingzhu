@@ -28,17 +28,17 @@ HarmonyOS NEXT 与 Linux。
 
 | 平台 | 文件 |
 |---|---|
-| **Windows 10/11** | **[⬇ 安装包 pingzhu-0.10.7-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.7/pingzhu-0.10.7-setup.exe)**　·　[便携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.7/pingzhu-0.10.7-win-x64.zip) |
-| **Android 8+** | **[⬇ pingzhu-0.10.7-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.7/pingzhu-0.10.7-android.apk)** |
-| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)）<br>**0.10.7 不含 macOS 产物**——输入法要向系统登记，签章必须是 Apple 签发的 Developer ID，而该入会仍在等。 |
+| **Windows 10/11** | **[⬇ 安装包 pingzhu-0.10.8-setup.exe](https://github.com/173787247/pingzhu/releases/download/v0.10.8/pingzhu-0.10.8-setup.exe)**　·　[便携版 ZIP](https://github.com/173787247/pingzhu/releases/download/v0.10.8/pingzhu-0.10.8-win-x64.zip) |
+| **Android 8+** | **[⬇ pingzhu-0.10.8-android.apk](https://github.com/173787247/pingzhu/releases/download/v0.10.8/pingzhu-0.10.8-android.apk)** |
+| **macOS 12+** ⚠️ | **[pingzhu-0.9.0-macos-UNVERIFIED.zip](https://github.com/173787247/pingzhu/releases/download/v0.8.0/pingzhu-0.9.0-macos-UNVERIFIED.zip)**（[先在真机验证](macos/TESTING.md)）<br>**0.10.8 不含 macOS 产物**——输入法要向系统登记，签章必须是 Apple 签发的 Developer ID，而该入会仍在等。 |
 
 **HarmonyOS** 没有安装包——它的产物是工程，要从源码构建。
 **Linux** 有 `.deb` 与 `.rpm` 两种包，也可以自己从源码构建 fcitx5 addon：
 
 | 平台 | 拿什么 | 怎么装 |
 |---|---|---|
-| **HarmonyOS NEXT** | **[pingzhu-0.10.7-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.7/pingzhu-0.10.7-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](harmonyos/README.md)） |
-| **Linux** | **[fcitx5-pingzhu_0.10.7_amd64.deb](https://github.com/173787247/pingzhu/releases/download/v0.10.7/fcitx5-pingzhu_0.10.7_amd64.deb)**　·　[fcitx5-pingzhu-0.10.7-1.x86_64.rpm](https://github.com/173787247/pingzhu/releases/download/v0.10.7/fcitx5-pingzhu-0.10.7-1.x86_64.rpm) | Debian 系 `sudo dpkg -i …`　·　RPM 系 `sudo rpm -ivh …`（[linux/](linux/README.md)） |
+| **HarmonyOS NEXT** | **[pingzhu-0.10.8-harmonyos-project.zip](https://github.com/173787247/pingzhu/releases/download/v0.10.8/pingzhu-0.10.8-harmonyos-project.zip)** | 在 DevEco 打开 `harmonyos/`、签名、Run（[步骤](harmonyos/README.md)） |
+| **Linux** | **[fcitx5-pingzhu_0.10.8_amd64.deb](https://github.com/173787247/pingzhu/releases/download/v0.10.8/fcitx5-pingzhu_0.10.8_amd64.deb)**　·　[fcitx5-pingzhu-0.10.8-1.x86_64.rpm](https://github.com/173787247/pingzhu/releases/download/v0.10.8/fcitx5-pingzhu-0.10.8-1.x86_64.rpm) | Debian 系 `sudo dpkg -i …`　·　RPM 系 `sudo rpm -ivh …`（[linux/](linux/README.md)） |
 
 **Windows**：装到 `%LOCALAPPDATA%\Programs\PingZhu`，不需要管理员权限。装好后 `Ctrl+Alt+Z`
 切换中英、`Ctrl+Alt+S` 切换繁简（或用角落的浮动按钮），打 `su3cl3` 会出现「你好」。
@@ -281,7 +281,7 @@ $ node engine/cli.ts su3cl3 ji394su3
 **方式一：从 release 上的 tarball 装**（零帐号、零设定，**推荐**）
 
 ```bash
-npm install https://github.com/173787247/pingzhu/releases/download/v0.10.7/pingzhu-engine-0.10.7.tgz
+npm install https://github.com/173787247/pingzhu/releases/download/v0.10.8/pingzhu-engine-0.10.8.tgz
 ```
 
 **方式二：从 GitHub Packages 装**（要先配 GitHub token）
