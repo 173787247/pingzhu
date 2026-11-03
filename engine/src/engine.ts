@@ -590,8 +590,12 @@ export class InputEngine {
     for (const combo of combos) {
       expanded.push(combo);
       if (!isFinal || combo.some((c) => c.kind === "tone")) continue;
+      // The tone was never typed, so it has no key of its own. The last key of the
+      // chunk is where it would have gone — enough for anything that asks which
+      // key a component came from.
+      const key = this.keys[pos + len - 1];
       for (let tone = 1; tone <= 4; tone++) {
-        expanded.push([...combo, { kind: "tone", index: tone }]);
+        expanded.push([...combo, { kind: "tone", index: tone, key }]);
       }
     }
 
