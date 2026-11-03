@@ -33,7 +33,13 @@ test("every sampled case is one the keyboard can actually spell", () => {
   const cases = buildTestSet(3000, 20260926);
   assert.ok(cases.length > 2000, `sample looks truncated: ${cases.length}`);
 
-  const unreachable = cases.filter((c) => engineReading(c.keystrokes) !== c.reading);
+  // Tones are not part of this. A reading that leaves the tone out (ㄅㄚ) decodes as
+  // whichever tone the language model prefers, and the keystrokes did express every
+  // syllable the reading has. What must survive is the syllable boundary.
+  const stripTones = (reading: string | null) => (reading ?? "").replace(/[ˊˇˋ˙]/g, "");
+  const unreachable = cases.filter(
+    (c) => stripTones(engineReading(c.keystrokes)) !== stripTones(c.reading),
+  );
   assert.deepEqual(
     unreachable.map((c) => `${c.word} (${c.reading})`),
     [],

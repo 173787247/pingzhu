@@ -124,7 +124,13 @@ export function buildTestSet(sampleSize, seed) {
   // such a case against the word its reading names asks for something the
   // keystrokes cannot express, which reads as a decoder miss and is really a
   // harness artifact. Keep only cases whose reading survives the round trip.
-  return picked.filter((c) => decodeReading(c.keystrokes) === c.reading);
+  // The round trip is about syllable BOUNDARIES, not tones. A reading that leaves
+  // the tone out (ㄅㄚ, 一聲 written without its mark) now decodes as whichever tone
+  // the language model prefers, so comparing tones here would drop every such
+  // entry — 48 of them in this corpus, all ㄅㄚ — and the sample would silently
+  // lose a reading instead of reporting it.
+  const stripTones = (reading) => (reading ?? "").replace(/[ˊˇˋ˙]/g, "");
+  return picked.filter((c) => stripTones(decodeReading(c.keystrokes)) === stripTones(c.reading));
 }
 
 /**
