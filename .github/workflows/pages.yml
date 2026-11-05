@@ -82,6 +82,7 @@ jobs:
         run: |
           mkdir -p demo/data
           cp data/bopomofo-lm.tsv demo/data/bopomofo-lm.tsv
+          cp data/shortcuts.tsv demo/data/shortcuts.tsv
           ls -l demo/data/
 
       - uses: actions/configure-pages@v5

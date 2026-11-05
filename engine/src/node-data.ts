@@ -30,8 +30,22 @@ export function loadConverter(path: string | URL): Converter {
   return Converter.fromText(readFileSync(path, "utf8"));
 }
 
-export function loadDictionary(path: string | URL, options: DictionaryOptions = {}): Dictionary {
-  return Dictionary.fromText(readFileSync(path, "utf8"), String(path), options);
+/**
+ * Load the language model, optionally followed by a shortcuts file.
+ *
+ * A shortcut is an extra entry in the same format with a score high enough to sit
+ * first — not a second kind of thing. Appending the text is enough: `fromText`
+ * already sorts by score and already rejects an empty word. Nothing new is threaded
+ * through the decoder, so no shell has to change to get the feature.
+ */
+export function loadDictionary(
+  path: string | URL,
+  options: DictionaryOptions = {},
+  shortcutsPath?: string | URL,
+): Dictionary {
+  const text = readFileSync(path, "utf8");
+  const extra = shortcutsPath ? readFileSync(shortcutsPath, "utf8") : "";
+  return Dictionary.fromText(extra ? `${text}\n${extra}` : text, String(path), options);
 }
 
 /** The legal-syllable set, read from the same file. */

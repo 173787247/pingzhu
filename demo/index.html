@@ -169,7 +169,20 @@ if (!response) {
   throw new Error("language model unavailable");
 }
 const text = await response.text();
-const dict = Dictionary.fromText(text, "bopomofo-lm.tsv");
+// The shortcuts, same format, same reason as loadDictionary in node-data.ts: a
+// phrase is a read-only entry with a score high enough to sit first. The file is
+// optional — a checkout without it is a working demo.
+let shortcuts = "";
+for (const url of ["./data/shortcuts.tsv", "../data/shortcuts.tsv"]) {
+  try {
+    const candidate = await fetch(url);
+    if (candidate.ok) { shortcuts = await candidate.text(); break; }
+  } catch {
+    // A missing shortcuts file is not an error: the demo works without one.
+  }
+}
+const combined = shortcuts ? `${text}\n${shortcuts}` : text;
+const dict = Dictionary.fromText(combined, "bopomofo-lm.tsv");
 const inventory = buildSyllableInventoryFromText(text);
 // --------------------------------------------------------- what was taught
 //

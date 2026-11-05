@@ -496,7 +496,7 @@ word sits deep in a list of dozens and the user is browsing anyway.
 | **M5** | macOS IMK shell: IMKInputController, candidate NSPanel, built and engine-tested in CI | ⚠️ **compiles and runs on hardware; the system does not accept it yet** — see [macos/](macos/README.md) |
 | **M6** | Android `InputMethodService`: self-drawn keyboard, candidate bar, JNI | ✅ done |
 | **M7** | HarmonyOS IME Kit shell: ArkTS, NAPI, Rust core, keyboard UI, panel, editor connection | ✅ **verified on a device: `su3cl3` → 你好** |
-| **M8** | ~~Symbol table~~ (done), word association, text shortcuts ([design](../docs/10-shortcuts-design.md)) | to do |
+| **M8** | ~~Symbol table~~ (done), ~~text shortcuts~~ (engine and demo done, [design](../docs/10-shortcuts-design.md)), word association | to do |
 
 Tests, as of 2026-10-11:
 

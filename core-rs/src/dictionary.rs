@@ -53,13 +53,44 @@ impl Dictionary {
         Self::load_with(path, DictionaryOptions::default())
     }
 
+    /// Load the language model, optionally followed by a shortcuts file.
+    ///
+    /// A shortcut is an extra entry in the same format with a score high enough to
+    /// sort first — not a second kind of thing. Concatenating the text is enough:
+    /// `from_text` already rejects an empty word and already sorts by score, so no
+    /// new mechanism is needed and no shell has to change to get the feature.
+    pub fn load_with_shortcuts(
+        path: impl AsRef<Path>,
+        shortcuts: Option<&Path>,
+        options: DictionaryOptions,
+    ) -> std::io::Result<Dictionary> {
+        let mut text = std::fs::read_to_string(&path)?;
+        if let Some(extra) = shortcuts {
+            // Optional by design: a data directory without the file is a working
+            // installation that simply has no shortcuts.
+            if let Ok(more) = std::fs::read_to_string(extra) {
+                text.push('\n');
+                text.push_str(&more);
+            }
+        }
+        Ok(Dictionary::from_text(&text, options))
+    }
+
     pub fn load_with(path: impl AsRef<Path>, options: DictionaryOptions) -> std::io::Result<Dictionary> {
-        let file = File::open(path)?;
+        Ok(Dictionary::from_text(&std::fs::read_to_string(path)?, options))
+    }
+
+    /// Build from the compiled TSV *text*.
+    ///
+    /// Reading the file is the caller's job, in the same shape as the TypeScript
+    /// side: it is what lets a platform shell feed the same bytes from whatever
+    /// filesystem API it has.
+    fn from_text(text: &str, options: DictionaryOptions) -> Dictionary {
         let mut dict = Dictionary { max_word_syllables: 1, ..Default::default() };
         let mut max_span = 1usize;
 
-        for line in BufReader::new(file).lines() {
-            let line = line?;
+        for line in text.lines() {
+            let line = line;
             if line.is_empty() || line.starts_with('#') {
                 continue;
             }
@@ -99,7 +130,7 @@ impl Dictionary {
             list.sort_by(|a, b| b.score.total_cmp(&a.score));
         }
         dict.max_word_syllables = max_span.min(options.max_word_syllables);
-        Ok(dict)
+        dict
     }
 
     pub fn lookup(&self, reading: &str) -> &[Entry] {
@@ -143,6 +174,33 @@ mod tests {
 
     fn lm_path() -> std::path::PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/bopomofo-lm.tsv")
+    }
+
+    #[test]
+    fn shortcuts_sort_first_and_do_not_replace_the_model() {
+        // The shipped phrase table, read the way `engine_create` reads it: from the
+        // same directory as the language model, optional.
+        let shortcuts = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/shortcuts.tsv");
+        let plain = Dictionary::load(lm_path()).unwrap();
+        let with = Dictionary::load_with_shortcuts(lm_path(), Some(&shortcuts), Default::default())
+            .unwrap();
+
+        // Without the file, the language model's own word leads.
+        assert_eq!(plain.lookup("ㄉㄧˋ-ㄓˇ")[0].word, "地址");
+        // With it, the phrase leads and the model's word is still behind it.
+        let words: Vec<&str> = with.lookup("ㄉㄧˋ-ㄓˇ").iter().map(|e| e.word.as_str()).collect();
+        assert_eq!(words[0], "台北市忠孝東路四段 100 號 5 樓");
+        assert!(words.contains(&"地址"), "model word disappeared: {words:?}");
+        // Every entry the phrase table adds is one entry; nothing else moves.
+        assert_eq!(with.size(), plain.size() + 3);
+    }
+
+    #[test]
+    fn a_missing_shortcuts_file_is_not_an_error() {
+        let missing = Path::new("/nonexistent/shortcuts.tsv");
+        let dict = Dictionary::load_with_shortcuts(lm_path(), Some(missing), Default::default())
+            .unwrap();
+        assert_eq!(dict.lookup("ㄉㄧˋ-ㄓˇ")[0].word, "地址");
     }
 
     #[test]

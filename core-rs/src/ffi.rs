@@ -21,7 +21,7 @@ use std::ffi::{c_char, CStr, CString};
 use std::path::Path;
 
 use crate::converter::{Converter, OutputScript};
-use crate::dictionary::{build_syllable_inventory, Dictionary};
+use crate::dictionary::{build_syllable_inventory, Dictionary, DictionaryOptions};
 use crate::engine::{EngineOptions, InputEngine};
 use crate::grid::CandidateOrder;
 use crate::keyboard::Layout;
@@ -79,7 +79,13 @@ pub unsafe extern "C" fn engine_create(
     };
 
     let lm = Path::new(&dir).join("bopomofo-lm.tsv");
-    let Ok(dict) = Dictionary::load(&lm) else { return std::ptr::null_mut() };
+    /* Shortcuts live next to the language model and are optional: a data directory
+     * without them is a working installation. Appending them as entries is the
+     * whole feature — see docs/10-shortcuts-design.md. */
+    let shortcuts = Path::new(&dir).join("shortcuts.tsv");
+    let shortcuts = if shortcuts.exists() { Some(shortcuts.as_path()) } else { None };
+    let Ok(dict) = Dictionary::load_with_shortcuts(&lm, shortcuts, DictionaryOptions::default())
+    else { return std::ptr::null_mut() };
     let Ok(inventory) = build_syllable_inventory(&lm) else { return std::ptr::null_mut() };
 
     /* The Traditional -> Simplified table lives next to the language model. It

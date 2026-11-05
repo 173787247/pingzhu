@@ -1,6 +1,7 @@
 # 快捷输入（自订短语）设计
 
-**状态**：设计，未实作。路线图 M8 的最后一项可做项。
+**状态**：**引擎与网页试打版已实作（2026-11-06）**；外壳（Windows / Linux / macOS /
+Android / HarmonyOS）还差**打包**这一步 —— 见文末「实作到哪」。
 
 ## 一、问题
 
@@ -76,7 +77,20 @@ custom_phrase:
 4. **要不要 UI**：纯文本档 + 文件说明，与 `pingzhu.ini`、`layout` 文件一致 —— 这个专案
    的设定一律是档案，不做设定介面（理由见 `windows/README.md`）。
 
-## 六、不做什么
+## 六、实作到哪（2026-11-06）
+
+| | |
+|---|---|
+| `data/shortcuts.tsv` | ✓ 新增，`读音\t词\t分数`，分数用 9（语言模型全是负数，所以永远排最前）|
+| TS 引擎 | ✓ `loadDictionary(lm, options, shortcutsPath)` 追加文本；`fromText` 原本就拒绝空词、按分数倒序 |
+| Rust 核心 | ✓ `Dictionary::load_with_shortcuts`；`engine_create` 从数据目录找可选的 `shortcuts.tsv` |
+| 网页试打版 | ✓ 额外抓一份 `shortcuts.tsv`（找不到就用原样）|
+| 测试 | TS 4 条、Rust 2 条：短语排第一、不替换语言模型、空短语被拒、学别的字不影响短语 |
+| **外壳的打包** | ✗ **还没做** —— 安装包目前只带 `bopomofo-lm.tsv`／`ts-conversion.tsv`／`bopomofo-chars.tsv`，要把 `shortcuts.tsv` 一起带上；不然装了包的使用者看不到这份档 |
+
+最后一行是这份文档与实作之间的**唯一差距**，写在明处而不是藏着。
+
+## 七、不做什么
 
 - **云端同步**：`research/04` §4.5.4 的建议是「MVP 只做本机」；隐私成本高、没有可信的
   公开格式可对接。这条不在本设计范围内。
