@@ -438,7 +438,7 @@ $ node engine/bench-learn.mjs 5000
 （2026-11-06），外壳的打包还没带上那份档 —— 取舍与进度见
 [10-shortcuts-design.md](10-shortcuts-design.md)。
 
-**符号表已完成**（2026-11）：六种前端各有一页全形标点。表只有一份，在
+**符号表已完成**（2026-11）：五个外壳与网页试打版各有一页全形标点。表只有一份，在
 `core-rs/src/symbols.rs`；试打版用的是 `engine/src/symbols.ts`（它没有 C ABI 可问，
 那是它存在的意义），两份由 `core-rs/tests/symbols.tsv` 对照。
 
