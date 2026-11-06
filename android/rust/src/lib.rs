@@ -143,7 +143,14 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeCreate(
     guarded(0, || {
         let Some(dir) = (unsafe { to_string(env, data_dir) }) else { return 0 };
         let lm = Path::new(&dir).join("bopomofo-lm.tsv");
-        let Ok(dict) = Dictionary::load(&lm) else { return 0 };
+        // Shortcuts live next to the language model and are optional, exactly as in
+        // the desktop FFI. Android has its own entry point rather than calling
+        // `engine_create`, so it has to name this too — leaving it out is why the
+        // phrase table worked everywhere except here.
+        let shortcuts = Path::new(&dir).join("shortcuts.tsv");
+        let shortcuts = if shortcuts.exists() { Some(shortcuts.as_path()) } else { None };
+        let Ok(dict) = Dictionary::load_with_shortcuts(&lm, shortcuts, Default::default())
+        else { return 0 };
         let Ok(inventory) = build_syllable_inventory(&lm) else { return 0 };
 
         // Optional, exactly as on the desktop: without the table the input method
