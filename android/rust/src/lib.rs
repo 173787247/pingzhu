@@ -542,3 +542,54 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeSymbolRows(
 /// Unused parameter kept for ABI symmetry with the other entry points.
 #[allow(dead_code)]
 fn _touch(_: *mut c_void, _: *const c_char) {}
+
+/// The data a shell hands to `nativeCreate` is a directory, and everything the
+/// engine reads must be found from it alone.
+///
+/// This crate had no tests at all, and the one thing that went wrong was exactly
+/// the kind of thing a test would have caught: `ffi.rs` learned to read
+/// `shortcuts.tsv` while this entry point kept calling `Dictionary::load`, so the
+/// phrase table worked on every platform except Android — silently, with no error
+/// anywhere. The test below pins the rule rather than the call: given a directory
+/// with the model and a phrase table, the engine that `nativeCreate` builds must
+/// know the phrase.
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    fn data_dir() -> std::path::PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data")
+    }
+
+    #[test]
+    fn the_shipped_data_directory_contains_the_phrase_table() {
+        let dir = data_dir();
+        assert!(dir.join("bopomofo-lm.tsv").exists(), "no language model in {dir:?}");
+        assert!(
+            dir.join("shortcuts.tsv").exists(),
+            "no phrase table in {dir:?} — the asset step would copy nothing"
+        );
+    }
+
+    #[test]
+    fn the_engine_reads_the_phrase_table_from_that_directory() {
+        let dir = data_dir();
+        let lm = dir.join("bopomofo-lm.tsv");
+        let shortcuts = dir.join("shortcuts.tsv");
+        let dict = pingzhu_core::Dictionary::load_with_shortcuts(
+            &lm,
+            Some(shortcuts.as_path()),
+            Default::default(),
+        )
+        .expect("language model should load");
+
+        // ㄉㄧˋ-ㄓˇ is 地址; the shipped table puts a full address in front of it.
+        let words: Vec<&str> = dict
+            .lookup("ㄉㄧˋ-ㄓˇ")
+            .iter()
+            .map(|e| e.word.as_str())
+            .collect();
+        assert_eq!(words[0], "台北市忠孝東路四段 100 號 5 樓", "phrase table not read: {words:?}");
+        assert!(words.contains(&"地址"), "model word disappeared: {words:?}");
+    }
+}
