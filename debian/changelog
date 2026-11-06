@@ -1,3 +1,22 @@
+fcitx5-pingzhu (0.10.9) unstable; urgency=medium
+
+  * New upstream release 0.10.9. Shortcuts: a plain-text phrase table, read from
+    data/shortcuts.tsv. A shortcut is not a second kind of thing — it is an entry
+    in the same format whose score sorts it first, so no new ABI and no new UI
+    were needed. Phrases are read-only and never take part in learning.
+
+    Also in this release:
+
+    - The three packaging lists that name data files (Windows, Android, HarmonyOS)
+      now carry shortcuts.tsv. The deb and rpm already did, because they install
+      the whole data directory.
+    - HarmonyOS: a listed file missing from rawfile no longer throws.
+    - RELEASING.md: the TSF DLL rename rule is now keyed to the files compiled
+      into the DLL, not to everything under windows/. This release changed
+      windows/package.sh, which does not alter the DLL, so the name is unchanged.
+
+ -- PingZhu <173787247@qq.com>  Fri, 06 Nov 2026 10:15:00 +0800
+
 fcitx5-pingzhu (0.10.8) unstable; urgency=medium
 
   * New upstream release 0.10.8. A syllable typed without its tone now works:
