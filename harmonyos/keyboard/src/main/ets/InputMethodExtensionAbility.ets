@@ -39,7 +39,9 @@ const TAG = 'PingZhu';
 const DOMAIN = 0x0000;
 
 /** The model files that ship inside the HAP, and where they go at runtime. */
-const MODEL_FILES: string[] = ['bopomofo-lm.tsv', 'ts-conversion.tsv'];
+// `shortcuts.tsv` is optional on disk: a build without it is a working input method
+// that simply has no phrases. Listed here so a build that has one carries it.
+const MODEL_FILES: string[] = ['bopomofo-lm.tsv', 'ts-conversion.tsv', 'shortcuts.tsv'];
 
 /** How much of the screen the keyboard takes. */
 const KEYBOARD_HEIGHT_RATE = 0.42;
@@ -171,7 +173,15 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
         if (fileIo.accessSync(target)) continue;
 
         step = `read rawfile ${name}`;
-        const bytes: Uint8Array = this.context.resourceManager.getRawFileContentSync(name);
+        let bytes: Uint8Array;
+        try {
+          bytes = this.context.resourceManager.getRawFileContentSync(name);
+        } catch {
+          // `shortcuts.tsv` is optional: a build without it is a working input
+          // method with no phrases. A missing model file also lands here, but
+          // `create()` below fails with a clearer message than this loop could.
+          continue;
+        }
 
         step = `write ${name}`;
         const file = fileIo.openSync(target, fileIo.OpenMode.CREATE |

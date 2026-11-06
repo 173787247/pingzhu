@@ -97,6 +97,7 @@ android {
 val copyEngineData by tasks.registering(Copy::class) {
     from(rootProject.file("../data/bopomofo-lm.tsv"))
     from(rootProject.file("../data/ts-conversion.tsv"))
+    from(rootProject.file("../data/shortcuts.tsv"))
     into(layout.projectDirectory.dir("src/main/assets"))
 }
 

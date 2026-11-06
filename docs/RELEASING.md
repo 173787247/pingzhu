@@ -41,20 +41,25 @@ git show <上一个发版提交> --stat
 
 所以规则是：
 
-> **只有 `windows/` 自上一個 tag 起有改动时，才改这个档名。**
+> **只有编译进 TSF DLL 的源文件自上一個 tag 起有改动时，才改这个档名。**
 
-因为 TSF DLL 会编译 `src/candidate_window.cpp`、`src/router.cpp`、`src/engine_api.cpp`
-等 —— 那些一改，DLL 的内容就变了，旧档名就变成了「同一个名字、不同内容」，正是要避开的
-那个情况。
+因为 TSF DLL 会编译 `windows/src/*.cpp`（`candidate_window`、`router`、`engine_api` 等）
+与 `windows/tsf/*.cpp` —— 那些一改，DLL 的内容就变了，旧档名就变成了「同一个名字、不同
+内容」，正是要避开的那个情况。
+
+**判据是「编译进 DLL 的东西」，不是整个 `windows/` 目录**：`package.sh`、`README.md`、
+`install.cmd` 这些改了不影响 DLL 的字节，换档名只会让使用者多下一次 100 KB 的档案而没有
+任何新东西。v0.10.9 那次改的是 `package.sh`（把 `shortcuts.tsv` 加进安装包），DLL 一个
+字节没变，档名就没动 —— 这条注记是那次补的，因为原来的写法会把它误判成「该换」。
 
 怎么查：
 
 ```bash
-git log --oneline <上一個 tag>..HEAD -- windows/
+git log --oneline <上一個 tag>..HEAD -- windows/src windows/tsf
 ```
 
 有输出就改，没有就不动（v0.8.0 与 v0.9.1 两个 tag 之间就一直是
-`pingzhu-tsf-0.7.6.dll`）。**两处要一起改**，否则 COM 契约测试会找不到 DLL：
+`pingzhu-tsf-0.7.6.dll`；v0.10.6 起一直到 v0.10.9 是 `pingzhu-tsf-0.10.6.dll`）。**两处要一起改**，否则 COM 契约测试会找不到 DLL：
 
 - `windows/build.bat` 的 `set TSFDLL=`
 - `windows/tsf/tests/test_com.cpp` 里的默认档名

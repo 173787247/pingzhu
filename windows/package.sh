@@ -53,6 +53,7 @@ cp "$STAGE/pingzhu-engine-test.exe" "$PKG/" 2>/dev/null || true
 cp "$ROOT/data/bopomofo-lm.tsv" "$PKG/"
 # The 繁/簡 table sits beside the language model; the engine finds it there.
 cp "$ROOT/data/ts-conversion.tsv" "$PKG/"
+cp "$ROOT/data/shortcuts.tsv" "$PKG/"
 
 # Scripts: CRLF so Notepad and cmd.exe are both happy; the .ps1 files carry a
 # UTF-8 BOM because Windows PowerShell 5.1 otherwise reads them as ANSI and the
