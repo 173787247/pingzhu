@@ -1,3 +1,20 @@
+fcitx5-pingzhu (0.10.10) unstable; urgency=medium
+
+  * New upstream release 0.10.10. Shortcuts now work on Android. 0.10.9 claimed the
+    feature needed no shell changes; that held for five of the six front ends.
+    Android builds its engine through its own Rust entry point (nativeCreate) rather
+    than the C ABI, and that one still called Dictionary::load — so the phrase table
+    was read everywhere except the phone, silently, with no error anywhere.
+
+    Also in this release:
+
+    - The android/rust crate had no tests at all; it now has two that pin the rule.
+    - Two documentation fixes from the Code Review PR on AtomGit: docs/06 said "six
+      front ends" where it means five shells plus the web demo, and the README had no
+      user-facing description of shortcuts at all.
+
+ -- PingZhu <173787247@qq.com>  Sat, 07 Nov 2026 10:05:00 +0800
+
 fcitx5-pingzhu (0.10.9) unstable; urgency=medium
 
   * New upstream release 0.10.9. Shortcuts: a plain-text phrase table, read from
