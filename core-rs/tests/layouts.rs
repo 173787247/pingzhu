@@ -139,3 +139,40 @@ fn every_layout_matches_the_reference() {
         mismatches.join("\n")
     );
 }
+
+// ---------------------------------------------------- the published list
+
+/// `engine_layout_rows` is what the shells' menus are built from. If it and
+/// `Layout::from_id` ever disagree, a menu offers a name the engine rejects — it
+/// falls back to standard, and the user clicks a layout that does not take.
+#[test]
+fn the_published_layout_list_matches_what_the_engine_accepts() {
+    use std::ffi::CStr;
+    use std::os::raw::c_char;
+
+    let raw: *mut c_char = unsafe { pingzhu_core::ffi::engine_layout_rows() };
+    assert!(!raw.is_null(), "engine_layout_rows returned null");
+    let text = unsafe { CStr::from_ptr(raw) }.to_str().expect("not UTF-8").to_owned();
+    unsafe { pingzhu_core::ffi::engine_layout_rows_free(raw) };
+
+    let rows: Vec<(&str, &str)> = text
+        .lines()
+        .map(|line| line.split_once(':').expect("row should be id:label"))
+        .collect();
+
+    assert_eq!(rows.len(), 7, "expected seven layouts, got {rows:?}");
+    assert_eq!(rows[0].0, "standard", "standard should come first");
+
+    for (id, label) in &rows {
+        assert!(!label.is_empty(), "{id} has no label");
+        assert!(
+            pingzhu_core::Layout::from_id(id).is_some(),
+            "the list offers {id:?} but from_id rejects it"
+        );
+    }
+
+    // And nothing the engine accepts is missing from the list.
+    for id in ["standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac"] {
+        assert!(rows.iter().any(|(name, _)| *name == id), "{id} missing from the list");
+    }
+}

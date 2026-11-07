@@ -22,6 +22,22 @@ pub enum Layout {
 }
 
 impl Layout {
+    /// Every layout, in the order a menu should offer them.
+    ///
+    /// This is the single place the set is written down. Shells used to each carry
+    /// their own copy of these seven names, which is the shape of defect this
+    /// project keeps finding: add a layout and one menu silently omits it, or a
+    /// shell falls back to standard because it does not recognise the name.
+    pub const ALL: [Layout; 7] = [
+        Layout::Standard,
+        Layout::ETen,
+        Layout::Hsu,
+        Layout::ETen26,
+        Layout::Ibm,
+        Layout::Ginyieh,
+        Layout::Mitac,
+    ];
+
     pub fn id(self) -> &'static str {
         match self {
             Layout::Standard => "standard",

@@ -46,6 +46,12 @@ void engine_keyboard_rows_free(char *text);
  * punctuation is not a reading — so there is no argument.
  * Each cell is exactly one character. Free with engine_symbol_rows_free. */
 char *engine_symbol_rows(void);
+
+/* Every layout the engine knows, as "id:label" per line, in menu order.
+ * Shells build their layout menu from this rather than from their own copy of
+ * the list. Free with engine_layout_rows_free. */
+char *engine_layout_rows(void);
+void engine_layout_rows_free(char *text);
 void engine_symbol_rows_free(char *text);
 
 uint32_t engine_abi_version(void);

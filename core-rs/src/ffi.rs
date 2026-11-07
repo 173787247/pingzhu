@@ -483,6 +483,39 @@ pub unsafe extern "C" fn engine_keyboard_rows_free(text: *mut c_char) {
 /// character (a test in `symbols` holds that).
 ///
 /// # Safety
+/// Every layout the engine knows: `id:label` per line, in menu order.
+///
+/// Shells used to each carry their own copy of these seven names. That is the
+/// defect shape this project keeps finding — add a layout and one menu silently
+/// omits it — so the set is published here and the menus read it.
+///
+/// The returned string must be freed with `engine_layout_rows_free`.
+#[no_mangle]
+pub unsafe extern "C" fn engine_layout_rows() -> *mut c_char {
+    let text = crate::keyboard::Layout::ALL
+        .iter()
+        .map(|layout| format!("{}:{}", layout.id(), layout.label()))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    match CString::new(text) {
+        Ok(value) => value.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// Frees a string returned by `engine_layout_rows`.
+///
+/// # Safety
+/// `text` must have come from `engine_layout_rows`, or be NULL.
+#[no_mangle]
+pub unsafe extern "C" fn engine_layout_rows_free(text: *mut c_char) {
+    if text.is_null() {
+        return;
+    }
+    drop(unsafe { CString::from_raw(text) });
+}
+
 /// The returned string must be freed with `engine_symbol_rows_free`.
 #[no_mangle]
 pub unsafe extern "C" fn engine_symbol_rows() -> *mut c_char {
