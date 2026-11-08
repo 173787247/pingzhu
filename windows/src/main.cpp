@@ -334,7 +334,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     /* Settings first: the file is created with commented defaults when missing,
      * so the 繁/簡 switch is discoverable rather than a secret. */
     pingzhu::writeDefaultConfigIfMissing(exeDir);
-    g_config = pingzhu::loadConfig(exeDir);
+    g_config = pingzhu::loadConfig(
+        exeDir, pingzhu::Engine::layoutIds(exeDir + L"\\pingzhu_core.dll"));
     std::string error;
     if (!g_engine.load(exeDir + L"\\pingzhu_core.dll", resolveDataDir(), g_config.layout.c_str(), nullptr)) {
         error = g_engine.lastError();

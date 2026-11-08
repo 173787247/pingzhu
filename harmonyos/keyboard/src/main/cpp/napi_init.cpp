@@ -156,6 +156,23 @@ napi_value SymbolRows(napi_env env, napi_callback_info info) {
     return result;
 }
 
+/* Every layout the engine knows, "id:label" per line.
+ *
+ * The keyboard used to carry its own copy of the seven names, which is the defect
+ * shape this project keeps finding: add a layout and one menu silently omits it.
+ * The C ABI publishes the set now. */
+napi_value LayoutRows(napi_env env, napi_callback_info info) {
+    char* rows = engine_layout_rows();
+    napi_value result;
+    if (rows == nullptr) {
+        napi_throw_error(env, nullptr, "the engine could not produce its layout list");
+        return nullptr;
+    }
+    napi_create_string_utf8(env, rows, NAPI_AUTO_LENGTH, &result);
+    engine_layout_rows_free(rows);
+    return result;
+}
+
 napi_value Candidates(napi_env env, napi_callback_info info) {
     if (g_engine == nullptr) {
         napi_throw_error(env, nullptr, "candidates() before create()");
@@ -397,6 +414,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"decode", nullptr, Decode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"keyboardRows", nullptr, KeyboardRows, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"symbolRows", nullptr, SymbolRows, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"layoutRows", nullptr, LayoutRows, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"candidates", nullptr, Candidates, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"bestSentence", nullptr, BestSentence, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"feedKey", nullptr, FeedKey, nullptr, nullptr, nullptr, napi_default, nullptr},

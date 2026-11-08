@@ -13,6 +13,7 @@
  * usage: pingzhu-config-test
  */
 #include <cstdio>
+#include <vector>
 #include <string>
 
 #include "config.h"
@@ -59,14 +60,25 @@ int main() {
     expect("a missing key is empty", configValue(text, "candidate_order"), "");
     expect("commented keys do not count", configValue("# layout = eten\r\n", "layout"), "");
 
-    /* The layout list: exactly the seven names the engine has. */
+    /* isKnownLayout no longer owns the list — it is given one. These checks are
+     * about the comparison, not about which layouts exist: that is the engine's
+     * test (core-rs/tests/layouts.rs). */
+    const std::vector<std::string> known = {
+        "standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac",
+    };
     for (const char *name : {"standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac"}) {
         const std::string what = std::string("layout accepted: ") + name;
-        expectTrue(what.c_str(), isKnownLayout(name));
+        expectTrue(what.c_str(), isKnownLayout(name, known));
     }
-    expectTrue("a typo is refused", !isKnownLayout("hsuu"));
-    expectTrue("an old name is refused", !isKnownLayout("bopomofo"));
-    expectTrue("an empty name is refused", !isKnownLayout(""));
+    expectTrue("a typo is refused", !isKnownLayout("hsuu", known));
+    expectTrue("an old name is refused", !isKnownLayout("bopomofo", known));
+    expectTrue("an empty name is refused", !isKnownLayout("", known));
+
+    /* An empty list means the DLL would not load. Accepting is the safe side: the
+     * engine falls back to standard for a name it does not know, whereas refusing
+     * here would silently ignore a valid edit. */
+    expectTrue("unknown list accepts a name", isKnownLayout("hsu", {}));
+    expectTrue("unknown list still refuses empty", !isKnownLayout("", {}));
 
     if (failures == 0) {
         std::printf("\nall config checks passed\n");

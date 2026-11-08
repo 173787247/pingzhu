@@ -15,6 +15,7 @@
 
 #include <climits>
 #include <string>
+#include <vector>
 
 namespace pingzhu {
 
@@ -41,7 +42,13 @@ struct Config {
 /* Load `<moduleDir>\pingzhu.ini`. A missing or unreadable file yields defaults:
  * the input method must still work, because a settings problem is not a reason
  * to stop typing. */
-Config loadConfig(const std::wstring &moduleDir);
+/* Reads pingzhu.ini from `moduleDir`.
+ *
+ * `knownLayouts` comes from the engine (Engine::layoutIds). Passing it in keeps
+ * this file free of any engine dependency — which is what lets the config tests
+ * run without a DLL — and keeps the set of layouts in exactly one place. */
+Config loadConfig(const std::wstring &moduleDir,
+                  const std::vector<std::string> &knownLayouts);
 
 /* Write a commented default file if none exists, so the settings are
  * discoverable instead of a secret. Never overwrites an existing file. */
@@ -57,7 +64,14 @@ bool saveStatusPosition(const std::wstring &moduleDir, int x, int y);
 /* Whether `name` is a layout the engine knows. An unknown one must not reach the
  * engine: it would fall back to standard silently, and the user would be left
  * wondering why their edit did nothing. */
-bool isKnownLayout(const std::string &name);
+/* Whether `name` is a layout the engine accepts.
+ *
+ * `known` comes from the engine (Engine::layoutIds). Passing it in rather than
+ * comparing against a list kept here is the point: a copy loses a layout the day
+ * one is added. An empty list — the DLL could not be loaded — accepts any
+ * non-empty name, because rejecting a valid one is worse than passing it through
+ * to an engine that will fall back anyway. */
+bool isKnownLayout(const std::string &name, const std::vector<std::string> &known);
 
 /* Trimmed value for `key`, or "" when absent. Exposed for tests. */
 std::string configValue(const std::string &text, const std::string &key);

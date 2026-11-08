@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace pingzhu {
 
@@ -32,6 +33,12 @@ public:
      * `dataDir` must hold bopomofo-lm.tsv. Returns false and sets lastError(). */
     bool load(const std::wstring &dllPath, const std::string &dataDir,
               const char *layout = "standard", const char *candidateOrder = nullptr);
+
+    /* Every layout the engine accepts, asked of the DLL rather than kept here.
+     * Needs no engine instance: the list is a property of the core, not of one run.
+     * Returns an empty vector when the DLL cannot be loaded — the caller should then
+     * accept whatever it was going to accept rather than reject a valid name. */
+    static std::vector<std::string> layoutIds(const std::wstring &dllPath);
     void destroy();
 
     bool valid() const { return handle_ != nullptr; }

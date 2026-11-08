@@ -56,18 +56,13 @@ std::wstring configPath(const std::wstring &moduleDir) {
 
 namespace {
 
-/* The names the engine accepts. Kept here rather than in the header: nothing
- * outside this file needs the list, and a `const char *const []` cannot be
- * forward-declared without a size anyway. */
-const char *const kLayoutNames[] = {
-    "standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac",
-};
-
 }  // namespace
 
-bool isKnownLayout(const std::string &name) {
-    for (const char *known : kLayoutNames) {
-        if (name == known) return true;
+bool isKnownLayout(const std::string &name, const std::vector<std::string> &known) {
+    if (name.empty()) return false;
+    if (known.empty()) return true;  // engine unavailable: let it decide
+    for (const std::string &candidate : known) {
+        if (name == candidate) return true;
     }
     return false;
 }
@@ -87,7 +82,8 @@ std::string configValue(const std::string &text, const std::string &key) {
     return "";
 }
 
-Config loadConfig(const std::wstring &moduleDir) {
+Config loadConfig(const std::wstring &moduleDir,
+                  const std::vector<std::string> &knownLayouts) {
     Config config;
     config.path = configPath(moduleDir);
     const std::string text = readFile(config.path);
@@ -98,7 +94,11 @@ Config loadConfig(const std::wstring &moduleDir) {
      * leave the user with no idea why their edit did nothing. */
     if (output == "traditional" || output == "simplified") config.output = output;
     const std::string layout = configValue(text, "layout");
-    if (!layout.empty() && isKnownLayout(layout)) config.layout = layout;
+    /* The accepted set comes from the engine, not from a list kept here: a copy
+     * loses a layout the day one is added, silently. */
+    if (!layout.empty() && isKnownLayout(layout, knownLayouts)) {
+        config.layout = layout;
+    }
     const std::string x = configValue(text, "status_x");
     const std::string y = configValue(text, "status_y");
     if (!x.empty() && !y.empty()) {

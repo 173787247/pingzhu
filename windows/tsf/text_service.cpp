@@ -733,7 +733,8 @@ void TextService::ApplySettings() {
     if (!engineReady_) return;
     const std::wstring moduleDirectory = moduleDir();
     writeDefaultConfigIfMissing(moduleDirectory);
-    const Config config = loadConfig(moduleDirectory);
+    const Config config =
+        loadConfig(moduleDirectory, Engine::layoutIds(moduleDirectory + L"\\pingzhu_core.dll"));
     if (config.output == engine_.outputScript()) return;
 
     if (engine_.setOutputScript(config.output.c_str())) {
@@ -801,7 +802,7 @@ void TextService::EnsureEngineLoaded() {
     /* The layout comes from pingzhu.ini, the same file the output script does.
      * It is fixed for the engine's lifetime, so changing it needs a restart —
      * which is what the file's own instructions say. */
-    const Config config = loadConfig(moduleDir());
+    const Config config = loadConfig(moduleDir(), Engine::layoutIds(coreDll));
     if (!engine_.load(coreDll, toUtf8(dataDir_), config.layout.c_str(), nullptr)) {
         log("ENGINE LOAD FAILED: " + engine_.lastError());
         return;

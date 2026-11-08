@@ -44,6 +44,8 @@ export function composing(): string;
  * per shell.
  */
 export function symbolRows(): string;
+/** Every layout the engine knows: "id:label" per line, in menu order. */
+export function layoutRows(): string;
 
 /** The sentence that would be committed. */
 export function bestSentence(): string;

@@ -146,7 +146,21 @@ class Engine private constructor(private var handle: Long) : AutoCloseable {
 
         @JvmStatic private external fun nativeKeyboardLabels(layout: String): String
 
+        /**
+         * Every layout the engine knows: id to label, in menu order.
+         *
+         * The settings screen builds its spinner from this rather than from its own
+         * copy of the names — a copy silently loses a new layout the day one is
+         * added, which is exactly what happened with the phrase table.
+         */
+        fun layoutRows(): List<Pair<String, String>> =
+            nativeLayoutRows().split("\n").filter { it.isNotEmpty() }.map {
+                val at = it.indexOf(':')
+                if (at <= 0) it to it else it.substring(0, at) to it.substring(at + 1)
+            }
+
         @JvmStatic private external fun nativeSymbolRows(): String
+        @JvmStatic private external fun nativeLayoutRows(): String
         @JvmStatic private external fun nativeDestroy(handle: Long)
         @JvmStatic private external fun nativeFeedKey(handle: Long, key: String): Boolean
         @JvmStatic private external fun nativeBackspace(handle: Long): Boolean

@@ -22,6 +22,34 @@ bool bind(void *module, const char *name, T &slot) {
 
 Engine::~Engine() { destroy(); }
 
+std::vector<std::string> Engine::layoutIds(const std::wstring &dllPath) {
+    std::vector<std::string> ids;
+    HMODULE module = LoadLibraryW(dllPath.c_str());
+    if (module == nullptr) return ids;
+    using RowsFn = char *(*)();
+    using FreeFn = void (*)(char *);
+    auto rows = reinterpret_cast<RowsFn>(GetProcAddress(module, "engine_layout_rows"));
+    auto release = reinterpret_cast<FreeFn>(GetProcAddress(module, "engine_layout_rows_free"));
+    if (rows != nullptr && release != nullptr) {
+        char *text = rows();
+        if (text != nullptr) {
+            std::string line;
+            for (const char *p = text; *p; ++p) {
+                if (*p == '\n') {
+                    if (!line.empty()) ids.push_back(line.substr(0, line.find(':')));
+                    line.clear();
+                } else {
+                    line.push_back(*p);
+                }
+            }
+            if (!line.empty()) ids.push_back(line.substr(0, line.find(':')));
+            release(text);
+        }
+    }
+    FreeLibrary(module);
+    return ids;
+}
+
 bool Engine::load(const std::wstring &dllPath, const std::string &dataDir, const char *layout,
                   const char *candidateOrder) {
     destroy();

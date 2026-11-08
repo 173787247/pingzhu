@@ -10,20 +10,37 @@ import pingzhu from 'libpingzhu.so';
 import { Session } from '../model/Session';
 import { BackspaceAction, routeBackspace } from '../model/Keys';
 import { promptAction } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 /**
  * The layouts the engine has, with the names the core knows. Order is the menu's
  * order: the two almost everyone uses first, then the rearranged ones.
  */
-const LAYOUT_CHOICES: Array<[string, string]> = [
-  ['standard', '大千式'],
-  ['eten', '倚天式'],
-  ['hsu', '許氏'],
-  ['eten26', '倚天 26 鍵'],
-  ['ibm', 'IBM'],
-  ['ginyieh', '精業'],
-  ['mitac', '神通'],
-];
+/**
+ * The layouts the engine has, id and label, in the order its menu should show them.
+ *
+ * Read from the engine rather than written down here. A copy loses a layout the day
+ * one is added — silently, with the long-press menu just not offering it — which is
+ * the same defect the phrase table had: it worked everywhere except where a shell
+ * kept its own list.
+ */
+function layoutChoices(): Array<[string, string]> {
+  try {
+    const rows = pingzhu.layoutRows();
+    const parsed: Array<[string, string]> = rows
+      .split('\n')
+      .filter((line: string) => line.length > 0)
+      .map((line: string): [string, string] => {
+        const at = line.indexOf(':');
+        return at > 0 ? [line.slice(0, at), line.slice(at + 1)] : [line, line];
+      });
+    return parsed.length > 0 ? parsed : [['standard', '大千式']];
+  } catch (error) {
+    // A build whose native side predates layoutRows(). The menu still works.
+    hilog.warn(0x0000, 'PingZhu', 'layoutRows unavailable: %{public}s', String(error));
+    return [['standard', '大千式']];
+  }
+}
 
 /** One key on the board. */
 interface Key {
@@ -196,7 +213,7 @@ export struct KeyboardPanel {
   @Builder
   layoutMenu() {
     Column() {
-      ForEach(LAYOUT_CHOICES, (choice: [string, string]) => {
+      ForEach(layoutChoices(), (choice: [string, string]) => {
         Row({ space: 8 }) {
           Text(choice[0] === this.layout ? '✓' : '')
             .fontSize(13)

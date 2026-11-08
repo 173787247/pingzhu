@@ -525,6 +525,27 @@ pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeKeyboardLabels(
 /// # Safety
 /// Called by the JVM.
 #[no_mangle]
+/// Every layout the engine knows, `id:label` per line — the same text the C ABI's
+/// `engine_layout_rows` produces.
+///
+/// The settings screen used to carry its own copy of the seven names. That is the
+/// defect shape this project keeps finding: add a layout and one menu silently
+/// omits it. The set is published by the engine now.
+#[no_mangle]
+pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeLayoutRows(
+    env: *mut JNIEnv,
+    _class: jclass,
+) -> jstring {
+    let text = guarded_string(|| {
+        pingzhu_core::keyboard::Layout::ALL
+            .iter()
+            .map(|layout| format!("{}:{}", layout.id(), layout.label()))
+            .collect::<Vec<_>>()
+            .join("\n")
+    });
+    unsafe { to_jstring(env, &text) }
+}
+
 pub unsafe extern "C" fn Java_tw_pingzhu_ime_Engine_nativeSymbolRows(
     env: *mut JNIEnv,
     _class: jclass,

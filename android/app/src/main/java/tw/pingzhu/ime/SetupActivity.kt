@@ -86,12 +86,24 @@ class SetupActivity : Activity() {
         // want on a phone, and both need a restart to take effect.
         column.addView(title(getString(R.string.setup_layout)))
         column.addView(body(getString(R.string.setup_layout_body)))
-        val layoutIds = arrayOf("standard", "eten", "hsu", "eten26", "ibm", "ginyieh", "mitac")
-        val layoutLabels = arrayOf(
-            R.string.layout_standard, R.string.layout_eten, R.string.layout_hsu,
-            R.string.layout_eten26, R.string.layout_ibm, R.string.layout_ginyieh,
-            R.string.layout_mitac,
-        ).map { getString(it) }
+        // The list comes from the engine, not from a copy kept here. A copy loses a
+        // layout the day one is added — silently, with the menu just not offering it.
+        // Labels stay localised where a string exists, and fall back to the engine's
+        // own label (繁體) for an id this build has no translation for.
+        val layouts = Engine.layoutRows().ifEmpty { listOf("standard" to "標準 (大千式)") }
+        val layoutIds = layouts.map { it.first }.toTypedArray()
+        val layoutLabels = layouts.map { (id, engineLabel) ->
+            when (id) {
+                "standard" -> getString(R.string.layout_standard)
+                "eten" -> getString(R.string.layout_eten)
+                "hsu" -> getString(R.string.layout_hsu)
+                "eten26" -> getString(R.string.layout_eten26)
+                "ibm" -> getString(R.string.layout_ibm)
+                "ginyieh" -> getString(R.string.layout_ginyieh)
+                "mitac" -> getString(R.string.layout_mitac)
+                else -> engineLabel
+            }
+        }
         column.addView(
             Spinner(this).apply {
                 adapter = ArrayAdapter(
