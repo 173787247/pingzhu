@@ -1,3 +1,23 @@
+fcitx5-pingzhu (0.10.11) unstable; urgency=medium
+
+  * New upstream release 0.10.11. The layouts are now published by the engine
+    rather than copied into each shell. The seven names used to live in four
+    places: the core, and the Windows, Android and HarmonyOS menus. That shape
+    of defect is what made the phrase table silent on Android in 0.10.9 — add a
+    layout and one menu omits it, or offers a name the engine rejects and falls
+    back silently.
+
+    Also in this release:
+
+    - engine_layout_rows() on the C ABI, "id:label" per line, in menu order.
+    - The Windows config no longer opens the DLL itself to validate the ini's
+      layout; the caller passes the list in, which also lets the config tests
+      run without a linked engine.
+    - TSF DLL renamed to pingzhu-tsf-0.10.11.dll: this release does change the
+      files compiled into it.
+
+ -- PingZhu <173787247@qq.com>  Mon, 09 Nov 2026 00:35:00 +0800
+
 fcitx5-pingzhu (0.10.10) unstable; urgency=medium
 
   * New upstream release 0.10.10. Shortcuts now work on Android. 0.10.9 claimed the
