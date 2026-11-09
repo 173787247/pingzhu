@@ -141,23 +141,51 @@ class PingZhuImeService : InputMethodService() {
      * an input method that silently types nothing is worse than one that says it
      * cannot start.
      */
+    /**
+     * The data directory the engine is created against.
+     *
+     * The two model files are required and are re-extracted whenever either is
+     * missing. `shortcuts.tsv` is different in two ways: it is optional, and the
+     * user is meant to edit it. So it is extracted only when absent — never
+     * overwritten — and a failure to read it from the APK is not an error.
+     *
+     * Leaving it out entirely is what made the phrase table dead on Android: the
+     * APK carried `assets/shortcuts.tsv` since 0.10.10 and the engine looks for it
+     * in this directory, but nothing ever copied it there.
+     */
     private fun ensureData(): File? {
         val target = File(filesDir, "data")
         val model = File(target, "bopomofo-lm.tsv")
         val conversion = File(target, "ts-conversion.tsv")
-        if (model.exists() && conversion.exists()) return target
+        if (model.exists() && conversion.exists()) {
+            extractIfMissing(target, "shortcuts.tsv")
+            return target
+        }
 
         target.mkdirs()
         return try {
-            assets.open("bopomofo-lm.tsv").use { input ->
-                model.outputStream().use { input.copyTo(it) }
-            }
-            assets.open("ts-conversion.tsv").use { input ->
-                conversion.outputStream().use { input.copyTo(it) }
-            }
+            extractIfMissing(target, "bopomofo-lm.tsv")
+            extractIfMissing(target, "ts-conversion.tsv")
+            extractIfMissing(target, "shortcuts.tsv")
             target
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /// Copies one asset into `target` unless the file is already there.
+    ///
+    /// Missing from the APK is not an error: a build without the phrase table is a
+    /// working input method with no phrases.
+    private fun extractIfMissing(target: File, name: String) {
+        val destination = File(target, name)
+        if (destination.exists()) return
+        try {
+            assets.open(name).use { input ->
+                destination.outputStream().use { input.copyTo(it) }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "no $name in the APK (optional): ${e.message}")
         }
     }
 
