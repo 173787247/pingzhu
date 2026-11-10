@@ -85,13 +85,24 @@ jobs:
           cp data/shortcuts.tsv demo/data/shortcuts.tsv
           ls -l demo/data/
 
+      # The site root is a landing page; the keyboard lives under /demo/. The
+      # landing page carries the downloads, the numbers and the way in — the demo
+      # is what an engineer wants, and it should not be what a visitor lands on.
+      - name: Assemble the site
+        run: |
+          rm -rf .site
+          mkdir -p .site
+          cp site/index.html .site/index.html
+          cp -r demo .site/demo
+          ls -l .site .site/demo | head -20
+
       - uses: actions/configure-pages@v5
         with:
           enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: demo
+          path: .site
 
   deploy:
     needs: build
