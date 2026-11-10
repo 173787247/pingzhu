@@ -1,3 +1,20 @@
+fcitx5-pingzhu (0.10.12) unstable; urgency=medium
+
+  * New upstream release 0.10.12. Shortcuts now actually work on Android. 0.10.10
+    shipped the phrase table inside the APK and taught the engine to look for it in
+    the data directory, but PingZhuImeService.ensureData() only extracted the two
+    model files — so the table was present and never readable. The engine found
+    nothing, silently, and typing a shortcut did nothing.
+
+    The extraction is now one helper for all three files, with deliberate
+    differences: the model files are re-extracted when missing, shortcuts.tsv is
+    extracted only when absent and never overwritten (the user is meant to edit
+    it), and its absence from the APK is not an error.
+
+    Verified on the emulator: all three files land in filesDir/data/.
+
+ -- PingZhu <173787247@qq.com>  Tue, 10 Nov 2026 08:45:00 +0800
+
 fcitx5-pingzhu (0.10.11) unstable; urgency=medium
 
   * New upstream release 0.10.11. The layouts are now published by the engine
