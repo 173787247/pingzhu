@@ -11,7 +11,7 @@ Named after 平注 (píng zhù) — *plain Zhuyin* — for the same reason 自�
 after natural input: it describes what the thing does, and it is not a trademark
 anyone else owns.
 
-**[▶ Try it in a browser](https://173787247.github.io/pingzhu/)** — nothing to install.
+**[▶ Try it in a browser](https://173787247.github.io/pingzhu/demo/)** — nothing to install.
 Type `su3cl3` and watch the engine decode it, using the same modules the test suite
 runs against.
 
