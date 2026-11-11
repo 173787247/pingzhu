@@ -118,7 +118,14 @@ w96j0         → 台灣
 
 ## 已知限制
 
-- **只在模拟器上验证过**（见下）。实机行为、各家 OEM 的输入法框架差异尚未确认。
+- **首次真机验证（2026-11-11，Huawei Pura 70 Ultra）**：APK 装得上 ✓、`ime enable` /
+  `ime set` 成功 ✓、键盘在「备忘录」里正常显示 ✓、点 ㄋㄧˇㄏㄠˇ 打出「你好」且候选第一条
+  正确 ✓。见 `docs/images/android-real-device-pura70.jpg`。
+
+  那台机器是 **HarmonyOS 4.2 / EMUI 14.2**（Android 12 内核）—— 不是纯鸿蒙，装的是 APK。
+
+  **还没验的**：其他 App（微信、浏览器、搜索框）、候选列长列表的滚动、长按与滑动选字、
+  横屏、手势导航与键盘边缘的关系、长时间打字的流畅度。
 - ~~候选列永远不会显示~~ —— **已修**（2026-10-12）。原本有两个各自独立的毛病：
   1. `CandidateBar` 建在 `onCreateCandidatesView()` 里、点选回调也接了，但全仓没有一处
      调用 `setCandidatesViewShown(true)`，而 Android 的 candidates view 预设是隐藏的；
