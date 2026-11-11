@@ -33,8 +33,16 @@ const args = process.argv.slice(2);
 const limit = Number(args[args.indexOf("--limit") + 1]) || 5;
 const write = args.includes("--write");
 
-/** 政策文件列表页。这个页面是静态的，curl 就能取。 */
-const LIST = "https://www.gov.cn/zhengce/xxgk/";
+/**
+ * 政策文件列表页。这些页面是静态的，curl 就能取。
+ *
+ * 两个入口加起来约 19 篇。gov.cn 的列表页不翻页（`index_1.htm` 是 404），所以要更多
+ * 语料得另找入口 —— 那是后面的事，先把这 19 篇采完，看统计能不能稳住。
+ */
+const LISTS = [
+  "https://www.gov.cn/zhengce/xxgk/",
+  "https://www.gov.cn/zhengce/",
+];
 
 function curl(url) {
   return execFileSync(
@@ -84,9 +92,12 @@ function bodyText(rendered) {
     .join("\n");
 }
 
-const html = curl(LIST);
-const urls = articleUrls(html).slice(0, limit);
-console.log(`列表页 ${LIST}\n  ${urls.length} 篇候选（上限 ${limit}）\n`);
+const seen = new Set();
+for (const list of LISTS) {
+  for (const url of articleUrls(curl(list))) seen.add(url);
+}
+const urls = [...seen].slice(0, limit);
+console.log(`列表页 ${LISTS.length} 个，去重后 ${seen.size} 篇候选（上限 ${limit}）\n`);
 
 if (write) {
   mkdirSync(CORPUS, { recursive: true });
