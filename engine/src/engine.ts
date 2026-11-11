@@ -18,6 +18,7 @@ import {
   composeSyllable, componentChar, isCanonicalComponentOrder, isWellFormedComponents,
   type KeyComponent,
 } from "./syllable.ts";
+import { Associations } from "./associations.ts";
 import { Dictionary, type Entry } from "./dictionary.ts";
 import {
   ReadingGrid, type CandidateOrder, type GridPath, type ReadingGridOptions,
@@ -45,6 +46,13 @@ export interface EngineOptions {
   converter?: Converter;
   /** Which script leaves the engine. Input is always Traditional. */
   outputScript?: OutputScript;
+  /**
+   * 接续表：「某个词之后最可能接什么」。
+   *
+   * 与候选列刻意分开：候选列回答「这个读音有哪些字」，接续回答「接下来大概会写什么」。
+   * 引擎不用它解码，只在送出词之后回答问句 —— 所以它是可选的，没有它一切照旧。
+   */
+  associations?: Associations;
   /**
    * Whether committing the auto-selected sentence counts as teaching.
    *
@@ -103,6 +111,7 @@ export class InputEngine {
   private readonly maxSegmentations: number;
   private readonly userDict?: UserDictionary;
   private readonly learnFromCommit: boolean;
+  private readonly associations?: Associations;
   private readonly promote: boolean | undefined;
   private readonly promotionEpsilon?: number;
   private readonly candidateOrder?: CandidateOrder;
@@ -128,6 +137,7 @@ export class InputEngine {
     this.maxSegmentations = options.maxSegmentations ?? 4000;
     this.userDict = options.userDictionary;
     this.learnFromCommit = options.learnFromCommit ?? false;
+    this.associations = options.associations;
     // left undefined on purpose: ReadingGrid owns the default (see its options type)
     this.promote = options.promoteWordsOverDecomposition;
     this.promotionEpsilon = options.promotionEpsilon;
@@ -301,6 +311,17 @@ export class InputEngine {
    * what is on it. ↓ opens and pages with one key. Typing anything else closes
    * it again.
    */
+  /**
+   * 某个词之后最可能的接续词。没有接续表时返回空数组 —— 功能缺席不报错。
+   *
+   * 这是纯查询，不读引擎状态：谁决定「上一个词是什么」是外壳的事。桌面外壳可以在送出
+   * 一个词之后调用它，把结果画成一行提示；手机外壳可以画在候选列右侧。引擎不猜「什么时候
+   * 该显示」，因为那要看 UI 的性子。
+   */
+  suggestAfter(word: string, limit = 5): string[] {
+    return this.associations?.suggestions(word, limit) ?? [];
+  }
+
   get candidateWindowOpen(): boolean {
     return this.candidatesOpen;
   }
