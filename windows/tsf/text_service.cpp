@@ -266,6 +266,10 @@ STDMETHODIMP TextService::ActivateEx(ITfThreadMgr *threadMgr, TfClientId clientI
 }
 
 STDMETHODIMP TextService::Deactivate() {
+    /* 切走输入法时系统应该调这里。候选窗若在切走后还留在屏幕上，第一个要确定的就是
+     * 这一行有没有执行 —— 没有它就是「不该在这儿找」，有它才是隐藏那一步的问题。
+     * 所以这条日志无条件写，且写在最前面。 */
+    log("Deactivate: enter");
     if (composition_) {
         ITfContext *context = nullptr;
         if (threadMgr_ && SUCCEEDED(FocusedContext(&context)) && context) {
