@@ -28,6 +28,14 @@
   #composing { font-size: 26px; letter-spacing: .08em; min-height: 38px; }
   #composing .pending { color: var(--warn); }
   #sentence { font-size: 26px; color: var(--ok); min-height: 38px; }
+  /* 联想：候选列下面那一行。它不是候选 —— 候选列回答「这个读音有哪些字」，
+     这一行回答「接下来大概会写什么」。视觉上分开，点一下才送进去。 */
+  #associations { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 12px; min-height: 26px; align-items: center; }
+  #associations:empty::before { content: "（送出一個詞後，這裡會提示接著可能寫什麼）"; color: var(--dim); font-size: 12px; }
+  #associations .assoc { background: #23304a; border: 1px solid var(--line); color: var(--fg);
+    border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 15px; }
+  #associations .assoc:hover { border-color: var(--accent); }
+  #associations .label { color: var(--dim); font-size: 12px; margin-right: 4px; }
   #candidates { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; }
   .cand {
     background: #232833; border: 1px solid var(--line); border-radius: 6px;
@@ -102,6 +110,7 @@
 <div class="panel">
   <div class="label">候選字</div>
   <div id="candidates"></div>
+  <div id="associations"></div>
   <div class="meta">
     <span id="pageinfo">—</span>
     <span class="badge" id="mode">打字模式</span>
@@ -140,6 +149,7 @@
 <script type="module">
 import { InputEngine } from "./engine/engine.js";
 import { Dictionary, buildSyllableInventoryFromText } from "./engine/dictionary.js";
+import { Associations } from "./engine/associations.js";
 import { UserDictionary } from "./engine/userdict.js";
 import { LAYOUTS, STANDARD_LAYOUT, keyboardRows } from "./engine/keyboard.js";
 import { SYMBOL_ROWS } from "./engine/symbols.js";
@@ -181,6 +191,17 @@ for (const url of ["./data/shortcuts.tsv", "../data/shortcuts.tsv"]) {
     // A missing shortcuts file is not an error: the demo works without one.
   }
 }
+// 接续表，同样可选。没有它就没有联想 —— 引擎的 suggestAfter 会返回空数组。
+let associations = undefined;
+for (const url of ["./data/bigram.tsv", "../data/bigram.tsv"]) {
+  try {
+    const candidate = await fetch(url);
+    if (candidate.ok) { associations = Associations.fromText(await candidate.text(), "bigram.tsv"); break; }
+  } catch {
+    // 缺这个档不是错误：一个没有接续表的安装是「没有联想」的正常安装。
+  }
+}
+
 const combined = shortcuts ? `${text}\n${shortcuts}` : text;
 const dict = Dictionary.fromText(combined, "bopomofo-lm.tsv");
 const inventory = buildSyllableInventoryFromText(text);
@@ -213,7 +234,7 @@ function saveUserDictionary() {
 
 const userDict = loadUserDictionary();
 let currentLayout = "standard";
-let engine = new InputEngine(dict, inventory, { layout: currentLayout, userDictionary: userDict });
+let engine = new InputEngine(dict, inventory, { layout: currentLayout, userDictionary: userDict, associations });
 $("status").textContent = `已載入 ${dict.size.toLocaleString()} 詞條 / ${inventory.size} 合法音節`;
 
 // ------------------------------------------------------------------ keyboard
@@ -231,7 +252,7 @@ let symbolsShown = false;
 function feedSymbol(sym) {
   // Not a reading: it goes straight into the document, the way the Android shell
   // commits it. The engine has no opinion about punctuation.
-  committed.push(sym);
+  committed.push(sym); renderAssociations();
   $("document").value = committed.join("");
   draw();
 }
@@ -300,7 +321,7 @@ layoutSelect.onchange = () => {
   // A new engine, not a mutated one: the layout is fixed at construction, which
   // is what keeps the layout table from being a mutable global the decoder has to
   // re-check on every keystroke.
-  engine = new InputEngine(dict, inventory, { layout: currentLayout, userDictionary: userDict });
+  engine = new InputEngine(dict, inventory, { layout: currentLayout, userDictionary: userDict, associations });
   committed.length = 0;
   $("document").value = "";
   buildKeyboard(currentLayout);
@@ -336,7 +357,7 @@ function draw() {
     el.onclick = () => {
       if (!engine.candidateWindowOpen) engine.openCandidateWindow();
       const out = engine.selectCandidate(i + 1);
-      if (out) { committed.push(out); engine.reset(); saveUserDictionary(); }
+      if (out) { committed.push(out); engine.reset(); saveUserDictionary(); renderAssociations(); }
       draw();
     };
     box.appendChild(el);
@@ -364,6 +385,50 @@ $("learnclear").onclick = () => {
   draw();
 };
 
+/**
+ * 联想：已送出文本的最后一个词，以及它后面最可能接什么。
+ *
+ * 「最后一个词」由这里找，不由引擎记 —— 引擎只回答「X 之后接什么」，什么时候问、问了
+ * 画在哪，是界面的事。找法是「从尾部由长到短试，命中接续表的第一个就是」：接续表自己
+ * 就是词表，最长匹配与它的数据一致。
+ */
+function lastWordOf(text) {
+  if (!associations) return null;
+  const maxLen = 6;
+  for (let len = Math.min(maxLen, text.length); len >= 1; len -= 1) {
+    const tail = text.slice(-len);
+    if (!/^[\u4e00-\u9fff]+$/.test(tail)) break;
+    if (associations.lookup(tail).length > 0) return tail;
+  }
+  return null;
+}
+
+/** 重画那一行。点一下就把词追加进去，等于「接受建议」。 */
+function renderAssociations() {
+  const box = $("associations");
+  box.textContent = "";
+  const word = lastWordOf(committed.join(""));
+  if (!word) return;
+  const suggestions = engine.suggestAfter(word, 5);
+  if (suggestions.length === 0) return;
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = `「${word}」之後`;
+  box.appendChild(label);
+  for (const next of suggestions) {
+    const chip = document.createElement("button");
+    chip.className = "assoc";
+    chip.type = "button";
+    chip.textContent = next;
+    chip.addEventListener("click", () => {
+      committed.push(next);
+      $("document").value = committed.join("");
+      renderAssociations();
+    });
+    box.appendChild(chip);
+  }
+}
+
 // A commit can happen without a save above (the toolbar's 送出), and a tab can be
 // closed mid-session; this costs nothing and keeps the two paths from drifting.
 window.addEventListener("beforeunload", saveUserDictionary);
@@ -381,7 +446,7 @@ document.addEventListener("keydown", (e) => {
   else if (k === "Backspace") { e.preventDefault(); engine.backspace(); }
   else if (k === "Enter") {
     e.preventDefault();
-    if (engine.isComposing()) { committed.push(engine.commit()); saveUserDictionary(); }
+    if (engine.isComposing()) { committed.push(engine.commit()); saveUserDictionary(); renderAssociations(); }
     else { committed.push("\n"); }
   } else if (k === "Escape") { e.preventDefault(); engine.reset(); }
   else if (/^[0-9]$/.test(k)) {
@@ -390,7 +455,7 @@ document.addEventListener("keydown", (e) => {
     if (engine.candidateWindowOpen) {
       e.preventDefault();
       const out = engine.selectCandidate(k === "0" ? 10 : Number(k));
-      if (out) { committed.push(out); engine.reset(); saveUserDictionary(); }
+      if (out) { committed.push(out); engine.reset(); saveUserDictionary(); renderAssociations(); }
     } else {
       e.preventDefault();
       engine.press(k);
