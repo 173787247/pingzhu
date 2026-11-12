@@ -83,6 +83,7 @@ jobs:
           mkdir -p demo/data
           cp data/bopomofo-lm.tsv demo/data/bopomofo-lm.tsv
           cp data/shortcuts.tsv demo/data/shortcuts.tsv
+          cp data/bigram.tsv demo/data/bigram.tsv
           ls -l demo/data/
 
       # The site root is a landing page; the keyboard lives under /demo/. The
