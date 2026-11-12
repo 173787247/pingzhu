@@ -37,7 +37,7 @@ function layoutChoices(): Array<[string, string]> {
     return parsed.length > 0 ? parsed : [['standard', '大千式']];
   } catch (error) {
     // A build whose native side predates layoutRows(). The menu still works.
-    hilog.warn(0x0000, 'PingZhu', 'layoutRows unavailable: %{public}s', String(error));
+    hilog.warn(0x0001, 'PingZhu', 'layoutRows unavailable: %{public}s', String(error));
     return [['standard', '大千式']];
   }
 }

@@ -6,7 +6,7 @@ const TAG = 'PingZhu';
 
 export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
-    hilog.info(0x0000, TAG, '設定頁啟動');
+    hilog.info(0x0001, TAG, '設定頁啟動');
     windowStage.loadContent('pages/Index');
   }
 }

@@ -25,7 +25,7 @@ import { fileIo } from '@kit.CoreFileKit';
 import { util } from '@kit.ArkTS';
 
 const TAG = 'PingZhu';
-const DOMAIN = 0x0000;
+const DOMAIN = 0x0001;
 
 export class Session {
   private static client: inputMethodEngine.InputClient | null = null;

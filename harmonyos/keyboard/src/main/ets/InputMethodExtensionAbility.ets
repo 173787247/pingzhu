@@ -36,7 +36,7 @@ import pingzhu from 'libpingzhu.so';
 import { Session } from './model/Session';
 
 const TAG = 'PingZhu';
-const DOMAIN = 0x0000;
+const DOMAIN = 0x0001;
 
 /** The model files that ship inside the HAP, and where they go at runtime. */
 // `shortcuts.tsv` is optional on disk: a build without it is a working input method
