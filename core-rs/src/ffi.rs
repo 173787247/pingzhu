@@ -30,6 +30,10 @@ use crate::userdict::UserDictionary;
 /// Opaque handle. Shells only ever see a pointer to this.
 pub struct EngineHandle {
     engine: InputEngine,
+    /// 接续表，可选。没有它 `engine_suggest_after` 返回空串 —— 功能缺席不报错。
+    ///
+    /// 它不参与解码：候选列回答「这个读音有哪些字」，接续回答「接下来大概会写什么」。
+    associations: Option<crate::associations::Associations>,
 }
 
 thread_local! {
@@ -109,7 +113,7 @@ pub unsafe extern "C" fn engine_create(
         // silently lose every word they taught — until they happened to already
         // have a dictionary file, which a new user by definition does not.
         .with_user_dictionary(UserDictionary::new(Default::default()));
-    Box::into_raw(Box::new(EngineHandle { engine }))
+    Box::into_raw(Box::new(EngineHandle { engine, associations: None }))
 }
 
 /// Select the output script: `"traditional"` or `"simplified"`.
@@ -728,5 +732,75 @@ mod header_tests {
             missing.is_empty(),
             "exported but not declared in include/pingzhu.h: {missing:?}"
         );
+    }
+}
+
+/* ---------------------------------------------------------------- 接续表 */
+
+/// 载入接续表。`tsv` 是 `data/bigram.tsv` 的全文（三列 TSV），NUL 结尾。
+///
+/// 返回条数（>0 成功），失败返回 0。**不传路径** —— 核心不知道文件系统，
+/// 读文件是外壳的事，这样同一份代码在 Windows / Android / HarmonyOS / 浏览器里都能用。
+///
+/// # Safety
+/// `handle` 必须是 `engine_create` 的返回值；`tsv` 必须是 NUL 结尾的字符串。
+#[no_mangle]
+pub unsafe extern "C" fn engine_associations_load(
+    handle: *mut EngineHandle,
+    tsv: *const c_char,
+) -> usize {
+    if handle.is_null() || tsv.is_null() {
+        return 0;
+    }
+    let handle = &mut *handle;
+    let Ok(text) = CStr::from_ptr(tsv).to_str() else {
+        return 0;
+    };
+    let table = crate::associations::Associations::from_text(text);
+    let count = table.len();
+    handle.associations = if count > 0 { Some(table) } else { None };
+    count
+}
+
+/// 某个词之后最可能的接续词，用空格分开。没有接续表、或者词不在表里，返回空串。
+///
+/// 调用方自己记住「上一个送出的词是什么」—— 引擎没有这个概念，也不该有：
+/// 什么时候问、问了画在哪，是界面的事。
+///
+/// # Safety
+/// `handle` 必须是 `engine_create` 的返回值；`word` 必须是 NUL 结尾的字符串。
+#[no_mangle]
+pub unsafe extern "C" fn engine_suggest_after(
+    handle: *mut EngineHandle,
+    word: *const c_char,
+    limit: i32,
+) -> *mut c_char {
+    if handle.is_null() || word.is_null() {
+        return std::ptr::null_mut();
+    }
+    let handle = &*handle;
+    let Ok(word) = CStr::from_ptr(word).to_str() else {
+        return std::ptr::null_mut();
+    };
+    let limit = if limit <= 0 { 5 } else { limit as usize };
+    // 空串而不是 NULL：C 侧拿 NULL 去 strcmp 会崩，而「没有接续」是完全正常的状态。
+    let joined = match handle.associations.as_ref() {
+        Some(table) => table.suggestions(word, limit).join(" "),
+        None => String::new(),
+    };
+    match CString::new(joined) {
+        Ok(value) => value.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// 释放 `engine_suggest_after` 返回的字符串。传 NULL 安全。
+///
+/// # Safety
+/// `text` 必须来自 `engine_suggest_after`，或者为 NULL。
+#[no_mangle]
+pub unsafe extern "C" fn engine_suggest_after_free(text: *mut c_char) {
+    if !text.is_null() {
+        drop(CString::from_raw(text));
     }
 }

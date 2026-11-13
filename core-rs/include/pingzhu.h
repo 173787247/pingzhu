@@ -100,6 +100,25 @@ uint64_t engine_candidate_page_info(EngineHandle *handle); /* page | (count << 3
 /* Digits are bopomofo keys (1ㄅ 2ㄉ 3ˇ 4ˋ 5ㄓ 6ˊ 7˙ 8ㄚ 9ㄞ 0ㄢ) until the window
  * is open: a shell must route 1-9,0 to engine_select_candidate only when
  * engine_candidate_window_open() is true, and to engine_feed_key otherwise. */
+/* ---------------------------------------------------------------- associations
+ *
+ * 接续表：「某个词之后最可能接什么」。它**不参与解码** —— 候选列回答「这个读音有哪些字」，
+ * 接续回答「接下来大概会写什么」。混在一起会让空缓冲区也冒出东西。
+ *
+ * 数据是 data/bigram.tsv 的全文（三列 TSV，句柄内部解析）。传文本而不是路径，是因为核心
+ * 不知道文件系统：读文件是外壳的事，这样同一份代码在四个平台里都能用。
+ *
+ * 「上一个送出的词是什么」由外壳自己记 —— 引擎没有这个概念，也不该有。 */
+
+/** 载入接续表。返回接续条数，0 表示失败（或表是空的）。 */
+size_t engine_associations_load(EngineHandle *handle, const char *tsv);
+
+/** 某个词之后最可能的接续词，空格分开。没有就是空串。调用方用 engine_suggest_after_free 释放。 */
+char *engine_suggest_after(EngineHandle *handle, const char *word, int32_t limit);
+
+/** 释放 engine_suggest_after 的返回值。传 NULL 安全。 */
+void engine_suggest_after_free(char *text);
+
 bool engine_candidate_window_open(EngineHandle *handle);
 bool engine_open_candidate_window(EngineHandle *handle);   /* Down arrow */
 void engine_close_candidate_window(EngineHandle *handle);  /* Up arrow / Esc */
