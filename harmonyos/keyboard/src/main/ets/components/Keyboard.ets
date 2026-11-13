@@ -513,8 +513,10 @@ export struct KeyboardPanel {
       if (!this.ready) {
         Text('键盘载入中…').fontSize(13).fontColor('#999999').height(120)
       } else {
+        // 键里带上「中/英」模式与排号：只按字母拼，切换模式时 ArkUI 会复用旧行 ——
+        // 实测看到过「上两排注音、下两排 QWERTY」的半切换状态。换模式时整块重建才是对的。
         ForEach(this.rows, (row: Key[]) => { this.KeyRow(row) },
-          (row: Key[]) => row.map((k: Key) => k.letter).join(''))
+          (row: Key[], index: number) => `${this.english ? 'e' : 'b'}-${index}`)
       }
 
       // The function row, which is not Bopomofo and therefore is written here:
