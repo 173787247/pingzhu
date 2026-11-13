@@ -32,6 +32,7 @@ import { Want } from '@kit.AbilityKit';
 import { display } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { fileIo } from '@kit.CoreFileKit';
+import { buffer } from '@kit.ArkTS';
 import pingzhu from 'libpingzhu.so';
 import { Session } from './model/Session';
 
@@ -216,6 +217,18 @@ export default class PingZhuInputMethodExtensionAbility extends InputMethodExten
 
         // Outside the model directory: that one is rewritten from the raw files
         // on every start, and the user's own words must not be caught up in it.
+        // 接续表。它是可选的：没有 bigram.tsv 的安装是「没有联想」的正常安装，
+        // 不是坏掉的安装。所以读不到就算了，不抛错。
+        step = 'associations';
+        try {
+          const raw = this.context.resourceManager.getRawFileContentSync('bigram.tsv');
+          const tsv = buffer.from(raw.buffer).toString('utf-8');
+          const rows: number = pingzhu.loadAssociations(tsv);
+          hilog.info(DOMAIN, TAG, '接續表：%{public}d 條', rows);
+        } catch (error) {
+          hilog.info(DOMAIN, TAG, '沒有接續表，聯想功能關閉');
+        }
+
         Session.userDictPath = `${this.context.filesDir}/userdict.tsv`;
         const loaded: boolean = pingzhu.loadUserDictionary(Session.userDictPath);
         hilog.info(DOMAIN, TAG, '使用者詞典：%{public}s %{public}s',

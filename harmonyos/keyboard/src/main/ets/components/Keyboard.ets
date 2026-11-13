@@ -82,6 +82,14 @@ export struct KeyboardPanel {
   @State private symbolsShown: boolean = false;
   @State private ready: boolean = false;
   @State private failure: string = '';
+
+  /**
+   * 联想：已送出文本的最后一个词之后，最可能接什么。
+   *
+   * 「最后一个词」由界面找，不由引擎记 —— 引擎只回答「X 之后接什么」。找法是从尾部由长到
+   * 短试，命中接续表的第一个就是：接续表自己就是词表，这样切分与它的数据一致。
+   */
+  @State private suggestions: string[] = [];
   /** "traditional" or "simplified" — what the decoder outputs, not how it decodes. */
   @State private script: string = 'traditional';
   /** The layout the engine was built with; a rebuild is how it changes. */
@@ -297,6 +305,34 @@ export struct KeyboardPanel {
     }
   }
 
+  /** 从一段刚送出的文本尾部找词，问引擎「接下来接什么」。 */
+  private refreshSuggestions(text: string): void {
+    this.suggestions = [];
+    try {
+      // 最长匹配：从 6 个字往下试，第一个有接续的就是。
+      for (let len = Math.min(6, text.length); len >= 1; len -= 1) {
+        const tail: string = text.slice(text.length - len);
+        const joined: string = pingzhu.suggestAfter(tail, 5);
+        if (joined.length > 0) {
+          this.suggestions = joined.split(' ').filter((w: string) => w.length > 0);
+          return;
+        }
+      }
+    } catch (error) {
+      hilog.warn(0x0001, 'PingZhu', '聯想失敗：%{public}s', String(error));
+    }
+  }
+
+  /** 点了联想词：当成文字送进编辑器，然后重新算下一轮。 */
+  private acceptSuggestion(word: string): void {
+    try {
+      Session.insertText(word);
+      this.refreshSuggestions(word);
+    } catch (error) {
+      this.failure = `${error}`;
+    }
+  }
+
   private commit(): void {
     try {
       const text: string = pingzhu.commit();
@@ -312,6 +348,7 @@ export struct KeyboardPanel {
       // The editor and the engine are different things, and this is the call
       // that carries text from one to the other.
       const sent: boolean = Session.insertText(text);
+      this.refreshSuggestions(text);
       if (!sent) {
         // Worth showing. Text that is decoded and then dropped looks exactly
         // like text that was never typed.
@@ -389,6 +426,8 @@ export struct KeyboardPanel {
       this.saveUserDictionary();
       if (!Session.insertText(text)) {
         this.composing = `沒有編輯器（${text}）`;
+      } else {
+        this.refreshSuggestions(text);
       }
     } catch (error) {
       this.failure = `${error}`;
@@ -411,6 +450,32 @@ export struct KeyboardPanel {
     }
     .width('100%')
     .padding({ left: 4, right: 4 })
+  }
+
+  /**
+   * 联想条 —— 独立的浅色一条，在候选列**上面**。
+   *
+   * 为什么不并进候选列：候选列回答「这个读音有哪些字」，联想回答「接下来大概会写什么」。
+   * 混在一起会让空缓冲区也冒出东西。这个判断和引擎里 suggestAfter 与 candidates 分开是同一个。
+   */
+  @Builder
+  private AssociationBar() {
+    if (this.suggestions.length > 0) {
+      Row({ space: 6 }) {
+        ForEach(this.suggestions, (word: string) => {
+          Text(word)
+            .fontSize(15)
+            .fontColor('#1A1A1A')
+            .backgroundColor('#EEF2F8')
+            .borderRadius(6)
+            .padding({ left: 10, right: 10, top: 3, bottom: 3 })
+            .onClick(() => { this.acceptSuggestion(word); })
+        }, (word: string) => word)
+      }
+      .width('100%')
+      .padding({ left: 8, right: 8, top: 2, bottom: 2 })
+      .justifyContent(FlexAlign.Start)
+    }
   }
 
   build() {
@@ -440,6 +505,8 @@ export struct KeyboardPanel {
         .width('100%')
         .justifyContent(FlexAlign.Center)
       }
+
+      this.AssociationBar()
 
       this.CandidateBar()
 

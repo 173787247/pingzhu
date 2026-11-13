@@ -202,6 +202,68 @@ napi_value BestSentence(napi_env env, napi_callback_info info) {
 }
 
 // One key at a time, for a keyboard that sends keystrokes as they are tapped.
+/* ---------------------------------------------------------------- associations
+ *
+ * 接续表：「某个词之后最可能接什么」。数据是 bigram.tsv 的全文，由 ArkTS 侧读出来后
+ * 传进来 —— 核心不知道文件系统，四个外壳读文件的方式各不相同。
+ *
+ * 「上一个送出的词」由 ArkTS 侧自己记。引擎只回答「X 之后接什么」。
+ */
+
+napi_value LoadAssociations(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    size_t length = 0;
+    if (argc < 1 || napi_get_value_string_utf8(env, args[0], nullptr, 0, &length) != napi_ok) {
+        napi_throw_error(env, nullptr, "loadAssociations() expects the TSV text");
+        return nullptr;
+    }
+    std::string text(length, '\0');
+    napi_get_value_string_utf8(env, args[0], text.data(), length + 1, &length);
+
+    napi_value result = nullptr;
+    size_t count = 0;
+    if (g_engine != nullptr) {
+        count = engine_associations_load(g_engine, text.c_str());
+    }
+    napi_create_int64(env, static_cast<int64_t>(count), &result);
+    return result;
+}
+
+napi_value SuggestAfter(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value args[2] = {nullptr, nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    size_t length = 0;
+    if (argc < 1 || napi_get_value_string_utf8(env, args[0], nullptr, 0, &length) != napi_ok) {
+        napi_throw_error(env, nullptr, "suggestAfter() expects a word");
+        return nullptr;
+    }
+    std::string word(length, '\0');
+    napi_get_value_string_utf8(env, args[0], word.data(), length + 1, &length);
+
+    int32_t limit = 5;
+    if (argc >= 2) {
+        napi_get_value_int32(env, args[1], &limit);
+    }
+
+    /* 没有接续表时返回空串而不是抛错 —— 功能缺席是正常状态。 */
+    std::string joined;
+    if (g_engine != nullptr) {
+        char* out = engine_suggest_after(g_engine, word.c_str(), limit);
+        if (out != nullptr) {
+            joined = out;
+            engine_suggest_after_free(out);
+        }
+    }
+    napi_value result = nullptr;
+    napi_create_string_utf8(env, joined.c_str(), joined.size(), &result);
+    return result;
+}
+
 napi_value FeedKey(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value args[1] = {nullptr};
@@ -417,6 +479,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"layoutRows", nullptr, LayoutRows, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"candidates", nullptr, Candidates, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"bestSentence", nullptr, BestSentence, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"loadAssociations", nullptr, LoadAssociations, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"suggestAfter", nullptr, SuggestAfter, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"feedKey", nullptr, FeedKey, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"selectCandidate", nullptr, SelectCandidate, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"nextPage", nullptr, NextPage, nullptr, nullptr, nullptr, napi_default, nullptr},

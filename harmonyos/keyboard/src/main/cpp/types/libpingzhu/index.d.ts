@@ -115,3 +115,18 @@ export function decode(keys: string): string;
  * Comes from the engine, not from a table here.
  */
 export function keyboardRows(layout?: string): string;
+
+/**
+ * 接续表：「某个词之后最可能接什么」。
+ *
+ * 传 TSV 全文而不是路径 —— 核心不知道文件系统，读文件是 ArkTS 的事。
+ * 返回载入的条数，0 表示失败或表是空的。
+ */
+export function loadAssociations(tsv: string): number;
+
+/**
+ * 某个词之后最可能的接续词，空格分开。没有就是空串。
+ *
+ * 「上一个送出的词是什么」由界面记 —— 引擎只回答「X 之后接什么」。
+ */
+export function suggestAfter(word: string, limit?: number): string;
