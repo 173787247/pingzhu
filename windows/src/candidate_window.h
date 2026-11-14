@@ -35,7 +35,11 @@ constexpr int kItemGap = 14;
  * that last one only when there is more than one page. */
 constexpr int kLine1To2 = 22;
 constexpr int kLine2To3 = 26;
-constexpr int kLine2ToPage = 44;
+/* The association row sits between the preview and the page counter: it appears
+ * only after a word has been committed, so it is the least load-bearing line. */
+constexpr int kLine3ToAssoc = 22;
+constexpr int kLine2ToAssoc = kLine2To3 + kLine3ToAssoc;
+constexpr int kLine2ToPage = kLine2ToAssoc + 22;
 }  // namespace layout
 
 struct CandidateView {
@@ -51,6 +55,9 @@ struct CandidateView {
      * the whole point of a script indicator: a mode you cannot see is a mode you
      * forget you are in. */
     bool simplified = false;
+    /* 联想：上一个送出的词之后最可能接什么。空就是没有 —— 没有接续表、或者词不在表里
+     * 都落在这里，那两种情况在界面上是同一种样子：不显示。 */
+    std::vector<std::string> associations;
     /* When the caller knows where the caret is — a TSF text service does, via
      * ITfContextView::GetTextExt — it says so here instead of letting the window
      * guess from the foreground thread. */

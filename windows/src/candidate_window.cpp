@@ -10,6 +10,7 @@ using layout::kItemGap;
 using layout::kLabelW;
 using layout::kLine1To2;
 using layout::kLine2To3;
+using layout::kLine2ToAssoc;
 using layout::kLine2ToPage;
 using layout::kPadX;
 using layout::kPadY;
@@ -152,7 +153,15 @@ void CandidateWindow::reposition() {
      * from the offsets above, instead of adding up a second set of numbers, is
      * the whole fix - see the comment on them. */
     int lastLineTop = kPadY + kLine1To2 + kLine2To3;
-    if (view_.pageCount > 1) lastLineTop = kPadY + kLine1To2 + kLine2ToPage;
+    /* 联想行只在送出词之后出现，比预览行更靠下。取「所有会画的行里最下面那一行的
+     * 顶端」，而不是按条件一路覆盖 —— 覆盖会让「联想行 + 页码同时出现」时裁掉一行。
+     * 这个毛病候选窗以前犯过一次（见上面那段注释）。 */
+    if (!view_.associations.empty()) {
+        lastLineTop = std::max(lastLineTop, kPadY + kLine1To2 + kLine2ToAssoc);
+    }
+    if (view_.pageCount > 1) {
+        lastLineTop = std::max(lastLineTop, kPadY + kLine1To2 + kLine2ToPage);
+    }
     int height = lastLineTop + static_cast<int>(sSmall.cy) + kPadY;
 
     POINT at = view_.hasAnchor ? view_.anchor : caretAnchor();
@@ -241,6 +250,19 @@ void CandidateWindow::paint(HDC target) {
     SetTextColor(dc, RGB(120, 128, 145));
     TextOutW(dc, std::max<int>(kPadX, static_cast<int>(w - sHint.cx) - kPadX), y2 + kLine2To3, hint.c_str(),
              static_cast<int>(hint.size()));
+
+    /* 联想行：上一个送出的词之后，最可能接什么。点不了（候选窗不接收鼠标），
+     * 但看得出来。它和候选列分开画，因为它们是两件事 —— 候选列回答「这个读音有哪些
+     * 字」，这一行回答「接下来大概会写什么」。 */
+    if (!view_.associations.empty()) {
+        SetTextColor(dc, RGB(150, 190, 255));
+        std::wstring line = L"接下：";
+        for (size_t i = 0; i < view_.associations.size(); ++i) {
+            if (i > 0) line += L"  ";
+            line += widen(view_.associations[i]);
+        }
+        TextOutW(dc, kPadX, y2 + kLine2ToAssoc, line.c_str(), static_cast<int>(line.size()));
+    }
 
     if (view_.pageCount > 1) {
         wchar_t page[64];

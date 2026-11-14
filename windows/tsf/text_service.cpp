@@ -738,6 +738,7 @@ void TextService::ShowCandidates() {
     view.selectionMode = engine_.candidateWindowOpen();
     view.faithful = engine_.outputIsFaithful();
     view.simplified = engine_.outputScript() == "simplified";
+    view.associations = suggestions_;
     view.pageIndex = engine_.pageIndex();
     view.pageCount = engine_.pageCount();
     const int count = engine_.candidateCount();
