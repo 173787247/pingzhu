@@ -125,6 +125,16 @@ private:
     /* Last write time of pingzhu.ini that we have already acted on. */
     unsigned long long settingsStamp_ = 0;
     std::wstring dataDir_;
+
+    /* 联想：上一次送出的文本，以及它最后一个词之后最可能接什么。
+     *
+     * 引擎没有「上一个词」这个概念，也不该有 —— 它只回答「X 之后接什么」。什么时候问、
+     * 问了画在哪，是这一层的事。 */
+    std::string lastCommitted_;
+    std::vector<std::string> suggestions_;
+
+    /* 送出之后刷新联想。两处提交点（候选点选、Enter）都要调。 */
+    void RememberCommit(const std::string &text);
 };
 
 /* One display attribute: a dotted underline under the bopomofo being composed. */

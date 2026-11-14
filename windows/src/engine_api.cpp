@@ -86,6 +86,11 @@ bool Engine::load(const std::wstring &dllPath, const std::string &dataDir, const
               bind(module, "engine_commit", commit_) &&
               bind(module, "engine_set_output_script", setOutputScript_) &&
               bind(module, "engine_output_script", outputScript_);
+    /* 接续表是后加的 ABI。绑不上不算失败：一个没有联想的安装是正常安装，
+     * 而一个装着旧 DLL 的机器不该因此整个输入法都起不来。 */
+    bind(module, "engine_associations_load", loadAssociations_);
+    bind(module, "engine_suggest_after", suggestAfter_);
+    bind(module, "engine_suggest_after_free", suggestAfterFree_);
     if (!ok) {
         error_ = "pingzhu_core.dll is missing one or more ABI entry points";
         destroy();
@@ -233,6 +238,32 @@ std::string Engine::commit() {
     if (!handle_) return "";
     std::string out = copyOut(commit_(handle_));
     sync();
+    return out;
+}
+
+/* ---------------------------------------------------------------- associations */
+
+std::size_t Engine::loadAssociations(const std::string &tsv) {
+    if (!handle_ || !loadAssociations_) return 0;
+    return loadAssociations_(handle_, tsv.c_str());
+}
+
+std::vector<std::string> Engine::suggestAfter(const std::string &word, int limit) {
+    std::vector<std::string> out;
+    if (!handle_ || !suggestAfter_ || !suggestAfterFree_) return out;
+    char *text = suggestAfter_(handle_, word.c_str(), limit);
+    if (text == nullptr) return out;
+    std::string joined(text);
+    suggestAfterFree_(text);   /* 立刻复制再释放：这串是引擎分配的 */
+    if (joined.empty()) return out;
+    std::size_t start = 0;
+    while (start <= joined.size()) {
+        const std::size_t space = joined.find(' ', start);
+        const std::string piece = joined.substr(start, space == std::string::npos ? std::string::npos : space - start);
+        if (!piece.empty()) out.push_back(piece);
+        if (space == std::string::npos) break;
+        start = space + 1;
+    }
     return out;
 }
 

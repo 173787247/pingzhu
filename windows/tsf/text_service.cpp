@@ -1,6 +1,8 @@
 #include "text_service.h"
 
+#include <fstream>
 #include <functional>
+#include <iterator>
 #include <new>
 
 #include "../src/config.h"
@@ -468,6 +470,7 @@ bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
             std::string out = engine_.selectCandidate(decision.arg);
             if (!out.empty()) {
                 EndComposition(context, widen(out));
+                RememberCommit(out);
                 HideCandidates();
             } else {
                 ShowCandidates();
@@ -500,6 +503,7 @@ bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
         case Action::Commit: {
             std::string out = engine_.commit();
             EndComposition(context, widen(out));
+            RememberCommit(out);
             HideCandidates();
             break;
         }
@@ -685,6 +689,31 @@ bool TextService::CaretRect(ITfContext *context, RECT *out) {
     return found;
 }
 
+void TextService::RememberCommit(const std::string &text) {
+    lastCommitted_ = text;
+    suggestions_.clear();
+    if (text.empty()) return;
+    /* 从尾巴由长到短试，命中接续表的第一个就是 —— 接续表自己就是词表，这样切分与它的
+     * 数据一致。UTF-8 下一个汉字是 3 个字节，所以按字节退，但只在字符边界上试。 */
+    for (int chars = 6; chars >= 1; --chars) {
+        std::size_t bytes = 0;
+        int seen = 0;
+        for (std::size_t i = text.size(); i > 0 && seen < chars; --seen) {
+            --i;
+            while (i > 0 && (static_cast<unsigned char>(text[i]) & 0xC0) == 0x80) --i;
+            bytes = text.size() - i;
+        }
+        if (seen == 0 && bytes == 0) break;
+        if (bytes == 0 || bytes > text.size()) break;
+        const std::string tail = text.substr(text.size() - bytes);
+        std::vector<std::string> found = engine_.suggestAfter(tail, 5);
+        if (!found.empty()) {
+            suggestions_ = found;
+            return;
+        }
+    }
+}
+
 void TextService::ShowCandidates() {
     if (!engine_.isComposing()) {
         HideCandidates();
@@ -812,6 +841,21 @@ void TextService::EnsureEngineLoaded() {
         return;
     }
     engine_.loadUserDictionaryFile(toUtf8(dataDir_ + L"\\pingzhu-userdict.txt"));
+
+    /* 接续表。可选：没有这份档的安装是「没有联想」的正常安装，不是坏掉的安装。
+     * 老版 pingzhu_core.dll 也没有这个符号（Engine 里绑定失败就是了），一样不报错。 */
+    {
+        const std::wstring path = dataDir_ + L"\\bigram.tsv";
+        std::ifstream file(path, std::ios::binary);
+        if (file) {
+            std::string tsv((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+            const std::size_t rows = engine_.loadAssociations(tsv);
+            log("associations: " + std::to_string(rows) + " rows");
+        } else {
+            log("associations: bigram.tsv not found, suggestions off");
+        }
+    }
 
     engineReady_ = true;
     log("engine ready");

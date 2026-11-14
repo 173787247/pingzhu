@@ -81,6 +81,15 @@ public:
     /* Refresh the cached composing/open state after any engine call. */
     void sync();
 
+    /* 接续表：某个词之后最可能接什么。
+     *
+     * 传 TSV 全文而不是路径 —— 核心不知道文件系统。返回载入的条数，0 表示失败或表为空，
+     * 也包含「这个 DLL 太老、没有这个符号」的情况。 */
+    std::size_t loadAssociations(const std::string &tsv);
+
+    /* 某个词之后最可能的接续词。没有接续表、或者词不在表里，返回空 vector。 */
+    std::vector<std::string> suggestAfter(const std::string &word, int limit = 5);
+
 private:
     void *module_ = nullptr;
     EngineHandle *handle_ = nullptr;
@@ -114,6 +123,10 @@ private:
     const char *(*commit_)(EngineHandle *) = nullptr;
     bool (*setOutputScript_)(EngineHandle *, const char *) = nullptr;
     const char *(*outputScript_)(EngineHandle *) = nullptr;
+    /* 这三个是可选的：老版 pingzhu_core.dll 没有它们，绑定失败就是「没有联想」。 */
+    std::size_t (*loadAssociations_)(EngineHandle *, const char *) = nullptr;
+    char *(*suggestAfter_)(EngineHandle *, const char *, int32_t) = nullptr;
+    void (*suggestAfterFree_)(char *) = nullptr;
 };
 
 }  // namespace pingzhu
