@@ -24,6 +24,7 @@
 #include <string>
 
 #include "../src/candidate_window.h"
+#include "../src/association_window.h"
 #include "lang_bar.h"
 #include "../src/engine_api.h"
 
@@ -109,6 +110,8 @@ private:
 
     Engine engine_;
     CandidateWindow candidates_;
+    /* 联想窗：候选窗是「组字时」的，联想是「送出之后」的 —— 时间上不重叠，所以要两个窗。 */
+    AssociationWindow associations_;
     /* The button in the language bar. Owned here; it holds callbacks back into
      * this object, so it must be released before the engine is destroyed. */
     LangBarButton *langBar_ = nullptr;

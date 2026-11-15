@@ -106,7 +106,7 @@ rem the old file is removed on the next reboot.
 set TSFDLL=pingzhu-tsf-0.10.11.dll
 
 echo [build] %TSFDLL%
-cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\data_dir.cpp src\log.cpp src\config.cpp ^
+cl %COMMON% %TSFSRC% src\engine_api.cpp src\router.cpp src\candidate_window.cpp src\association_window.cpp src\data_dir.cpp src\log.cpp src\config.cpp ^
    /Fo:build\tsf\ /LD /Fe:%TSFDLL% ^
    /link %TSFLIBS% /DEF:tsf\pingzhu-tsf.def /SUBSYSTEM:WINDOWS
 if errorlevel 1 exit /b 1

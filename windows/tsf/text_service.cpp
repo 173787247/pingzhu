@@ -286,6 +286,8 @@ STDMETHODIMP TextService::Deactivate() {
         }
     }
     HideCandidates();
+    associations_.hide();
+    associations_.destroy();
     if (langBar_) {
         langBar_->remove();
         langBar_->Release();
@@ -423,6 +425,9 @@ HRESULT TextService::FocusedContext(ITfContext **out) {
 
 bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
     *eaten = false;
+    /* 任何一次按键都让联想窗消失。它是一次性的提示，不是常驻面板；
+     * 用户开始打下一个词，就不再看上一次的建议了。 */
+    associations_.hide();
     if (!engineReady_) {
         if (!reportedNotReady_) {
             reportedNotReady_ = true;
@@ -709,6 +714,9 @@ void TextService::RememberCommit(const std::string &text) {
         std::vector<std::string> found = engine_.suggestAfter(tail, 5);
         if (!found.empty()) {
             suggestions_ = found;
+            /* 候选窗此刻已经隐藏（送出就隐藏），所以联想要用自己的窗。锚点沿用
+             * 候选窗刚才记下的那个 —— 它们指的是同一个光标。 */
+            if (hasPendingAnchor_) associations_.show(suggestions_, pendingAnchor_);
             return;
         }
     }
@@ -829,6 +837,9 @@ void TextService::EnsureEngineLoaded() {
      * type over: the engine is the part that matters. */
     if (!candidates_.create(moduleHandle())) {
         log("candidate window creation failed; typing will work without it");
+    }
+    if (!associations_.create(moduleHandle())) {
+        log("association window creation failed; suggestions will not be shown");
     }
     displayAttribute_ = new (std::nothrow) DisplayAttributeInfo();
 
