@@ -76,6 +76,8 @@ cp "$ROOT/data/bopomofo-lm.tsv" "$STAGE/data/"
 # The 繁/簡 table lives beside the language model; without it the engine still
 # runs and simply cannot convert, which is the right failure mode.
 cp "$ROOT/data/ts-conversion.tsv" "$STAGE/data/"
+cp "$ROOT/data/bigram.tsv" "$STAGE/data/"
+cp "$ROOT/data/shortcuts.tsv" "$STAGE/data/" 2>/dev/null || true
 # MSVC's batch parser wants CRLF.
 sed 's/\r$//; s/$/\r/' "$HERE/build.bat" > "$STAGE/build.bat"
 
