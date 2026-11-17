@@ -695,9 +695,16 @@ bool TextService::CaretRect(ITfContext *context, RECT *out) {
 }
 
 void TextService::RememberCommit(const std::string &text) {
+    /* 这一行是为了回答「联想窗没出现」时最先要问的问题：这段代码有没有跑。
+     * 有它，下一步的问题就变成「它找到了什么」，而不是「它在不在」。 */
+    log("remember: committed " + std::to_string(text.size()) + " bytes" +
+        (hasPendingAnchor_ ? ", anchor set" : ", NO ANCHOR"));
     lastCommitted_ = text;
     suggestions_.clear();
-    if (text.empty()) return;
+    if (text.empty()) {
+        log("remember: empty, nothing to suggest");
+        return;
+    }
     /* 从尾巴由长到短试，命中接续表的第一个就是 —— 接续表自己就是词表，这样切分与它的
      * 数据一致。UTF-8 下一个汉字是 3 个字节，所以按字节退，但只在字符边界上试。 */
     for (int chars = 6; chars >= 1; --chars) {
@@ -714,12 +721,17 @@ void TextService::RememberCommit(const std::string &text) {
         std::vector<std::string> found = engine_.suggestAfter(tail, 5);
         if (!found.empty()) {
             suggestions_ = found;
+            log("remember: tail=" + tail + " found=" + std::to_string(found.size()) +
+                (hasPendingAnchor_ ? ", showing" : ", NOT showing (no anchor)"));
             /* 候选窗此刻已经隐藏（送出就隐藏），所以联想要用自己的窗。锚点沿用
              * 候选窗刚才记下的那个 —— 它们指的是同一个光标。 */
             if (hasPendingAnchor_) associations_.show(suggestions_, pendingAnchor_);
             return;
         }
     }
+    /* 走到这里说明尾部 1..6 个字都不在接续表里。这是正常状态（表只有 8849 条），
+     * 但要能看见它，否则「没找到」和「代码没跑」在日志里长得一样。 */
+    log("remember: no continuation found for the tail");
 }
 
 void TextService::ShowCandidates() {
