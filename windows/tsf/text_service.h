@@ -84,6 +84,18 @@ private:
      * is empty. Runs inside an edit session. */
     void UpdateComposition(ITfContext *context, const std::wstring &text);
     void EndComposition(ITfContext *context, const std::wstring &finalText);
+
+    /* 在光标处插入，不管有没有组字。联想词用它 —— `EndComposition` 在没有组字时
+     * 直接返回，调用它什么都不会插入。 */
+    bool InsertAtSelection(ITfContext *context, const std::wstring &text);
+
+    /* 上一次送出的文本末尾那个 range。
+     *
+     * TSF 在组字结束后把选区留在词的**开始**处，`InsertTextAtSelection` 从那里插，
+     * 结果就是「发展好」而不是「好发展」—— 实测。收拢选区没用（它本来就是个塌缩点）。
+     * 所以留一份 range 自己维护插入点，不依赖选区在哪。 */
+    ITfRange *commitEnd_ = nullptr;
+    void RememberCommitRange(ITfRange *range);
     void AbortComposition(ITfContext *context);
 
     /* Screen position of the caret, for the candidate window. */

@@ -425,7 +425,32 @@ HRESULT TextService::FocusedContext(ITfContext **out) {
 
 bool TextService::HandleKey(ITfContext *context, WPARAM vkey, bool *eaten) {
     *eaten = false;
-    /* 任何一次按键都让联想窗消失。它是一次性的提示，不是常驻面板；
+
+    /* 联想窗开着的时候，数字键选联想词。
+     *
+     * 这不与注音冲突：联想窗只在**送出一个词之后**出现，那时缓冲区是空的，数字键没有
+     * 注音可打。等到用户开始打下一个词，第一下非数字键就让它消失，数字键随后又归注音。
+     *
+     * 顺序很重要 —— 必须在下面 `associations_.hide()` 之前判断。 */
+    if (associations_.visible() && !suggestions_.empty() && vkey >= '1' && vkey <= '9') {
+        const std::size_t index = static_cast<std::size_t>(vkey - '1');
+        if (index < suggestions_.size() && context) {
+            const std::string word = suggestions_[index];
+            /* 不能走 EndComposition：它第一句就是「没有组字就返回」，而联想窗出现时
+             * 恰好没有组字 —— 那样调用什么都不会插入，只有联想窗自己会往前跳。
+             * ITfInsertAtSelection 不管有没有组字，就在当前光标处插入。 */
+            const bool inserted = InsertAtSelection(context, widen(word));
+            *eaten = true;
+            if (inserted) {
+                /* 只在这之后推进：用户连点两个数字就是在连写。插入失败时不推进，
+                 * 否则联想窗会跑在实际文本前面。 */
+                RememberCommit(word);
+            }
+            return true;
+        }
+    }
+
+    /* 其他任何按键都让联想窗消失。它是一次性的提示，不是常驻面板；
      * 用户开始打下一个词，就不再看上一次的建议了。 */
     associations_.hide();
     if (!engineReady_) {
@@ -622,13 +647,67 @@ void TextService::SetDisplayAttribute(TfEditCookie ec, ITfContext *context) {
     property->Release();
 }
 
+void TextService::RememberCommitRange(ITfRange *range) {
+    if (!range) return;
+    if (commitEnd_ != nullptr) {
+        commitEnd_->Release();
+        commitEnd_ = nullptr;
+    }
+    /* Clone 出整段；插入时再 Collapse 到末尾（那需要编辑会话）。 */
+    range->Clone(&commitEnd_);
+}
+
+bool TextService::InsertAtSelection(ITfContext *context, const std::wstring &text) {
+    if (!context || text.empty()) return false;
+    bool ok = false;
+    RunEditSession(context, clientId_, [this, context, &text, &ok](TfEditCookie ec) -> HRESULT {
+        /* 首选：从上一次送出的文本末尾往后写。TSF 的选区停在词的**开始**处，
+         * 用它插会变成「发展好」而不是「好发展」—— 实测到的。 */
+        if (commitEnd_ != nullptr) {
+            commitEnd_->Collapse(ec, TF_ANCHOR_END);
+            const HRESULT hr =
+                commitEnd_->SetText(ec, 0, text.c_str(), static_cast<LONG>(text.size()));
+            if (SUCCEEDED(hr)) {
+                /* 写完之后把插入点收拢到新文本的末尾，并把选区也移过去 —— 否则光标停在「发展」之前。 */
+                commitEnd_->Collapse(ec, TF_ANCHOR_END);
+                {
+                    TF_SELECTION sel;
+                    sel.range = commitEnd_;
+                    sel.style.ase = TF_AE_NONE;
+                    sel.style.fInterimChar = FALSE;
+                    context->SetSelection(ec, 1, &sel);
+                }
+                /* 写完之后插入点就在新文本后面，range 自己跟过去了。 */
+                ok = true;
+                return S_OK;
+            }
+        }
+
+        /* 退路：没有记住的 range（比如第一次）就走选区。位置可能偏前，但至少插得进去。 */
+        ITfInsertAtSelection *insert = nullptr;
+        if (FAILED(context->QueryInterface(IID_ITfInsertAtSelection,
+                                           reinterpret_cast<void **>(&insert))) ||
+            insert == nullptr) {
+            return E_NOINTERFACE;
+        }
+        ITfRange *range = nullptr;
+        const HRESULT hr =
+            insert->InsertTextAtSelection(ec, 0, text.c_str(), static_cast<LONG>(text.size()), &range);
+        if (range != nullptr) range->Release();
+        insert->Release();
+        ok = SUCCEEDED(hr);
+        return hr;
+    });
+    return ok;
+}
+
 void TextService::EndComposition(ITfContext *context, const std::wstring &finalText) {
     if (!context || !composition_) return;
     ITfComposition *composition = composition_;
     composition->AddRef();
     composition_ = nullptr;  /* OnCompositionTerminated will fire; do not re-enter */
 
-    RunEditSession(context, clientId_, [composition, finalText](TfEditCookie ec) -> HRESULT {
+    RunEditSession(context, clientId_, [this, composition, finalText](TfEditCookie ec) -> HRESULT {
         ITfRange *range = nullptr;
         HRESULT hr = composition->GetRange(&range);
         if (FAILED(hr)) {
@@ -640,6 +719,7 @@ void TextService::EndComposition(ITfContext *context, const std::wstring &finalT
          * be. Writing before ending would leave them inside a composition. */
         composition->EndComposition(ec);
         hr = range->SetText(ec, 0, finalText.c_str(), static_cast<LONG>(finalText.size()));
+        if (SUCCEEDED(hr)) RememberCommitRange(range);
         range->Release();
         return hr;
     });
