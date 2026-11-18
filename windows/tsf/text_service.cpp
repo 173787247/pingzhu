@@ -708,16 +708,21 @@ void TextService::RememberCommit(const std::string &text) {
     /* 从尾巴由长到短试，命中接续表的第一个就是 —— 接续表自己就是词表，这样切分与它的
      * 数据一致。UTF-8 下一个汉字是 3 个字节，所以按字节退，但只在字符边界上试。 */
     for (int chars = 6; chars >= 1; --chars) {
-        std::size_t bytes = 0;
-        int seen = 0;
-        for (std::size_t i = text.size(); i > 0 && seen < chars; --seen) {
-            --i;
-            while (i > 0 && (static_cast<unsigned char>(text[i]) & 0xC0) == 0x80) --i;
-            bytes = text.size() - i;
+        /* Walk back `chars` characters, then take what is left as the tail.
+         *
+         * The first version counted *down* from zero (`seen < chars`, `--seen`), which
+         * never reached `chars` — so every iteration walked to the start of the text
+         * and the loop tried the same full-string tail six times. 「你好」is not in the
+         * table, so it reported "no continuation" without ever trying 「好」. */
+        std::size_t start = text.size();
+        int walked = 0;
+        while (start > 0 && walked < chars) {
+            --start;
+            while (start > 0 && (static_cast<unsigned char>(text[start]) & 0xC0) == 0x80) --start;
+            ++walked;
         }
-        if (seen == 0 && bytes == 0) break;
-        if (bytes == 0 || bytes > text.size()) break;
-        const std::string tail = text.substr(text.size() - bytes);
+        if (walked == 0) break;
+        const std::string tail = text.substr(start);
         std::vector<std::string> found = engine_.suggestAfter(tail, 5);
         if (!found.empty()) {
             suggestions_ = found;
